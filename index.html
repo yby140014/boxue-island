@@ -387,15 +387,26 @@ img,svg{display:block}
 .sp-py{font-size:30px;font-weight:800;color:var(--brand);letter-spacing:1px;margin-top:6px;text-align:center}
 .sp-py:active{color:var(--accent)}
 
-/* 听写 */
-.tx-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:10px 0}
-.tx-cell{display:flex;flex-direction:column;align-items:center;gap:6px}
-.tx-py{font-size:14px;font-weight:700;color:var(--brand)}
-.tx-box{width:74px;height:74px;border:2px solid var(--line);border-radius:12px;background:var(--surface);touch-action:none;position:relative}
+/* 听写：田字格（外粗边 + 中十字线 + 对角虚线 + 范字浅底色） */
+.tx-grid{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:10px 0}
+.tx-cell{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tx-py{font-size:15px;font-weight:800;color:var(--brand);letter-spacing:.5px;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--pill);background:var(--brand-soft);cursor:pointer;transition:opacity .15s}
+.tx-py:active{opacity:.7}
+.tx-py::after{content:'🔊';font-size:11px;opacity:.55}
+.tx-box{width:130px;height:130px;border:3px solid #2B6CFF;border-radius:10px;background:#fff;touch-action:none;position:relative;box-sizing:border-box;display:block;background-image:
+  /* 横中线（虚）*/ linear-gradient(to right, transparent calc(50% - .5px), #FF8A3D calc(50% - .5px), #FF8A3D calc(50% + .5px), transparent calc(50% + .5px)),
+  /* 竖中线（虚）*/ linear-gradient(to bottom, transparent calc(50% - .5px), #FF8A3D calc(50% - .5px), #FF8A3D calc(50% + .5px), transparent calc(50% + .5px)),
+  /* 对角虚线 */ repeating-linear-gradient(45deg, transparent 0 4px, #FF8A3D88 4px 5px),repeating-linear-gradient(-45deg, transparent 0 4px, #FF8A3D88 4px 5px);
+}
+.tx-box::before{content:'';position:absolute;inset:0;border:3px solid #2B6CFF;border-radius:10px;pointer-events:none}
+/* 横屏加大田字格 */
+.is-tablet .tx-box{width:160px;height:160px}
+.is-tablet .tx-py{font-size:17px}
 
 /* 描红 */
-.copybook{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.mh-cell{background:var(--surface);border-radius:var(--r-sm);padding:12px;box-shadow:var(--shadow-sm);border:1px solid var(--line2);
+.copybook{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+#app.is-tablet .copybook{grid-template-columns:repeat(4,1fr);gap:14px}
+.mh-cell{background:var(--surface);border-radius:var(--r-sm);padding:10px;box-shadow:var(--shadow-sm);border:1px solid var(--line2);
   display:flex;flex-direction:column;align-items:center;gap:8px}
 .mh-cell .mh-cv{width:100%;max-width:none;aspect-ratio:1}
 .mh-cell .mh-spk{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--pill);background:var(--brand-soft);color:var(--brand-ink);font-size:13px;font-weight:700}
@@ -414,6 +425,24 @@ img,svg{display:block}
 .qopt.dim{opacity:.4}
 .quiz-bar{height:8px;border-radius:var(--pill);background:var(--surface3);overflow:hidden;margin-bottom:18px}
 .quiz-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .3s}
+
+/* 知识点演示 */
+.teach-list{display:flex;flex-direction:column;gap:10px}
+.teach-card{background:var(--surface);border-radius:var(--r-sm);box-shadow:var(--shadow-sm);border:1px solid var(--line2);overflow:hidden}
+.teach-head{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer}
+.teach-ico{font-size:22px}
+.teach-t{font-size:15.5px;font-weight:700;flex:1}
+.teach-ar{color:var(--faint);font-size:20px;transition:transform .2s}
+.teach-card.open .teach-ar{transform:rotate(90deg)}
+.teach-body{max-height:0;overflow:hidden;transition:max-height .3s;padding:0 16px}
+.teach-card.open .teach-body{max-height:400px;padding:4px 16px 16px}
+.teach-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+.teach-row:last-child{border-bottom:none}
+.teach-row b{color:var(--brand);flex:0 0 96px}
+.teach-row span{color:var(--ink2)}
+/* 应用题分步 */
+.wp-steps{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+.wp-step{background:var(--brand-soft);color:var(--brand-ink);padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:600}
 
 /* Result toast */
 .toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-b) + 20px);transform:translateX(-50%) translateY(20px);
@@ -461,6 +490,43 @@ img,svg{display:block}
 .grade-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .grade-pick button{padding:9px 15px;border-radius:var(--pill);background:var(--surface3);font-size:13px;font-weight:700;color:var(--ink2)}
 .grade-pick button.on{background:var(--brand);color:#fff}
+
+/* —— 字卡点读（自绘下拉 + 分段 + 生字表） —— */
+.zd-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;position:sticky;top:0;z-index:5;background:var(--surface);padding:6px 0 8px}
+.zd-row{display:flex;flex-direction:column;gap:4px}
+.zd-row label{font-size:11.5px;color:var(--ink3);font-weight:700;padding-left:2px}
+.zd-sel,.zd-seg{position:relative;width:100%}
+.zd-sel-input{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  width:100%;padding:9px 30px 9px 12px;border-radius:var(--r-sm);
+  background:var(--surface2);border:1px solid var(--line2);
+  font-size:14px;font-weight:700;color:var(--ink);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%238A93AC' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:12px;
+}
+.zd-sel-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.zd-seg{display:inline-flex;background:var(--surface3);border-radius:var(--pill);padding:3px;gap:2px}
+.zd-seg-btn{flex:1;padding:8px 0;border-radius:var(--pill);background:transparent;border:none;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all .2s}
+.zd-seg-btn.on{background:var(--brand);color:#fff;box-shadow:0 4px 12px color-mix(in srgb,var(--brand) 32%,transparent)}
+.zd-action{margin-top:14px}
+.zd-table-wrap{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r-sm);overflow:hidden;box-shadow:var(--shadow-sm)}
+.zd-table{width:100%;border-collapse:collapse;font-size:14px}
+.zd-table thead th{padding:10px 12px;background:var(--surface3);font-size:12px;font-weight:800;color:var(--ink3);text-align:left;border-bottom:1px solid var(--line)}
+.zd-table tbody tr{border-bottom:1px solid var(--line2);transition:background .15s}
+.zd-table tbody tr:last-child{border-bottom:none}
+.zd-table tbody tr:hover{background:var(--brand-soft)}
+.zd-td-c{width:64px;text-align:center;padding:10px 8px}
+.zd-td-py{width:90px;color:var(--brand);font-weight:800;padding:10px 12px;letter-spacing:.5px}
+.zd-td-w{color:var(--ink2);padding:10px 12px}
+.zd-td-act{width:80px;text-align:right;padding:8px 12px}
+.zd-big{display:inline-block;font-size:28px;font-weight:800;color:var(--ink);line-height:1.2;font-family:'PingFang SC','Microsoft YaHei',serif}
+.zd-spk-btn{padding:6px 10px!important;font-size:12px!important}
+/* 平板/横屏：下拉头部扩展，多留点空间给表格 */
+.is-tablet .zd-head{grid-template-columns:200px 1fr 180px}
+.is-tablet .zd-table{font-size:15px}
+.is-tablet .zd-big{font-size:34px}
+.is-tablet .zd-td-py{font-size:16px}
+
 .audio-fab{position:absolute;bottom:calc(var(--tab-h) + var(--safe-b) + 16px);right:18px;z-index:9;
   width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 10px 26px color-mix(in srgb,var(--brand) 50%,transparent)}
@@ -492,7 +558,7 @@ img,svg{display:block}
 .login-switch a:active{opacity:.6}
 
 /* —— 年级分段选择器（描红/听写通用）—— */
-.grade-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.grade-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:6;background:var(--surface)}
 .grade-chip{flex:1 1 auto;min-width:54px;text-align:center;padding:9px 6px;border-radius:var(--pill);
   font-size:13px;font-weight:600;color:var(--ink2);background:var(--surface3);border:1.5px solid transparent;cursor:pointer;transition:.18s;user-select:none}
 .grade-chip.active{color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;
@@ -2904,14 +2970,66 @@ function addXP(n, x, y){
 }
 function toast(msg, type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(type?(' '+type):''); clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',1600); }
 
-/* TTS 朗读（云端接口，平板需联网） */
+/* TTS 朗读：主用百度 TTS，失败自动降级 Web Speech API */
+let _spkMode = null; // 'baidu' | 'web' | 'none'
+function _speakWeb(text){
+  try{
+    const ss = window.speechSynthesis; if(!ss) return false;
+    // 取消上一条，避免排队
+    ss.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; u.rate = 0.9; u.pitch = 1;
+    // 选中文语音
+    const vs = ss.getVoices();
+    const zh = vs.find(v=>/zh|cmn|Chinese/i.test(v.lang+v.name));
+    if(zh) u.voice = zh;
+    ss.speak(u);
+    return true;
+  }catch(e){ return false; }
+}
 function speak(text, opt){
+  if(!text) return;
   opt = opt||{};
   const spd = opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
   const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&type=3';
+  // 首次尝试检测可用通道
+  if(_spkMode===null){
+    const ss = window.speechSynthesis;
+    _spkMode = ss ? 'web' : 'none'; // 默认假设 web 可用，baidu 在 play 失败时再降级
+  }
   try{
-    const a = new Audio(url); a.play().catch(()=>{});
-  }catch(e){}
+    const a = new Audio(url);
+    a.play().then(()=>{ _spkMode='baidu'; }).catch(()=>{ if(_spkMode!=='baidu'){ _speakWeb(text); } });
+    // 若浏览器不支持 Audio 或静默失败，3s 内无 baidu 成功则降级
+    setTimeout(()=>{ if(_spkMode!=='baidu'){ _speakWeb(text); } }, 600);
+  }catch(e){
+    // Audio 构造失败 → 直接走 web
+    if(!_speakWeb(text)){ /* 两路都不可用，静默 */ }
+  }
+}
+/* TTS 序列朗读：依次播放 wordList，每词后停 gapMs（够听清的间隔） */
+let _spkChain = Promise.resolve();
+function speakSeq(list, gapMs){
+  gapMs = gapMs||750;
+  if(speechSynthesis && speechSynthesis.speak){ try{ speechSynthesis.cancel(); }catch(e){} }
+  _spkChain = _spkChain.then(async ()=>{
+    for(let i=0;i<list.length;i++){
+      const t = list[i]; if(!t) continue;
+      await new Promise(res=>{
+        let done = false;
+        const finish = ()=>{ if(!done){ done=true; res(); } };
+        try{
+          const u = new SpeechSynthesisUtterance(t);
+          u.lang='zh-CN'; u.rate=0.85; u.onend=finish; u.onerror=finish;
+          speechSynthesis.speak(u);
+          // 单字超时兜底（避免某一字被吞而永远等不到 onend）
+          setTimeout(finish, 1400);
+        }catch(e){ finish(); }
+      });
+      if(i<list.length-1) await new Promise(r=>setTimeout(r, gapMs));
+    }
+  }).catch(()=>{});
+  return _spkChain;
 }
 function $(s, r){ return (r||document).querySelector(s); }
 function $all(s, r){ return Array.from((r||document).querySelectorAll(s)); }
@@ -3064,6 +3182,8 @@ function ringSVG(pct, cap){
 
 /* ============ 语文 ============ */
 function gradeUnits(g){ const tb=TEXTBOOK[GM[g]||g]||[]; return tb; }
+/* 生字组词字段兼容：数据里 wd 可能是字符串("我们、我国")或数组，统一转数组 */
+function ziWords(z){ if(!z) return []; const w=z.wd; if(Array.isArray(w)) return w.filter(Boolean); if(typeof w==='string') return w.split(/[、,，\s]+/).filter(Boolean); return []; }
 function renderChinese(){
   const s = document.getElementById('screen-chinese');
   const mods = [
@@ -3112,44 +3232,126 @@ function renderMath(){
     '<div class="card tint mb"><div class="hero"><div class="hero-flame">🔢</div><div class="hero-meta">'+
       '<div class="hero-num">北师大版 · '+g+'</div>'+
       '<div class="hero-cap">口算范围：'+d.ops.map(o=>opName[o]).join('、')+' · 上限 '+d.max+'</div></div></div></div>'+
-    '<div class="section-title">数学模块</div>'+
+    '<div class="section-title">先学后练 <span class="st-sub">知识点演示</span></div>'+
+    '<div class="mod-grid">'+
+      modMath('📚','数学知识点','长度/质量/时间·图形·应用题','var(--brand-soft)','#5B6CFF',openMathTeach)+
+    '</div>'+
+    '<div class="section-title">数学模块 <span class="st-sub">闯关练习</span></div>'+
     '<div class="mod-grid">'+
       modMath('🔢','口算挑战','计时心算·错题归集','var(--brand-soft)','#5B6CFF',openSuan)+
-      modMath('📐','图形与应用题','规划中','var(--surface3)','#8A93AC',()=>toast('该模块规划中，敬请期待'))+
+      modMath('📏','单位换算','km/m/dm/cm/mm·t/kg/g','var(--accent-soft)','#FF8A3D',openConvert)+
+      modMath('🔷','图形认知','周长公式·图形辨认','var(--success-soft)','#1FB874',openShape)+
+      modMath('🧩','应用题闯关','分步提示·理清思路','var(--brand-soft)','#8B5CF6',openWordProb)+
     '</div>';
   $all('.mod', s).forEach(card=>{ card.onclick = card._fn; });
 }
 function modMath(ico,t,s,bg,fg,fn){ const e=el('div','mod'); e._fn=fn; e.innerHTML='<div class="mod-ico" style="background:'+bg+';color:'+fg+'">'+ico+'</div><div class="mod-title">'+t+'</div><div class="mod-sub">'+s+'</div>'; return e; }
 
-/* —— 字卡点读 —— */
+/* —— 字卡点读（下拉目录 + 卡片/生字表双模式） —— */
 let zidianGrade = state.profile.grade;
+let _zdMode = 'card'; // 'card' | 'table'
 function openZidian(){
+  const optsUnits = () => {
+    const u = gradeUnits(zidianGrade);
+    return u.length ? u.map((uu,i)=>({v:i, l:(i+1)+'. '+uu.u})) : [];
+  };
   const body =
-    '<div class="grade-pick" id="zgPick"></div>'+
-    '<div class="grade-pick" id="zuPick"></div>'+
-    '<div class="note mb12">点字卡听读音；点击🔊播放；下方为该单元全部生字。</div>'+
-    '<div class="char-grid" id="zgGrid"></div>';
+    '<div class="zd-head">'+
+      '<div class="zd-row"><label>年级</label><div class="zd-sel" id="zgGrade"></div></div>'+
+      '<div class="zd-row"><label>单元</label><div class="zd-sel" id="zgUnit"></div></div>'+
+      '<div class="zd-row"><label>模式</label><div class="zd-seg" id="zgMode">'+
+        '<button class="zd-seg-btn on" data-mode="card">卡片</button>'+
+        '<button class="zd-seg-btn" data-mode="table">生字表</button>'+
+      '</div></div>'+
+    '</div>'+
+    '<div class="note mb12" id="zgNote">点字卡听读音；点击🔊播放；卡片模式支持点字发声，生字表模式可一键朗读全部。</div>'+
+    '<div id="zgView" class="char-grid"></div>'+
+    '<div class="zd-action hidden" id="zgAct"><button class="btn btn-primary btn-block" id="zgReadAll">📣 一键朗读本页全部生字</button></div>';
   openOverlay('字卡点读', body);
-  const pick = document.getElementById('zgPick');
-  GRADES.forEach(g=>{ const b=el('button', g===zidianGrade?'on':''); b.textContent=g; b.onclick=()=>{ zidianGrade=g; openZidian(); }; pick.appendChild(b); });
-  const units = gradeUnits(zidianGrade);
-  const up = document.getElementById('zuPick');
-  if(!units.length){ document.getElementById('zgGrid').innerHTML='<div class="note">该册内容待录入。</div>'; return; }
-  units.forEach((u,i)=>{ const b=el('button', i===0?'on':''); b.textContent=(i+1)+'.'+u.u; b.dataset.i=i; b.onclick=()=>{ $all('#zuPick button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawZidian(i); }; up.appendChild(b); });
-  drawZidian(0);
+
+  const gS = makeSelect(zidianGrade, GRADES.map(g=>({v:g,l:g+'册'})), v=>{ zidianGrade=v; refreshUnits(); });
+  document.getElementById('zgGrade').appendChild(gS);
+
+  $all('#zgMode .zd-seg-btn').forEach(b=>{
+    b.onclick = ()=>{
+      $all('#zgMode .zd-seg-btn').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      _zdMode = b.dataset.mode;
+      renderView();
+    };
+  });
+
+  refreshUnits();
+  function refreshUnits(){
+    const opts = optsUnits();
+    const uPick = document.getElementById('zgUnit');
+    uPick.innerHTML = '';
+    if(!opts.length){
+      document.getElementById('zgView').innerHTML = '<div class="note">该册内容待录入。</div>';
+      document.getElementById('zgAct').classList.add('hidden');
+      return;
+    }
+    _zidianUnit = 0;
+    const uS = makeSelect(_zidianUnit, opts, v=>{ _zidianUnit=+v; renderView(); });
+    uPick.appendChild(uS);
+    renderView();
+  }
+  function renderView(){
+    const units = gradeUnits(zidianGrade);
+    if(!units.length) return;
+    const u = units[_zidianUnit] || units[0];
+    if(_zdMode==='card') drawZidian(u);
+    else drawZidianTable(u);
+    document.getElementById('zgAct').classList.toggle('hidden', _zdMode!=='table');
+  }
+  document.getElementById('zgReadAll').onclick = ()=>{
+    const u = gradeUnits(zidianGrade)[_zidianUnit];
+    if(!u) return;
+    const seq = (u.zi||[]).map(z=>z.c).filter(Boolean);
+    if(seq.length) speakSeq(seq, 800);
+  };
 }
-function drawZidian(ui){
-  const units = gradeUnits(zidianGrade); const u = units[ui]; if(!u) return;
-  const grid = document.getElementById('zgGrid'); grid.innerHTML='';
+let _zidianUnit = 0;
+function makeSelect(cur, options, onChg){
+  const sel = document.createElement('select');
+  sel.className = 'zd-sel-input';
+  options.forEach(o=>{
+    const op = document.createElement('option');
+    op.value = String(o.v); op.textContent = o.l;
+    if(String(o.v)===String(cur)) op.selected = true;
+    sel.appendChild(op);
+  });
+  sel.onchange = ()=>onChg(sel.value);
+  return sel;
+}
+function drawZidian(u){
+  const grid = document.getElementById('zgView'); grid.className='char-grid'; grid.innerHTML='';
   (u.zi||[]).forEach(z=>{
     const t = el('div','char-tile');
-    t.innerHTML = '<div class="ct-c">'+z.c+'</div><div class="ct-p">'+z.py+'</div><div class="ct-w">'+((z.wd||[]).slice(0,2).join(' '))+'</div>'+
-      '<div class="spk" style="position:absolute;top:6px;right:6px">🔊</div>';
+    const ws = ziWords(z).slice(0,2).join(' ');
+    t.innerHTML = '<div class="ct-c">'+z.c+'</div><div class="ct-p">'+z.py+'</div><div class="ct-w">'+ws+
+      '</div><div class="spk" style="position:absolute;top:6px;right:6px">🔊</div>';
     t.style.position='relative';
     t.querySelector('.spk').onclick = (e)=>{ e.stopPropagation(); speak(z.c); };
     t.onclick = ()=>{ speak(z.c); flashTile(t); };
     grid.appendChild(t);
   });
+}
+function drawZidianTable(u){
+  const view = document.getElementById('zgView'); view.className=''; view.innerHTML='';
+  const wrap = el('div','zd-table-wrap');
+  const rows = (u.zi||[]).map(z=>{
+    const ws = ziWords(z).slice(0,3).join('、');
+    return '<tr>'+
+      '<td class="zd-td-c"><span class="zd-big">'+z.c+'</span></td>'+
+      '<td class="zd-td-py">'+z.py+'</td>'+
+      '<td class="zd-td-w">'+ws+'</td>'+
+      '<td class="zd-td-act"><button class="btn btn-sm zd-spk-btn" data-c="'+z.c+'">🔊 读</button></td>'+
+    '</tr>';
+  }).join('');
+  wrap.innerHTML = '<table class="zd-table"><thead><tr><th>生字</th><th>拼音</th><th>组词</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  view.appendChild(wrap);
+  $all('.zd-spk-btn', view).forEach(btn=>{ btn.onclick=()=>speak(btn.dataset.c); });
 }
 function flashTile(t){ t.style.background='var(--brand-soft)'; setTimeout(()=>t.style.background='',220); }
 
@@ -3171,13 +3373,13 @@ function drawText(g){
     const wrap = el('div','');
     (u.zi||[]).forEach(z=>{
       const row = el('div','list-row');
-      row.innerHTML = '<div class="lr-ico" style="background:var(--brand-soft)">'+z.c+'</div><div class="lr-main"><div class="lr-title">'+z.c+' <span style="color:var(--brand);font-size:13px">'+z.py+'</span></div><div class="lr-sub">'+((z.wd||[]).join('、')||'—')+'</div></div><div class="spk">🔊</div>';
+      row.innerHTML = '<div class="lr-ico" style="background:var(--brand-soft)">'+z.c+'</div><div class="lr-main"><div class="lr-title">'+z.c+' <span style="color:var(--brand);font-size:13px">'+z.py+'</span></div><div class="lr-sub">'+(ziWords(z).join('、')||'—')+'</div></div><div class="spk">🔊</div>';
       row.querySelector('.spk').onclick=(e)=>{e.stopPropagation();speak(z.c);};
       row.onclick=()=>{ speak(z.c); };
       wrap.appendChild(row);
     });
     // 词语
-    const words = (u.zi||[]).flatMap(z=>(z.wd||[])).filter(w=>w&&w.length>=2);
+    const words = (u.zi||[]).flatMap(z=>ziWords(z)).filter(w=>w&&w.length>=2);
     if(words.length){
       const wr = el('div','list-row');
       wr.innerHTML='<div class="lr-ico" style="background:var(--accent-soft)">词</div><div class="lr-main"><div class="lr-title">词语跟读</div><div class="lr-sub">'+words.slice(0,6).join('、')+'</div></div><div class="spk">🔊</div>';
@@ -3303,17 +3505,21 @@ function gradeChipsHTML(cur){
 }
 function openTrace(initialGrade){
   let tg = initialGrade || state.profile.grade;
+  let tu = 0; // 当前单元索引
   function renderTrace(){
     const units=(TEXTBOOK[GM[tg]||tg]||[]);
     if(!units.length){ openOverlay('描红练习', gradeChipsHTML(tg)+'<div class="empty"><div class="em-ico">🖌️</div><div class="em-t">'+tg+' 内容待录入</div></div>'); bindChips(); return; }
-    const sample = shuffle(units.flatMap(u=>u.zi.map(z=>z.c))).slice(0,10);
-    const body=gradeChipsHTML(tg)+
-      '<div class="note mb12">大字描红（'+tg+'）：在浅色范字上用手指或电子笔描摹；每格下方「🔊 读音」可点听标准普通话。</div>'+
+    if(tu>=units.length) tu=0;
+    const unitChips = '<div class="grade-chips" id="unitChips" style="position:sticky;top:46px">'+units.map((u,i)=>'<div class="grade-chip'+(i===tu?' active':'')+'" data-i="'+i+'">'+(i+1)+'.'+u.u.replace(/·.*/,'').slice(0,6)+'</div>').join('')+'</div>';
+    const body=gradeChipsHTML(tg)+ unitChips +
+      '<div class="note mb12">大字描红（'+tg+'）：在浅色范字上用手指或电子笔描摹；每格下方「🔊 读音」可点听标准普通话。共 '+units[tu].zi.length+' 字，可上下滑动。</div>'+
       '<div class="copybook" id="cbOut"></div>';
     openOverlay('描红练习', body);
     bindChips();
+    const box=$('#unitChips'); if(box) $all('.grade-chip',box).forEach(ch=>{ ch.onclick=()=>{ tu=+ch.dataset.i; renderTrace(); }; });
     const out=$('#cbOut');
-    sample.forEach(c=>{
+    units[tu].zi.forEach(z=>{
+      const c=z.c;
       const cell=el('div','mh-cell');
       cell.innerHTML='<canvas class="mh-cv" width="260" height="260"></canvas><div class="mh-spk">🔊 读音</div>';
       out.appendChild(cell);
@@ -3325,7 +3531,7 @@ function openTrace(initialGrade){
   }
   function bindChips(){
     const box=$('#gradeChips'); if(!box)return;
-    $all('.grade-chip',box).forEach(ch=>{ ch.onclick=()=>{ tg=ch.dataset.g; renderTrace(); }; });
+    $all('.grade-chip',box).forEach(ch=>{ ch.onclick=()=>{ tg=ch.dataset.g; tu=0; renderTrace(); }; });
   }
   renderTrace();
 }
@@ -3367,7 +3573,7 @@ function openPinyinQuiz(){
     cur=chars[Math.floor(Math.random()*chars.length)];
     $('#qPy').textContent=charPy(cur.c)||'';
     $('#qListen').onclick=()=>speak(cur.c);
-    speak(cur.c);
+    // 不自动播放，由用户点🔊触发
     const opts=new Set([cur.c]);
     while(opts.size<4){ const o=chars[Math.floor(Math.random()*chars.length)].c; if(o!==cur.c)opts.add(o); }
     const arr=shuffle([...opts]);
@@ -3413,7 +3619,7 @@ function openChallenge(){
       const z=chars[Math.floor(Math.random()*chars.length)];
       cur={q:z.c,a:z.c,type:'char',wrong:false};
       $('#cQ').textContent='🔊'; $('#cHint').textContent='听读音，选出正确的字';
-      $('#cListen').style.display='flex'; $('#cListen').onclick=()=>speak(z.c); speak(z.c);
+      $('#cListen').style.display='flex'; $('#cListen').onclick=()=>speak(z.c); // 不自动播放
       const opts=new Set([z.c]); while(opts.size<4){ const o=chars[Math.floor(Math.random()*chars.length)].c; if(!opts.has(o))opts.add(o); }
       fillOpts(box,[...opts],z.c,'char');
     }
@@ -3451,7 +3657,7 @@ function startUnitQuiz(u,title){
     '<button class="btn btn-primary btn-block mb12" id="uListen">🔊 再听</button><div class="quiz-opts" id="uOpts"></div>';
   openOverlay(title+' · 检测', body);
   function round(){ if(total>=Math.min(10,chars.length)){ openOverlay(title+' · 检测','<div class="empty"><div class="em-ico">🌟</div><div class="em-t">检测完成 '+score+'/'+Math.min(10,chars.length)+'</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>'); return; }
-    cur=chars[Math.floor(Math.random()*chars.length)]; $('#uPy').textContent=charPy(cur.c)||''; $('#uListen').onclick=()=>speak(cur.c); speak(cur.c);
+    cur=chars[Math.floor(Math.random()*chars.length)]; $('#uPy').textContent=charPy(cur.c)||''; $('#uListen').onclick=()=>speak(cur.c); // 不自动播放
     const opts=new Set([cur.c]); while(opts.size<4){ const o=chars[Math.floor(Math.random()*chars.length)].c; if(!opts.has(o))opts.add(o); }
     const box=$('#uOpts'); box.innerHTML='';
     shuffle([...opts]).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{ if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
@@ -3463,8 +3669,169 @@ function startUnitQuiz(u,title){
   round();
 }
 
-/* ============ 数学（口算闯关）============ */
+/* ============ 数学（知识点演示 + 闯关）============ */
 function mathDiff(g){ if(g==='一上'||g==='一下')return {max:20,ops:['+','-']}; if(g==='二上'||g==='二下')return {max:100,ops:['+','-','×']}; return {max:100,ops:['+','-','×','÷']}; }
+
+/* 北师大版三年级（上）核心知识点演示 */
+function openMathTeach(){
+  const kp = [
+    {t:'长度单位', c:'📏', items:[
+      ['千米 km','1 km = 1000 m（操场2圈半≈1km）'],
+      ['米 m','课桌约1m长，身高约1.3m'],
+      ['分米 dm','1 m = 10 dm，手掌宽约1dm'],
+      ['厘米 cm','1 dm = 10 cm，手指宽约1cm'],
+      ['毫米 mm','1 cm = 10 mm，硬币厚约2mm'],
+      ['进率口诀','大化小×进率，小化大÷进率'],
+    ]},
+    {t:'质量单位', c:'⚖️', items:[
+      ['吨 t','1 t = 1000 kg（一头牛约500kg）'],
+      ['千克 kg','1 kg = 1000 g（两瓶水≈1kg）'],
+      ['克 g','一枚硬币约6g'],
+      ['称量',' heavy用kg/t，轻小用g'],
+    ]},
+    {t:'时间计算', c:'⏰', items:[
+      ['时刻 vs 时段','8:00是时刻，走了30分是时段'],
+      ['经过时间','结束时刻 - 开始时刻'],
+      ['24时制','下午3时 = 15:00'],
+      ['一天','24小时 = 1日'],
+    ]},
+    {t:'图形与周长', c:'🔷', items:[
+      ['周长','图形一周的长度'],
+      ['长方形周长','(长+宽)×2'],
+      ['正方形周长','边长×4'],
+      ['面积','图形表面的大小（三年级下重点）'],
+    ]},
+    {t:'应用题类型', c:'🧩', items:[
+      ['和差问题','已知和与差，求两数'],
+      ['倍数问题','A是B的几倍→×'],
+      ['归一问题','先求单一量再求总数'],
+      ['分步作答','圈关键词→列式→写单位→答'],
+    ]},
+  ];
+  let html = '<div class="note mb12">先学知识点，再做练习更扎实。点任意卡片展开要点。</div><div class="teach-list" id="teachList">';
+  kp.forEach((k,i)=>{
+    html += '<div class="teach-card" data-i="'+i+'"><div class="teach-head"><span class="teach-ico">'+k.c+'</span><span class="teach-t">'+k.t+'</span><span class="teach-ar">›</span></div>'+
+      '<div class="teach-body" id="tb'+i+'">'+k.items.map(it=>'<div class="teach-row"><b>'+it[0]+'</b><span>'+it[1]+'</span></div>').join('')+'</div></div>';
+  });
+  html += '</div>';
+  openOverlay('数学知识点', html);
+  $all('#teachList .teach-card').forEach(card=>{
+    card.querySelector('.teach-head').onclick=()=> card.classList.toggle('open');
+  });
+}
+
+/* —— 单位换算闯关 —— */
+function openConvert(){
+  const units = [
+    {name:'长度', pairs:[['km','m',1000],['m','dm',10],['dm','cm',10],['cm','mm',10],['m','cm',100]]},
+    {name:'质量', pairs:[['t','kg',1000],['kg','g',1000]]},
+  ];
+  let score=0,total=0,cur=null;
+  function gen(){
+    const grp = units[Math.floor(Math.random()*units.length)];
+    const p = grp.pairs[Math.floor(Math.random()*grp.pairs.length)];
+    const small = Math.random()<0.5;
+    let q,ans;
+    if(small){ const v=Math.floor(Math.random()*9)+1; q=v+' '+p[0]+' = ? '+p[1]; ans=v*p[2]; }
+    else { const v=(Math.floor(Math.random()*9)+1)*p[2]; q=v+' '+p[1]+' = ? '+p[0]; ans=v/p[2]; }
+    return {q, ans, grp:grp.name};
+  }
+  function round(){
+    if(total>=10){ finish(); return; }
+    cur=gen();
+    openOverlay('单位换算', '<div class="quiz-bar"><i id="cBar" style="width:'+(total/10*100)+'%"></i></div>'+
+      '<div class="note center" id="cScore">第 '+(total+1)+' 题 · 答对 '+score+'</div>'+
+      '<div class="quiz-q"><div class="quiz-py" id="cQ" style="font-size:38px">'+cur.q+'</div><div class="quiz-hint">'+cur.grp+' · 大化小×进率，小化大÷进率</div></div>'+
+      '<div class="quiz-opts" id="cOpts"></div>');
+    const opts=new Set([cur.ans]); while(opts.size<4){ let w=Math.max(0,cur.ans+Math.floor(Math.random()*20)-10); if(w!==cur.ans)opts.add(w); }
+    const box=$('#cOpts'); box.innerHTML='';
+    shuffle([...opts]).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
+      if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
+      if(o===cur.ans){ b.classList.add('correct'); score++; addXP(5); }
+      else { b.classList.add('wrong'); $all('#cOpts .qopt').forEach(x=>{if(x.textContent==(''+cur.ans))x.classList.add('correct');}); collectWrong({subject:'math',type:'convert',q:cur.q,a:''+cur.ans,wrong:true}); toast('正确答案 '+cur.ans,'err'); }
+      $all('#cOpts .qopt').forEach(x=>x.classList.add('dim')); total++; setTimeout(round,800);
+    }; box.appendChild(b); });
+  }
+  function finish(){
+    state.progress.practiceCount++; state.progress.mathTotal+=10; state.progress.mathCorrect+=score; saveState();
+    openOverlay('单位换算','<div class="empty"><div class="em-ico">✅</div><div class="em-t">完成！答对 '+score+'/10</div><div class="em-s">错题已归集到「成长」</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
+  }
+  round();
+}
+
+/* —— 图形认知闯关 —— */
+function openShape(){
+  const Q = [
+    {q:'长方形周长公式', a:'(长+宽)×2', opt:['(长+宽)×2','长×宽','边长×4'], hint:'封闭一周的长度'},
+    {q:'正方形周长公式', a:'边长×4', opt:['边长×4','(长+宽)×2','边长×边长'], hint:'四条边相等'},
+    {q:'下面哪个是封闭图形？', a:'圆', opt:['圆','线段','角'], hint:'首尾相连'},
+    {q:'1平方分米 ≈ 边长多少的正方形', a:'1分米', opt:['1分米','1厘米','1米'], hint:'面积单位'},
+    {q:'周长相等的两个长方形，面积一定相等吗？', a:'不一定', opt:['不一定','一定相等','无法判断'], hint:'举例：长6宽2 vs 长5宽3'},
+  ];
+  let score=0,total=0,cur=null;
+  function round(){
+    if(total>=Q.length){ finish(); return; }
+    cur=Q[total];
+    openOverlay('图形认知', '<div class="quiz-bar"><i id="sBar" style="width:'+(total/Q.length*100)+'%"></i></div>'+
+      '<div class="note center" id="sScore">第 '+(total+1)+'/'+Q.length+' 题 · 答对 '+score+'</div>'+
+      '<div class="quiz-q"><div class="quiz-py" id="sQ" style="font-size:30px">'+cur.q+'</div><div class="quiz-hint">'+cur.hint+'</div></div>'+
+      '<div class="quiz-opts" id="sOpts"></div>');
+    const box=$('#sOpts'); box.innerHTML='';
+    shuffle(cur.opt.slice()).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
+      if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
+      if(o===cur.a){ b.classList.add('correct'); score++; addXP(5); }
+      else { b.classList.add('wrong'); $all('#sOpts .qopt').forEach(x=>{if(x.textContent===cur.a)x.classList.add('correct');}); collectWrong({subject:'math',type:'shape',q:cur.q,a:cur.a,wrong:true}); toast('正确答案 '+cur.a,'err'); }
+      $all('#sOpts .qopt').forEach(x=>x.classList.add('dim')); total++; setTimeout(round,850);
+    }; box.appendChild(b); });
+  }
+  function finish(){
+    state.progress.practiceCount++; state.progress.mathTotal+=Q.length; state.progress.mathCorrect+=score; saveState();
+    openOverlay('图形认知','<div class="empty"><div class="em-ico">🔷</div><div class="em-t">完成！答对 '+score+'/'+Q.length+'</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
+  }
+  round();
+}
+
+/* —— 应用题闯关（分步提示）—— */
+function openWordProb(){
+  const P = [
+    {s:'小明有12颗糖，分给3个小朋友，平均每人几颗？', a:4, step:['求平均数→总数÷份数','12÷3']},
+    {s:'一本书85页，小红每天看9页，几天能看完？', a:10, step:['85÷9=9余4','剩余4页还需1天','共10天']},
+    {s:'操场长60米宽40米，周长多少米？', a:200, step:['长方形周长=(长+宽)×2','(60+40)×2','=200']},
+    {s:'一箱苹果30元，买4箱送1箱，买4箱实际得到几箱？', a:5, step:['买4箱','送1箱','共5箱']},
+    {s:'火车每小时120千米，3小时行多少千米？', a:360, step:['速度×时间=路程','120×3','=360']},
+  ];
+  let score=0,total=0,cur=null,stepIdx=0;
+  function round(){
+    if(total>=P.length){ finish(); return; }
+    cur=P[total]; stepIdx=0;
+    render();
+  }
+  function render(){
+    openOverlay('应用题', '<div class="quiz-bar"><i id="wBar" style="width:'+(total/P.length*100)+'%"></i></div>'+
+      '<div class="note center" id="wScore">第 '+(total+1)+'/'+P.length+' 题 · 答对 '+score+'</div>'+
+      '<div class="quiz-q"><div class="quiz-py" id="wQ" style="font-size:24px;text-align:left;line-height:1.5">'+cur.s+'</div></div>'+
+      '<div class="wp-steps" id="wSteps"></div>'+
+      '<button class="btn btn-ghost btn-block mb12" id="wStep">👉 看第一步提示</button>'+
+      '<div class="quiz-opts" id="wOpts"></div>');
+    const stepsBox=$('#wSteps');
+    cur.step.slice(0,stepIdx).forEach(t=>{ const d=el('div','wp-step'); d.textContent='· '+t; stepsBox.appendChild(d); });
+    $('#wStep').onclick=()=>{ if(stepIdx<cur.step.length){ stepIdx++; render(); } else toast('已是最后一步'); };
+    const box=$('#wOpts'); box.innerHTML='';
+    const opts=new Set([cur.a]); while(opts.size<4){ let w=Math.max(0,cur.a+Math.floor(Math.random()*20)-10); if(w!==cur.a)opts.add(w); }
+    shuffle([...opts]).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
+      if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
+      if(o===cur.a){ b.classList.add('correct'); score++; addXP(6); }
+      else { b.classList.add('wrong'); $all('#wOpts .qopt').forEach(x=>{if(x.textContent==(''+cur.a))x.classList.add('correct');}); collectWrong({subject:'math',type:'word',q:cur.s,a:''+cur.a,wrong:true}); toast('正确答案 '+cur.a,'err'); }
+      $all('#wOpts .qopt').forEach(x=>x.classList.add('dim')); total++; setTimeout(round,900);
+    }; box.appendChild(b); });
+  }
+  function finish(){
+    state.progress.practiceCount++; state.progress.mathTotal+=P.length; state.progress.mathCorrect+=score; saveState();
+    openOverlay('应用题','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">完成！答对 '+score+'/'+P.length+'</div><div class="em-s">善用「分步提示」能帮你理清思路</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
+  }
+  round();
+}
+
 function openSuan(){
   const g=state.profile.grade; const d=mathDiff(g);
   let score=0,total=0,cur=null,timer=0,timeLeft=60,started=false,tm=null;
