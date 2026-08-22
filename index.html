@@ -526,6 +526,39 @@ img,svg{display:block}
 .is-tablet .zd-table{font-size:15px}
 .is-tablet .zd-big{font-size:34px}
 .is-tablet .zd-td-py{font-size:16px}
+/* 生字表：组词点击按钮 */
+.zd-word-btn{display:inline-block;margin:2px 4px 2px 0;padding:4px 11px;border-radius:var(--pill);border:1.5px solid var(--brand);
+  background:var(--brand-soft);color:var(--brand);font-size:13.5px;font-weight:700;cursor:pointer;transition:all .18s;font-family:inherit}
+.zd-word-btn:active{transform:scale(.94)}
+.zd-word-btn:hover{background:var(--brand);color:#fff}
+.zd-word-hit{background:var(--brand)!important;color:#fff!important;transform:scale(1.06)}
+.zd-no-word{color:var(--faint)}
+.is-tablet .zd-word-btn{font-size:15px;padding:6px 14px}
+
+/* ===== 课文模块 ===== */
+.text-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.text-title{flex:1;min-width:80px;font-size:17px;font-weight:800;color:var(--ink);text-align:center}
+.is-tablet .text-title{font-size:20px}
+.text-passage{display:flex;flex-direction:column;gap:12px}
+.sentence-btn{display:flex;align-items:flex-start;gap:10px;text-align:left;width:100%;padding:16px 18px;border-radius:var(--r);
+  background:var(--surface);border:1.5px solid var(--line2);cursor:pointer;transition:all .18s;font-family:inherit;color:inherit}
+.sentence-btn:hover{border-color:var(--brand);background:var(--brand-soft);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.sentence-btn:active{transform:scale(.99)}
+.sentence-playing{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 14%,var(--surface))!important}
+.sentence-hanzi{flex:1;font-size:21px;line-height:2.15;font-weight:600;color:var(--ink);letter-spacing:.5px}
+.is-tablet .sentence-hanzi{font-size:25px;line-height:2.4}
+.sentence-spk{flex:0 0 auto;font-size:18px;opacity:.55;transition:opacity .18s}
+.sentence-btn:hover .sentence-spk{opacity:1}
+/* ruby 拼音严格对齐 */
+.sentence-hanzi ruby{display:inline-flex;flex-direction:column;align-items:center;line-height:1;margin:0 1px;vertical-align:top}
+.sentence-hanzi ruby .hz{font-size:21px;line-height:1.15}
+.sentence-hanzi ruby rt{font-size:11px;color:var(--brand);line-height:1.1;font-weight:600;letter-spacing:0;margin-bottom:2px;user-select:none}
+.sentence-hanzi .punct{display:inline-block;margin:0 1px}
+.is-tablet .sentence-hanzi ruby .hz{font-size:25px}
+.is-tablet .sentence-hanzi ruby rt{font-size:13px}
+/* 隐藏拼音 */
+.text-passage.hide-py ruby rt{visibility:hidden;height:0;margin:0}
+.text-passage.hide-py .sentence-hanzi ruby{margin-top:0}
 
 .audio-fab{position:absolute;bottom:calc(var(--tab-h) + var(--safe-b) + 16px);right:18px;z-index:9;
   width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
@@ -2935,6 +2968,729 @@ const PINYIN = {
 </script>
 
 <script>
+/* 课文全文数据（示例）。结构：LESSON[年级][单元名] = [{title, sentences:[{h:'汉字句', p:'逐字拼音 空格分隔'}]}]
+   拼音与汉字严格逐字对应。可随时替换为正式教材文本。
+   单元名需与 frag_data.txt 中 TEXTBOOK 的 u 字段完全一致。 */
+const LESSON = {
+  '一上':{
+    '我上学了':[
+      {title:'上学歌', sentences:[
+        {h:'太阳当空照，', p:'tài yáng dāng kōng zhào'},
+        {h:'花儿对我笑。', p:'huā ér duì wǒ xiào'},
+        {h:'小鸟说：早早早，', p:'xiǎo niǎo shuō zǎo zǎo zǎo'},
+        {h:'你为什么背上小书包？', p:'nǐ wèi shén me bēi shàng xiǎo shū bāo'},
+        {h:'我去上学校，', p:'wǒ qù shàng xué xiào'},
+        {h:'天天不迟到。', p:'tiān tiān bù chí dào'},
+        {h:'爱学习，爱劳动，', p:'ài xué xí ài láo dòng'},
+        {h:'长大要为祖国立功劳。', p:'zhǎng dà yào wèi zǔ guó lì gōng láo'}
+      ]}
+    ],
+    '第一单元·识字':[
+      {title:'金木水火土', sentences:[
+        {h:'一二三四五，', p:'yī èr sān sì wǔ'},
+        {h:'金木水火土。', p:'jīn mù shuǐ huǒ tǔ'},
+        {h:'天地分上下，', p:'tiān dì fēn shàng xià'},
+        {h:'日月照今古。', p:'rì yuè zhào jīn gǔ'}
+      ]},
+      {title:'口耳目手足', sentences:[
+        {h:'口、耳、目、手、足，', p:'kǒu ěr mù shǒu zú'},
+        {h:'人的五种感觉。', p:'rén de wǔ zhǒng gǎn jué'},
+        {h:'站如松，坐如钟。', p:'zhàn rú sōng zuò rú zhōng'},
+        {h:'行如风，卧如弓。', p:'xíng rú fēng wò rú gōng'}
+      ]}
+    ],
+    '第五单元·阅读':[
+      {title:'秋天', sentences:[
+        {h:'天气凉了，', p:'tiān qì liáng le'},
+        {h:'树叶黄了。', p:'shù yè huáng le'},
+        {h:'一片片叶子从树上落下来。', p:'yī piàn piàn yè zi cóng shù shàng luò xià lái'},
+        {h:'天空那么蓝，那么高。', p:'tiān kōng nà me lán nà me gāo'},
+        {h:'一群大雁往南飞，', p:'yī qún dà yàn wǎng nán fēi'},
+        {h:'一会儿排成个“人”字，', p:'yī huì er pái chéng gè rén zì'},
+        {h:'一会儿排成个“一”字。', p:'yī huì er pái chéng gè yī zì'},
+        {h:'啊！秋天来了！', p:'a qiū tiān lái le'}
+      ]},
+      {title:'小小的船', sentences:[
+        {h:'弯弯的月儿小小的船，', p:'wān wān de yuè ér xiǎo xiǎo de chuán'},
+        {h:'小小的船儿两头尖。', p:'xiǎo xiǎo de chuán ér liǎng tóu jiān'},
+        {h:'我在小小的船里坐，', p:'wǒ zài xiǎo xiǎo de chuán lǐ zuò'},
+        {h:'只看见闪闪的星星蓝蓝的天。', p:'zhǐ kàn jiàn shǎn shǎn de xīng xing lán lán de tiān'}
+      ]},
+      {title:'江南', sentences:[
+        {h:'江南可采莲，', p:'jiāng nán kě cǎi lián'},
+        {h:'莲叶何田田。', p:'lián yè hé tián tián'},
+        {h:'鱼戏莲叶间。', p:'yú xì lián yè jiān'},
+        {h:'鱼戏莲叶东，鱼戏莲叶西，', p:'yú xì lián yè dōng yú xì lián yè xī'},
+        {h:'鱼戏莲叶南，鱼戏莲叶北。', p:'yú xì lián yè nán yú xì lián yè běi'}
+      ]},
+      {title:'四季', sentences:[
+        {h:'草芽尖尖，', p:'cǎo yá jiān jiān'},
+        {h:'他对小鸟说：“我是春天。”', p:'tā duì xiǎo niǎo shuō wǒ shì chūn tiān'},
+        {h:'荷叶圆圆，', p:'hé yè yuán yuán'},
+        {h:'他对青蛙说：“我是夏天。”', p:'tā duì qīng wā shuō wǒ shì xià tiān'},
+        {h:'谷穗弯弯，', p:'gǔ suì wān wān'},
+        {h:'他鞠着躬说：“我是秋天。”', p:'tā jū zhe gōng shuō wǒ shì qiū tiān'},
+        {h:'雪人大肚子一挺，', p:'xuě rén dà dù zi yī tǐng'},
+        {h:'他顽皮地说：“我就是冬天。”', p:'tā wán pí de shuō wǒ jiù shì dōng tiān'}
+      ]}
+    ],
+    '第六单元·识字':[
+      {title:'对韵歌', sentences:[
+        {h:'云对雨，雪对风。', p:'yún duì yǔ xuě duì fēng'},
+        {h:'花对树，鸟对虫。', p:'huā duì shù niǎo duì chóng'},
+        {h:'山清对水秀，', p:'shān qīng duì shuǐ xiù'},
+        {h:'柳绿对桃红。', p:'liǔ lǜ duì táo hóng'}
+      ]},
+      {title:'日月明', sentences:[
+        {h:'日月明，田力男。', p:'rì yuè míng tián lì nán'},
+        {h:'小大尖，小土尘。', p:'xiǎo dà jiān xiǎo tǔ chén'},
+        {h:'二人从，三人众。', p:'èr rén cóng sān rén zhòng'},
+        {h:'双木林，三木森。', p:'shuāng mù lín sān mù sēn'},
+        {h:'一人不成众，', p:'yī rén bù chéng zhòng'},
+        {h:'独木不成林。', p:'dú mù bù chéng lín'},
+        {h:'众人一条心，', p:'zhòng rén yī tiáo xīn'},
+        {h:'黄土变成金。', p:'huáng tǔ biàn chéng jīn'}
+      ]}
+    ],
+    '第七单元·阅读':[
+      {title:'影子', sentences:[
+        {h:'影子在前，影子在后，', p:'yǐng zi zài qián yǐng zi zài hòu'},
+        {h:'影子常常跟着我，', p:'yǐng zi cháng cháng gēn zhe wǒ'},
+        {h:'就像一条小黑狗。', p:'jiù xiàng yī tiáo xiǎo hēi gǒu'},
+        {h:'影子在左，影子在右，', p:'yǐng zi zài zuǒ yǐng zi zài yòu'},
+        {h:'影子常常陪着我，', p:'yǐng zi cháng cháng péi zhe wǒ'},
+        {h:'它是我的好朋友。', p:'tā shì wǒ de hǎo péng yǒu'}
+      ]},
+      {title:'两件宝', sentences:[
+        {h:'人有两件宝，', p:'rén yǒu liǎng jiàn bǎo'},
+        {h:'双手与大脑。', p:'shuāng shǒu yǔ dà nǎo'},
+        {h:'双手会做工，', p:'shuāng shǒu huì zuò gōng'},
+        {h:'大脑会思考。', p:'dà nǎo huì sī kǎo'},
+        {h:'用手又用脑，', p:'yòng shǒu yòu yòng nǎo'},
+        {h:'才能有创造。', p:'cái néng yǒu chuàng zào'}
+      ]}
+    ],
+    '第八单元·阅读':[
+      {title:'比尾巴', sentences:[
+        {h:'谁的尾巴长？', p:'shéi de wěi ba cháng'},
+        {h:'谁的尾巴短？', p:'shéi de wěi ba duǎn'},
+        {h:'谁的尾巴好像一把伞？', p:'shéi de wěi ba hǎo xiàng yī bǎ sǎn'},
+        {h:'猴子的尾巴长，', p:'hóu zi de wěi ba cháng'},
+        {h:'兔子的尾巴短，', p:'tù zi de wěi ba duǎn'},
+        {h:'松鼠的尾巴好像一把伞。', p:'sōng shǔ de wěi ba hǎo xiàng yī bǎ sǎn'},
+        {h:'孔雀的尾巴最好看。', p:'kǒng què de wěi ba zuì hǎo kàn'}
+      ]},
+      {title:'乌鸦喝水', sentences:[
+        {h:'一只乌鸦口渴了，', p:'yī zhī wū yā kǒu kě le'},
+        {h:'到处找水喝。', p:'dào chù zhǎo shuǐ hē'},
+        {h:'它看见一个瓶子，', p:'tā kàn jiàn yī gè píng zi'},
+        {h:'瓶子里有水。', p:'píng zi lǐ yǒu shuǐ'},
+        {h:'可是瓶子很高，', p:'kě shì píng zi hěn gāo'},
+        {h:'乌鸦喝不着水。', p:'wū yā hē bù zháo shuǐ'},
+        {h:'它想办法，', p:'tā xiǎng bàn fǎ'},
+        {h:'把小石子一颗一颗放进瓶子里，', p:'bǎ xiǎo shí zi yī kē yī kē fàng jìn píng zi lǐ'},
+        {h:'瓶子里的水升高了，', p:'píng zi lǐ de shuǐ shēng gāo le'},
+        {h:'乌鸦就喝着水了。', p:'wū yā jiù hē zháo shuǐ le'}
+      ]}
+    ]
+  },
+  '一下':{
+    '第一单元·识字':[
+      {title:'春夏秋冬', sentences:[
+        {h:'春风吹，夏雨落，', p:'chūn fēng chuī xià yǔ luò'},
+        {h:'秋霜降，冬雪飘。', p:'qiū shuāng jiàng dōng xuě piāo'},
+        {h:'青草、红花、游鱼、飞鸟，', p:'qīng cǎo hóng huā yóu yú fēi niǎo'},
+        {h:'池草青，山花红，', p:'chí cǎo qīng shān huā hóng'},
+        {h:'鱼出水，鸟入林。', p:'yú chū shuǐ niǎo rù lín'}
+      ]},
+      {title:'姓氏歌', sentences:[
+        {h:'你姓什么？我姓李。', p:'nǐ xìng shén me wǒ xìng lǐ'},
+        {h:'什么李？木子李。', p:'shén me lǐ mù zi lǐ'},
+        {h:'他姓什么？他姓张。', p:'tā xìng shén me tā xìng zhāng'},
+        {h:'什么张？弓长张。', p:'shén me zhāng gōng cháng zhāng'},
+        {h:'古月胡，口天吴，', p:'gǔ yuè hú kǒu tiān wú'},
+        {h:'双人徐，言午许。', p:'shuāng rén xú yán wǔ xǔ'}
+      ]}
+    ],
+    '第二单元·阅读':[
+      {title:'吃水不忘挖井人', sentences:[
+        {h:'瑞金城外有个小村子，', p:'ruì jīn chéng wài yǒu gè xiǎo cūn zi'},
+        {h:'叫沙洲坝。', p:'jiào shā zhōu bà'},
+        {h:'毛主席在江西领导革命的时候，', p:'máo zhǔ xí zài jiāng xī lǐng dǎo gé mìng de shí hou'},
+        {h:'在那儿住过。', p:'zài nà er zhù guò'},
+        {h:'村子里没有水井，', p:'cūn zi lǐ méi yǒu shuǐ jǐng'},
+        {h:'乡亲们吃水要到很远的地方去挑。', p:'xiāng qīn men chī shuǐ yào dào hěn yuǎn de dì fang qù tiāo'},
+        {h:'毛主席就带领战士和乡亲们挖了一口井。', p:'máo zhǔ xí jiù dài lǐng zhàn shì hé xiāng qīn men wā le yī kǒu jǐng'},
+        {h:'吃水不忘挖井人，', p:'chī shuǐ bù wàng wā jǐng rén'},
+        {h:'时刻想念毛主席。', p:'shí kè xiǎng niàn máo zhǔ xí'}
+      ]},
+      {title:'我多想去看看', sentences:[
+        {h:'妈妈告诉我，', p:'mā ma gào su wǒ'},
+        {h:'沿着弯弯的小路，', p:'yán zhe wān wān de xiǎo lù'},
+        {h:'就会走出天山。', p:'jiù huì zǒu chū tiān shān'},
+        {h:'遥远的北京，', p:'yáo yuǎn de běi jīng'},
+        {h:'有一座雄伟的天安门，', p:'yǒu yī zuò xióng wěi de tiān ān mén'},
+        {h:'广场上的升旗仪式非常壮观。', p:'guǎng chǎng shàng de shēng qí yí shì fēi cháng zhuàng guān'},
+        {h:'我对妈妈说的是：', p:'wǒ duì mā ma shuō de shì'},
+        {h:'我多想去看看，我多想去看看！', p:'wǒ duō xiǎng qù kàn kan wǒ duō xiǎng qù kàn kan'}
+      ]}
+    ],
+    '第三单元·阅读':[
+      {title:'小公鸡和小鸭子', sentences:[
+        {h:'小公鸡和小鸭子一块儿出去玩。', p:'xiǎo gōng jī hé xiǎo yā zi yī kuài er chū qù wán'},
+        {h:'他们走进草地里。', p:'tā men zǒu jìn cǎo dì lǐ'},
+        {h:'小公鸡找到了许多虫子，', p:'xiǎo gōng jī zhǎo dào le xǔ duō chóng zi'},
+        {h:'吃得很欢。', p:'chī de hěn huān'},
+        {h:'小鸭子捉不到虫子，', p:'xiǎo yā zi zhuō bù dào chóng zi'},
+        {h:'急得直哭。', p:'jí de zhí kū'},
+        {h:'小公鸡看见了，', p:'xiǎo gōng jī kàn jiàn le'},
+        {h:'捉到虫子就给小鸭子吃。', p:'zhuō dào chóng zi jiù gěi xiǎo yā zi chī'}
+      ]}
+    ],
+    '第四单元·阅读':[
+      {title:'静夜思', sentences:[
+        {h:'床前明月光，', p:'chuáng qián míng yuè guāng'},
+        {h:'疑是地上霜。', p:'yí shì dì shàng shuāng'},
+        {h:'举头望明月，', p:'jǔ tóu wàng míng yuè'},
+        {h:'低头思故乡。', p:'dī tóu sī gù xiāng'}
+      ]},
+      {title:'夜色', sentences:[
+        {h:'我从前胆子很小很小，', p:'wǒ cóng qián dǎn zi hěn xiǎo hěn xiǎo'},
+        {h:'天一黑就不敢往外瞧。', p:'tiān yī hēi jiù bù gǎn wǎng wài qiáo'},
+        {h:'妈妈把勇敢的故事讲了又讲，', p:'mā ma bǎ yǒng gǎn de gù shi jiǎng le yòu jiǎng'},
+        {h:'可我一看窗外心就乱跳。', p:'kě wǒ yī kàn chuāng wài xīn jiù luàn tiào'},
+        {h:'爸爸晚上偏要拉我去散步，', p:'bà ba wǎn shàng piān yào lā wǒ qù sàn bù'},
+        {h:'原来花草都像白天一样微笑。', p:'yuán lái huā cǎo dōu xiàng bái tiān yī yàng wēi xiào'}
+      ]}
+    ],
+    '第五单元·识字':[
+      {title:'动物儿歌', sentences:[
+        {h:'蜻蜓半空展翅飞，', p:'qīng tíng bàn kōng zhǎn chì fēi'},
+        {h:'蝴蝶花间捉迷藏。', p:'hú dié huā jiān zhuō mí cáng'},
+        {h:'蚯蚓土里造宫殿，', p:'qiū yǐn tǔ lǐ zào gōng diàn'},
+        {h:'蚂蚁地上运食粮。', p:'mǎ yǐ dì shàng yùn shí liáng'},
+        {h:'蝌蚪池中游得欢，', p:'kē dǒu chí zhōng yóu de huān'},
+        {h:'蜘蛛房前结网忙。', p:'zhī zhū fáng qián jié wǎng máng'}
+      ]},
+      {title:'古对今', sentences:[
+        {h:'古对今，圆对方。', p:'gǔ duì jīn yuán duì fāng'},
+        {h:'严寒对酷暑，春暖对秋凉。', p:'yán hán duì kù shǔ chūn nuǎn duì qiū liáng'},
+        {h:'晨对暮，雪对霜。', p:'chén duì mù xuě duì shuāng'},
+        {h:'和风对细雨，朝霞对夕阳。', p:'hé fēng duì xì yǔ zhāo xiá duì xī yáng'},
+        {h:'桃对李，柳对杨。', p:'táo duì lǐ liǔ duì yáng'},
+        {h:'莺歌对燕舞，鸟语对花香。', p:'yīng gē duì yàn wǔ niǎo yǔ duì huā xiāng'}
+      ]}
+    ],
+    '第六单元·阅读':[
+      {title:'池上', sentences:[
+        {h:'小娃撑小艇，', p:'xiǎo wá chēng xiǎo tǐng'},
+        {h:'偷采白莲回。', p:'tōu cǎi bái lián huí'},
+        {h:'不解藏踪迹，', p:'bù jiě cáng zōng jì'},
+        {h:'浮萍一道开。', p:'fú píng yī dào kāi'}
+      ]},
+      {title:'小池', sentences:[
+        {h:'泉眼无声惜细流，', p:'quán yǎn wú shēng xī xì liú'},
+        {h:'树阴照水爱晴柔。', p:'shù yīn zhào shuǐ ài qíng róu'},
+        {h:'小荷才露尖尖角，', p:'xiǎo hé cái lù jiān jiān jiǎo'},
+        {h:'早有蜻蜓立上头。', p:'zǎo yǒu qīng tíng lì shàng tóu'}
+      ]}
+    ],
+    '第七单元·阅读':[
+      {title:'文具的家', sentences:[
+        {h:'铅笔，只用了一次，', p:'qiān bǐ zhǐ yòng le yī cì'},
+        {h:'不知丢到哪里去了。', p:'bù zhī diū dào nǎ lǐ qù le'},
+        {h:'橡皮，只擦了一回，', p:'xiàng pí zhǐ cā le yī huí'},
+        {h:'再想擦，就找不着了。', p:'zài xiǎng cā jiù zhǎo bù zháo le'},
+        {h:'妈妈说：“贝贝，你有一个家，', p:'mā ma shuō bèi bei nǐ yǒu yī gè jiā'},
+        {h:'每天放学后，你都平平安安地回家。', p:'měi tiān fàng xué hòu nǐ dōu píng píng ān ān de huí jiā'},
+        {h:'你要是想起来了，', p:'nǐ yào shì xiǎng qǐ lái le'},
+        {h:'就赶快回家！”', p:'jiù gǎn kuài huí jiā'}
+      ]}
+    ],
+    '第八单元·阅读':[
+      {title:'棉花姑娘', sentences:[
+        {h:'棉花姑娘生病了，', p:'mián huā gū niang shēng bìng le'},
+        {h:'叶子上有许多可恶的蚜虫。', p:'yè zi shàng yǒu xǔ duō kě wù de yá chóng'},
+        {h:'她多么盼望有医生来给她治病啊！', p:'tā duō me pàn wàng yǒu yī shēng lái gěi tā zhì bìng a'},
+        {h:'燕子飞来了，', p:'yàn zi fēi lái le'},
+        {h:'棉花姑娘说：“请你帮我捉害虫吧！”', p:'mián huā gū niang shuō qǐng nǐ bāng wǒ zhuō hài chóng ba'},
+        {h:'燕子说：“对不起，我只会捉空中飞的害虫。”', p:'yàn zi shuō duì bù qǐ wǒ zhǐ huì zhuō kōng zhōng fēi de hài chóng'}
+      ]}
+    ]
+  },
+  '二上':{
+    '第一单元·阅读':[
+      {title:'小蝌蚪找妈妈', sentences:[
+        {h:'池塘里有一群小蝌蚪，', p:'chí táng lǐ yǒu yī qún xiǎo kē dǒu'},
+        {h:'大大的脑袋，黑灰色的身子，', p:'dà dà de nǎo dai hēi huī sè de shēn zi'},
+        {h:'甩着长长的尾巴，快活地游来游去。', p:'shuǎi zhe cháng cháng de wěi ba kuài huó de yóu lái yóu qù'},
+        {h:'小蝌蚪游哇游，', p:'xiǎo kē dǒu yóu wa yóu'},
+        {h:'过了几天，长出了两条后腿。', p:'guò le jǐ tiān zhǎng chū le liǎng tiáo hòu tuǐ'},
+        {h:'他们看见鲤鱼妈妈在教小鲤鱼捕食，', p:'tā men kàn jiàn lǐ yú mā ma zài jiāo xiǎo lǐ yú bǔ shí'},
+        {h:'就迎上去问：“我们的妈妈在哪里？”', p:'jiù yíng shàng qù wèn wǒ men de mā ma zài nǎ lǐ'}
+      ]},
+      {title:'我是什么', sentences:[
+        {h:'我会变。', p:'wǒ huì biàn'},
+        {h:'太阳一晒，我就变成汽。', p:'tài yáng yī shài wǒ jiù biàn chéng qì'},
+        {h:'升到天空，我又变成无数极小极小的点儿，', p:'shēng dào tiān kōng wǒ yòu biàn chéng wú shù jí xiǎo jí xiǎo de diǎn er'},
+        {h:'连成一片，在空中飘浮。', p:'lián chéng yī piàn zài kōng zhōng piāo fú'},
+        {h:'有时候我穿着白衣服，', p:'yǒu shí hou wǒ chuān zhe bái yī fu'},
+        {h:'有时候我穿着黑衣服，', p:'yǒu shí hou wǒ chuān zhe hēi yī fu'},
+        {h:'早晨和傍晚我又把红袍披在身上。', p:'zǎo chén hé bàng wǎn wǒ yòu bǎ hóng páo pī zài shēn shàng'},
+        {h:'人们叫我“云”。', p:'rén men jiào wǒ yún'}
+      ]}
+    ],
+    '第二单元·识字':[
+      {title:'场景歌', sentences:[
+        {h:'一只海鸥，一片沙滩。', p:'yī zhī hǎi ōu yī piàn shā tān'},
+        {h:'一艘军舰，一条帆船。', p:'yī sōu jūn jiàn yī tiáo fān chuán'},
+        {h:'一方鱼塘，一块稻田。', p:'yī fāng yú táng yī kuài dào tián'},
+        {h:'一行垂柳，一座花园。', p:'yī háng chuí liǔ yī zuò huā yuán'},
+        {h:'一道小溪，一孔石桥。', p:'yī dào xiǎo xī yī kǒng shí qiáo'},
+        {h:'一丛翠竹，一群飞鸟。', p:'yī cóng cuì zhú yī qún fēi niǎo'},
+        {h:'一面队旗，一把铜号。', p:'yī miàn duì qí yī bǎ tóng hào'},
+        {h:'一队“红领巾”，一片欢笑。', p:'yī duì hóng lǐng jīn yī piàn huān xiào'}
+      ]},
+      {title:'树之歌', sentences:[
+        {h:'杨树高，榕树壮，', p:'yáng shù gāo róng shù zhuàng'},
+        {h:'梧桐树叶像手掌。', p:'wú tóng shù yè xiàng shǒu zhǎng'},
+        {h:'枫树秋天叶儿红，', p:'fēng shù qiū tiān yè er hóng'},
+        {h:'松柏四季披绿装。', p:'sōng bǎi sì jì pī lǜ zhuāng'},
+        {h:'木棉喜暖在南方，', p:'mù mián xǐ nuǎn zài nán fāng'},
+        {h:'桦树耐寒守北疆。', p:'huà shù nài hán shǒu běi jiāng'},
+        {h:'银杏水杉活化石，', p:'yín xìng shuǐ shān huó huà shí'},
+        {h:'金桂开花满院香。', p:'jīn guì kāi huā mǎn yuàn xiāng'}
+      ]}
+    ],
+    '第三单元·阅读':[
+      {title:'曹冲称象', sentences:[
+        {h:'曹操的儿子曹冲才七岁。', p:'cáo cāo de ér zi cáo chōng cái qī suì'},
+        {h:'他站出来，说：“我有个办法。', p:'tā zhàn chū lái shuō wǒ yǒu gè bàn fǎ'},
+        {h:'把大象赶到一艘大船上，', p:'bǎ dà xiàng gǎn dào yī sōu dà chuán shàng'},
+        {h:'看船身下沉多少，', p:'kàn chuán shēn xià chén duō shǎo'},
+        {h:'就沿着水面，在船舷上画一条线。', p:'jiù yán zhe shuǐ miàn zài chuán xián shàng huà yī tiáo xiàn'},
+        {h:'再把大象赶上岸，往船上装石头，', p:'zài bǎ dà xiàng gǎn shàng àn wǎng chuán shàng zhuāng shí tou'},
+        {h:'装到船下沉到画线的地方为止。', p:'zhuāng dào chuán xià chén dào huà xiàn de dì fang wéi zhǐ'},
+        {h:'然后称一称船上的石头。', p:'rán hòu chēng yī chēng chuán shàng de shí tou'},
+        {h:'石头有多重，大象就有多重。”', p:'shí tou yǒu duō zhòng dà xiàng jiù yǒu duō zhòng'}
+      ]}
+    ],
+    '第四单元·阅读':[
+      {title:'登鹳雀楼', sentences:[
+        {h:'白日依山尽，', p:'bái rì yī shān jìn'},
+        {h:'黄河入海流。', p:'huáng hé rù hǎi liú'},
+        {h:'欲穷千里目，', p:'yù qióng qiān lǐ mù'},
+        {h:'更上一层楼。', p:'gèng shàng yī céng lóu'}
+      ]},
+      {title:'望庐山瀑布', sentences:[
+        {h:'日照香炉生紫烟，', p:'rì zhào xiāng lú shēng zǐ yān'},
+        {h:'遥看瀑布挂前川。', p:'yáo kàn pù bù guà qián chuān'},
+        {h:'飞流直下三千尺，', p:'fēi liú zhí xià sān qiān chǐ'},
+        {h:'疑是银河落九天。', p:'yí shì yín hé luò jiǔ tiān'}
+      ]},
+      {title:'黄山奇石', sentences:[
+        {h:'闻名中外的黄山风景区，', p:'wén míng zhōng wài de huáng shān fēng jǐng qū'},
+        {h:'在我国安徽省南部。', p:'zài wǒ guó ān huī shěng nán bù'},
+        {h:'那里景色秀丽神奇，', p:'nà lǐ jǐng sè xiù lì shén qí'},
+        {h:'尤其是那些怪石，', p:'yóu qí shì nà xiē guài shí'},
+        {h:'有趣极了。', p:'yǒu qù jí le'}
+      ]}
+    ],
+    '第五单元·阅读':[
+      {title:'坐井观天', sentences:[
+        {h:'青蛙坐在井里。', p:'qīng wā zuò zài jǐng lǐ'},
+        {h:'小鸟飞来，落在井沿上。', p:'xiǎo niǎo fēi lái luò zài jǐng yán shàng'},
+        {h:'青蛙问小鸟：“你从哪儿来呀？”', p:'qīng wā wèn xiǎo niǎo nǐ cóng nǎ er lái ya'},
+        {h:'小鸟回答说：“我从天上来，', p:'xiǎo niǎo huí dá shuō wǒ cóng tiān shàng lái'},
+        {h:'飞了一百多里，口渴了，下来找点水喝。”', p:'fēi le yī bǎi duō lǐ kǒu kě le xià lái zhǎo diǎn shuǐ hē'},
+        {h:'青蛙说：“朋友，别说大话了！', p:'qīng wā shuō péng you bié shuō dà huà le'},
+        {h:'天不过井口那么大，还用飞那么远吗？”', p:'tiān bù guò jǐng kǒu nà me dà hái yòng fēi nà me yuǎn ma'}
+      ]}
+    ],
+    '第六单元·阅读':[
+      {title:'朱德的扁担', sentences:[
+        {h:'1928年，朱德同志带领队伍到井冈山，', p:'yī jiǔ èr bā nián zhū dé tóng zhì dài lǐng duì wu dào jǐng gāng shān'},
+        {h:'跟毛泽东同志会师了。', p:'gēn máo zé dōng tóng zhì huì shī le'},
+        {h:'红军要巩固井冈山根据地，', p:'hóng jūn yào gǒng gù jǐng gāng shān gēn jù dì'},
+        {h:'粉碎敌人的围攻，', p:'fěn suì dí rén de wéi gōng'},
+        {h:'必须储备足够的粮食。', p:'bì xū chǔ bèi zú gòu de liáng shi'},
+        {h:'朱德同志也跟战士们一块儿去挑粮。', p:'zhū dé tóng zhì yě gēn zhàn shì men yī kuài er qù tiāo liáng'}
+      ]}
+    ],
+    '第七单元·阅读':[
+      {title:'敕勒歌', sentences:[
+        {h:'敕勒川，阴山下，', p:'chì lè chuān yīn shān xià'},
+        {h:'天似穹庐，笼盖四野。', p:'tiān sì qióng lú lǒng gài sì yě'},
+        {h:'天苍苍，野茫茫，', p:'tiān cāng cāng yě máng máng'},
+        {h:'风吹草低见牛羊。', p:'fēng chuī cǎo dī xiàn niú yáng'}
+      ]},
+      {title:'雾在哪里', sentences:[
+        {h:'从前有一片雾，他是个淘气的孩子。', p:'cóng qián yǒu yī piàn wù tā shì gè táo qì de hái zi'},
+        {h:'有一天，雾飞到海上。', p:'yǒu yī tiān wù fēi dào hǎi shàng'},
+        {h:'“我要把大海藏起来。”', p:'wǒ yào bǎ dà hǎi cáng qǐ lái'},
+        {h:'于是，他把大海藏了起来。', p:'yú shì tā bǎ dà hǎi cáng le qǐ lái'},
+        {h:'无论是海水、船只，还是蓝色的远方，', p:'wú lùn shì hǎi shuǐ chuán zhī hái shì lán sè de yuǎn fāng'},
+        {h:'都看不见了。', p:'dōu kàn bù jiàn le'}
+      ]}
+    ],
+    '第八单元·阅读':[
+      {title:'纸船和风筝', sentences:[
+        {h:'松鼠住在山顶，小熊住在山脚。', p:'sōng shǔ zhù zài shān dǐng xiǎo xióng zhù zài shān jiǎo'},
+        {h:'山上的小溪往下流，', p:'shān shàng de xiǎo xī wǎng xià liú'},
+        {h:'正好从小熊的家门口流过。', p:'zhèng hǎo cóng xiǎo xióng de jiā mén kǒu liú guò'},
+        {h:'松鼠折了一只纸船，', p:'sōng shǔ zhé le yī zhī zhǐ chuán'},
+        {h:'放在小溪里。', p:'fàng zài xiǎo xī lǐ'},
+        {h:'纸船漂哇漂，漂到了小熊家门口。', p:'zhǐ chuán piāo wa piāo piāo dào le xiǎo xióng jiā mén kǒu'}
+      ]}
+    ]
+  },
+  '二下':{
+    '第一单元·阅读':[
+      {title:'村居', sentences:[
+        {h:'草长莺飞二月天，', p:'cǎo zhǎng yīng fēi èr yuè tiān'},
+        {h:'拂堤杨柳醉春烟。', p:'fú dī yáng liǔ zuì chūn yān'},
+        {h:'儿童散学归来早，', p:'ér tóng sàn xué guī lái zǎo'},
+        {h:'忙趁东风放纸鸢。', p:'máng chèn dōng fēng fàng zhǐ yuān'}
+      ]},
+      {title:'咏柳', sentences:[
+        {h:'碧玉妆成一树高，', p:'bì yù zhuāng chéng yī shù gāo'},
+        {h:'万条垂下绿丝绦。', p:'wàn tiáo chuí xià lǜ sī tāo'},
+        {h:'不知细叶谁裁出，', p:'bù zhī xì yè shéi cái chū'},
+        {h:'二月春风似剪刀。', p:'èr yuè chūn fēng sì jiǎn dāo'}
+      ]},
+      {title:'找春天', sentences:[
+        {h:'春天来了！春天来了！', p:'chūn tiān lái le chūn tiān lái le'},
+        {h:'我们几个孩子脱掉棉袄，', p:'wǒ men jǐ gè hái zi tuō diào mián ǎo'},
+        {h:'冲出家门，奔向田野，', p:'chōng chū jiā mén bēn xiàng tián yě'},
+        {h:'去寻找春天。', p:'qù xún zhǎo chūn tiān'},
+        {h:'春天像个害羞的小姑娘，', p:'chūn tiān xiàng gè hài xiū de xiǎo gū niang'},
+        {h:'遮遮掩掩，躲躲藏藏。', p:'zhē zhē yǎn yǎn duǒ duǒ cáng cáng'},
+        {h:'我们仔细地找哇，找哇。', p:'wǒ men zǐ xì de zhǎo wa zhǎo wa'}
+      ]}
+    ],
+    '第二单元·阅读':[
+      {title:'雷锋叔叔，你在哪里', sentences:[
+        {h:'沿着长长的小溪，', p:'yán zhe cháng cháng de xiǎo xī'},
+        {h:'寻找雷锋的足迹。', p:'xún zhǎo léi fēng de zú jì'},
+        {h:'雷锋叔叔，你在哪里，', p:'léi fēng shū shū nǐ zài nǎ lǐ'},
+        {h:'你在哪里？', p:'nǐ zài nǎ lǐ'},
+        {h:'小溪说：“昨天，他曾路过这里，', p:'xiǎo xī shuō zuó tiān tā céng lù guò zhè lǐ'},
+        {h:'抱着迷路的孩子，', p:'bào zhe mí lù de hái zi'},
+        {h:'冒着蒙蒙的细雨。”', p:'mào zhe méng méng de xì yǔ'}
+      ]},
+      {title:'千人糕', sentences:[
+        {h:'爸爸拿起一块糕，', p:'bà ba ná qǐ yī kuài gāo'},
+        {h:'说：“你想知道糕是怎么做成的吗？”', p:'shuō nǐ xiǎng zhī dào gāo shì zěn me zuò chéng de ma'},
+        {h:'孩子说：“是把大米磨成粉做的，', p:'hái zi shuō shì bǎ dà mǐ mò chéng fěn zuò de'},
+        {h:'还加了糖。”', p:'hái jiā le táng'},
+        {h:'爸爸说：“没错，', p:'bà ba shuō méi cuò'},
+        {h:'大米是农民种的，糖是甘蔗汁熬的。”', p:'dà mǐ shì nóng mín zhòng de táng shì gān zhè zhī áo de'}
+      ]}
+    ],
+    '第三单元·识字':[
+      {title:'神州谣', sentences:[
+        {h:'我神州，称中华，', p:'wǒ shén zhōu chēng zhōng huá'},
+        {h:'山川美，可入画。', p:'shān chuān měi kě rù huà'},
+        {h:'黄河奔，长江涌，', p:'huáng hé bēn cháng jiāng yǒng'},
+        {h:'长城长，珠峰耸。', p:'cháng chéng cháng zhū fēng sǒng'},
+        {h:'台湾岛，隔海峡，', p:'tái wān dǎo gé hǎi xiá'},
+        {h:'与大陆，是一家。', p:'yǔ dà lù shì yī jiā'},
+        {h:'各民族，情谊浓，', p:'gè mín zú qíng yì nóng'},
+        {h:'齐奋发，共繁荣。', p:'qí fèn fā gòng fán róng'}
+      ]},
+      {title:'传统节日', sentences:[
+        {h:'春节到，人欢笑，', p:'chūn jié dào rén huān xiào'},
+        {h:'贴窗花，放鞭炮。', p:'tiē chuāng huā fàng biān pào'},
+        {h:'元宵节，看花灯，', p:'yuán xiāo jié kàn huā dēng'},
+        {h:'大街小巷人如潮。', p:'dà jiē xiǎo xiàng rén rú cháo'},
+        {h:'清明节，雨纷纷，', p:'qīng míng jié yǔ fēn fēn'},
+        {h:'先人墓前去祭扫。', p:'xiān rén mù qián qù jì sǎo'},
+        {h:'过端午，赛龙舟，', p:'guò duān wǔ sài lóng zhōu'},
+        {h:'粽香艾香满堂飘。', p:'zòng xiāng ài xiāng mǎn táng piāo'},
+        {h:'七月七，来乞巧，', p:'qī yuè qī lái qǐ qiǎo'},
+        {h:'牛郎织女会鹊桥。', p:'niú láng zhī nǚ huì què qiáo'}
+      ]}
+    ],
+    '第四单元·阅读':[
+      {title:'彩色的梦', sentences:[
+        {h:'我有一大把彩色的梦，', p:'wǒ yǒu yī dà bǎ cǎi sè de mèng'},
+        {h:'有的长，有的圆，有的硬。', p:'yǒu de cháng yǒu de yuán yǒu de yìng'},
+        {h:'他们躺在铅笔盒里聊天，', p:'tā men tǎng zài qiān bǐ hé lǐ liáo tiān'},
+        {h:'一打开，就在白纸上跳蹦。', p:'yī dǎ kāi jiù zài bái zhǐ shàng tiào bèng'},
+        {h:'脚尖滑过的地方，', p:'jiǎo jiān huá guò de dì fang'},
+        {h:'大块的草坪，绿了；', p:'dà kuài de cǎo píng lǜ le'},
+        {h:'大朵的野花，红了；', p:'dà duǒ de yě huā hóng le'},
+        {h:'大片的天空，蓝了。', p:'dà piàn de tiān kōng lán le'}
+      ]}
+    ],
+    '第五单元·阅读':[
+      {title:'亡羊补牢', sentences:[
+        {h:'从前有个人，养了几只羊。', p:'cóng qián yǒu gè rén yǎng le jǐ zhī yáng'},
+        {h:'一天早上，他去放羊，', p:'yī tiān zǎo shàng tā qù fàng yáng'},
+        {h:'发现羊少了一只。', p:'fā xiàn yáng shǎo le yī zhī'},
+        {h:'原来羊圈破了个窟窿，', p:'yuán lái yáng juàn pò le gè kū long'},
+        {h:'狼从窟窿钻进去，把羊叼走了。', p:'láng cóng kū long zuān jìn qù bǎ yáng diāo zǒu le'},
+        {h:'街坊劝他说：“赶紧把羊圈修一修吧！”', p:'jiē fāng quàn tā shuō gǎn jǐn bǎ yáng juàn xiū yī xiū ba'},
+        {h:'他说：“羊已经丢了，还修干什么？”', p:'tā shuō yáng yǐ jīng diū le hái xiū gàn shén me'},
+        {h:'第二天，羊又少了一只。', p:'dì èr tiān yáng yòu shǎo le yī zhī'},
+        {h:'他很后悔，赶紧堵上窟窿，', p:'tā hěn hòu huǐ gǎn jǐn dǔ shàng kū long'},
+        {h:'把羊圈修得结结实实。', p:'bǎ yáng juàn xiū de jiē jiē shi shi'}
+      ]}
+    ],
+    '第六单元·阅读':[
+      {title:'晓出净慈寺送林子方', sentences:[
+        {h:'毕竟西湖六月中，', p:'bì jìng xī hú liù yuè zhōng'},
+        {h:'风光不与四时同。', p:'fēng guāng bù yǔ sì shí tóng'},
+        {h:'接天莲叶无穷碧，', p:'jiē tiān lián yè wú qióng bì'},
+        {h:'映日荷花别样红。', p:'yìng rì hé huā bié yàng hóng'}
+      ]},
+      {title:'绝句', sentences:[
+        {h:'两个黄鹂鸣翠柳，', p:'liǎng gè huáng lí míng cuì liǔ'},
+        {h:'一行白鹭上青天。', p:'yī háng bái lù shàng qīng tiān'},
+        {h:'窗含西岭千秋雪，', p:'chuāng hán xī lǐng qiān qiū xuě'},
+        {h:'门泊东吴万里船。', p:'mén pō dōng wú wàn lǐ chuán'}
+      ]}
+    ],
+    '第七单元·阅读':[
+      {title:'大象的耳朵', sentences:[
+        {h:'大象有一对大耳朵，', p:'dà xiàng yǒu yī duì dà ěr duo'},
+        {h:'像扇子似的，耷拉着。', p:'xiàng shàn zi shì de dā lā zhe'},
+        {h:'这一天，大象正在路上慢慢地散步，', p:'zhè yī tiān dà xiàng zhèng zài lù shàng màn màn de sàn bù'},
+        {h:'遇到了小兔子。', p:'yù dào le xiǎo tù zi'},
+        {h:'小兔子说：“咦，大象啊，', p:'xiǎo tù zi shuō yí dà xiàng a'},
+        {h:'你的耳朵怎么耷拉下来了？”', p:'nǐ de ěr duo zěn me dā lā xià lái le'}
+      ]}
+    ],
+    '第八单元·阅读':[
+      {title:'羿射九日', sentences:[
+        {h:'很久很久以前，', p:'hěn jiǔ hěn jiǔ yǐ qián'},
+        {h:'在世界最东边的海上，', p:'zài shì jiè zuì dōng biān de hǎi shàng'},
+        {h:'生长着一棵大树，', p:'shēng zhǎng zhe yī kē dà shù'},
+        {h:'叫作扶桑。', p:'jiào zuò fú sāng'},
+        {h:'十个太阳每天轮换，', p:'shí gè tài yáng měi tiān lún huàn'},
+        {h:'给大地万物带来光明和温暖。', p:'gěi dà dì wàn wù dài lái guāng míng hé wēn nuǎn'},
+        {h:'可是，有一天，十个太阳一起跑了出来，', p:'kě shì yǒu yī tiān shí gè tài yáng yī qǐ pǎo le chū lái'},
+        {h:'烤得大地寸草不生。', p:'kǎo de dà dì cùn cǎo bù shēng'}
+      ]}
+    ]
+  },
+  '三上':{
+    '第一单元·阅读':[
+      {title:'大青树下的小学', sentences:[
+        {h:'早晨，从山坡上，从坪坝里，', p:'zǎo chén cóng shān pō shàng cóng píng bà lǐ'},
+        {h:'从一条条开着绒球花和太阳花的小路上，', p:'cóng yī tiáo tiáo kāi zhe róng qiú huā hé tài yáng huā de xiǎo lù shàng'},
+        {h:'走来了许多小学生。', p:'zǒu lái le xǔ duō xiǎo xué shēng'},
+        {h:'有汉族的，有傣族的，', p:'yǒu hàn zú de yǒu dǎi zú de'},
+        {h:'有景颇族的，还有阿昌族和德昂族的。', p:'yǒu jǐng pō zú de hái yǒu ā chāng zú hé dé áng zú de'},
+        {h:'大家穿戴不同，来到学校，', p:'dà jiā chuān dài bù tóng lái dào xué xiào'},
+        {h:'都成了好朋友。', p:'dōu chéng le hǎo péng yǒu'}
+      ]},
+      {title:'花的学校', sentences:[
+        {h:'当雷云在天上轰响，', p:'dāng léi yún zài tiān shàng hōng xiǎng'},
+        {h:'六月的阵雨落下的时候，', p:'liù yuè de zhèn yǔ luò xià de shí hou'},
+        {h:'润湿的东风走过荒野，', p:'rùn shī de dōng fēng zǒu guò huāng yě'},
+        {h:'在竹林中吹着口笛。', p:'zài zhú lín zhōng chuī zhe kǒu dí'},
+        {h:'于是，一群一群的花', p:'yú shì yī qún yī qún de huā'},
+        {h:'从无人知道的地方突然跑出来，', p:'cóng wú rén zhī dào de dì fang tū rán pǎo chū lái'},
+        {h:'在绿草上跳舞、狂欢。', p:'zài lǜ cǎo shàng tiào wǔ kuáng huān'}
+      ]}
+    ],
+    '第二单元·阅读':[
+      {title:'山行', sentences:[
+        {h:'远上寒山石径斜，', p:'yuǎn shàng hán shān shí jìng xié'},
+        {h:'白云生处有人家。', p:'bái yún shēng chù yǒu rén jiā'},
+        {h:'停车坐爱枫林晚，', p:'tíng chē zuò ài fēng lín wǎn'},
+        {h:'霜叶红于二月花。', p:'shuāng yè hóng yú èr yuè huā'}
+      ]},
+      {title:'铺满金色巴掌的水泥道', sentences:[
+        {h:'一夜秋风，一夜秋雨。', p:'yī yè qiū fēng yī yè qiū yǔ'},
+        {h:'我背着书包去上学的时候，', p:'wǒ bēi zhe shū bāo qù shàng xué de shí hou'},
+        {h:'天开始放晴了。', p:'tiān kāi shǐ fàng qíng le'},
+        {h:'啊！多么明朗的天空。', p:'a duō me míng lǎng de tiān kōng'},
+        {h:'可是，地面还是潮湿的，', p:'kě shì dì miàn hái shì cháo shī de'},
+        {h:'道路两旁的法国梧桐树，', p:'dào lù liǎng páng de fǎ guó wú tóng shù'},
+        {h:'掉下了一片片金黄金黄的叶子。', p:'diào xià le yī piàn piàn jīn huáng jīn huáng de yè zi'}
+      ]}
+    ],
+    '第三单元·阅读':[
+      {title:'去年的树', sentences:[
+        {h:'一棵树和一只鸟儿是好朋友。', p:'yī kē shù hé yī zhī niǎo er shì hǎo péng yǒu'},
+        {h:'鸟儿站在树枝上，', p:'niǎo er zhàn zài shù zhī shàng'},
+        {h:'天天给树唱歌。', p:'tiān tiān gěi shù chàng gē'},
+        {h:'树呢，天天听着鸟儿唱。', p:'shù ne tiān tiān tīng zhe niǎo er chàng'},
+        {h:'日子一天天过去，', p:'rì zi yī tiān tiān guò qù'},
+        {h:'寒冷的冬天就要来了。', p:'hán lěng de dōng tiān jiù yào lái le'},
+        {h:'鸟儿必须离开树，', p:'niǎo er bì xū lí kāi shù'},
+        {h:'飞到很远很远的地方去。', p:'fēi dào hěn yuǎn hěn yuǎn de dì fang qù'}
+      ]}
+    ],
+    '第四单元·阅读':[
+      {title:'总也倒不了的老屋', sentences:[
+        {h:'老屋已经活了一百多岁了。', p:'lǎo wū yǐ jīng huó le yī bǎi duō suì le'},
+        {h:'它的窗户变成了黑窟窿，', p:'tā de chuāng hù biàn chéng le hēi kū long'},
+        {h:'门板也破了洞。', p:'mén bǎn yě pò le dòng'},
+        {h:'它很久很久没人住了。', p:'tā hěn jiǔ hěn jiǔ méi rén zhù le'},
+        {h:'“好了，我到了倒下的时候了！”', p:'hǎo le wǒ dào le dǎo xià de shí hou le'},
+        {h:'它自言自语着，准备往旁边倒去。', p:'tā zì yán zì yǔ zhe zhǔn bèi wǎng páng biān dǎo qù'}
+      ]}
+    ],
+    '第五单元·阅读':[
+      {title:'搭船的鸟', sentences:[
+        {h:'我和母亲坐着小船，', p:'wǒ hé mǔ qīn zuò zhe xiǎo chuán'},
+        {h:'到乡下外祖父家里去。', p:'dào xiāng xià wài zǔ fù jiā lǐ qù'},
+        {h:'我们坐在船舱里。', p:'wǒ men zuò zài chuán cāng lǐ'},
+        {h:'天下着大雨，', p:'tiān xià zhe dà yǔ'},
+        {h:'雨点打在船篷上，沙啦沙啦地响。', p:'yǔ diǎn dǎ zài chuán péng shàng shā lā shā lā de xiǎng'},
+        {h:'后来雨停了。', p:'hòu lái yǔ tíng le'},
+        {h:'我看见一只彩色的小鸟站在船头。', p:'wǒ kàn jiàn yī zhī cǎi sè de xiǎo niǎo zhàn zài chuán tóu'}
+      ]}
+    ],
+    '第六单元·阅读':[
+      {title:'富饶的西沙群岛', sentences:[
+        {h:'西沙群岛位于南海的西北部，', p:'xī shā qún dǎo wèi yú nán hǎi de xī běi bù'},
+        {h:'是我国海南省三沙市的一部分。', p:'shì wǒ guó hǎi nán shěng sān shā shì de yī bù fen'},
+        {h:'那里风景优美，物产丰富，', p:'nà lǐ fēng jǐng yōu měi wù chǎn fēng fù'},
+        {h:'是个可爱的地方。', p:'shì gè kě ài de dì fang'},
+        {h:'西沙群岛一带海水五光十色，', p:'xī shā qún dǎo yī dài hǎi shuǐ wǔ guāng shí sè'},
+        {h:'瑰丽无比。', p:'guī lì wú bǐ'}
+      ]}
+    ],
+    '第七单元·阅读':[
+      {title:'望洞庭', sentences:[
+        {h:'湖光秋月两相和，', p:'hú guāng qiū yuè liǎng xiāng hé'},
+        {h:'潭面无风镜未磨。', p:'tán miàn wú fēng jìng wèi mó'},
+        {h:'遥望洞庭山水翠，', p:'yáo wàng dòng tíng shān shuǐ cuì'},
+        {h:'白银盘里一青螺。', p:'bái yín pán lǐ yī qīng luó'}
+      ]},
+      {title:'大自然的声音', sentences:[
+        {h:'风，是大自然的音乐家。', p:'fēng shì dà zì rán de yīn yuè jiā'},
+        {h:'他会在森林里演奏他的手风琴。', p:'tā huì zài sēn lín lǐ yǎn zòu tā de shǒu fēng qín'},
+        {h:'当他翻动树叶，', p:'dāng tā fān dòng shù yè'},
+        {h:'树叶便像歌手一样，', p:'shù yè biàn xiàng gē shǒu yī yàng'},
+        {h:'唱出各种不同的歌曲。', p:'chàng chū gè zhǒng bù tóng de gē qǔ'}
+      ]}
+    ],
+    '第八单元·阅读':[
+      {title:'司马光', sentences:[
+        {h:'群儿戏于庭，', p:'qún ér xì yú tíng'},
+        {h:'一儿登瓮，足跌没水中。', p:'yī ér dēng wèng zú diē mò shuǐ zhōng'},
+        {h:'众皆弃去，', p:'zhòng jiē qì qù'},
+        {h:'光持石击瓮破之，', p:'guāng chí shí jī wèng pò zhī'},
+        {h:'水迸，儿得活。', p:'shuǐ bèng ér dé huó'}
+      ]}
+    ]
+  },
+  '三下':{
+    '第一单元·阅读':[
+      {title:'绝句（杜甫）', sentences:[
+        {h:'迟日江山丽，', p:'chí rì jiāng shān lì'},
+        {h:'春风花草香。', p:'chūn fēng huā cǎo xiāng'},
+        {h:'泥融飞燕子，', p:'ní róng fēi yàn zi'},
+        {h:'沙暖睡鸳鸯。', p:'shā nuǎn shuì yuān yāng'}
+      ]},
+      {title:'燕子', sentences:[
+        {h:'一身乌黑的羽毛，', p:'yī shēn wū hēi de yǔ máo'},
+        {h:'一双剪刀似的尾巴，', p:'yī shuāng jiǎn dāo shì de wěi ba'},
+        {h:'一对轻快有力的翅膀，', p:'yī duì qīng kuài yǒu lì de chì bǎng'},
+        {h:'凑成了那样可爱的活泼的小燕子。', p:'còu chéng le nà yàng kě ài de huó pō de xiǎo yàn zi'},
+        {h:'二三月的春日里，', p:'èr sān yuè de chūn rì lǐ'},
+        {h:'轻风微微地吹拂着，', p:'qīng fēng wēi wēi de chuī fú zhe'},
+        {h:'如毛的细雨由天上洒落着。', p:'rú máo de xì yǔ yóu tiān shàng sǎ luò zhe'}
+      ]}
+    ],
+    '第二单元·阅读':[
+      {title:'守株待兔', sentences:[
+        {h:'宋人有耕者。', p:'sòng rén yǒu gēng zhě'},
+        {h:'田中有株。', p:'tián zhōng yǒu zhū'},
+        {h:'兔走触株，折颈而死。', p:'tù zǒu chù zhū zhé jǐng ér sǐ'},
+        {h:'因释其耒而守株，', p:'yīn shì qí lěi ér shǒu zhū'},
+        {h:'冀复得兔。', p:'jì fù dé tù'},
+        {h:'兔不可复得，', p:'tù bù kě fù dé'},
+        {h:'而身为宋国笑。', p:'ér shēn wéi sòng guó xiào'}
+      ]},
+      {title:'陶罐和铁罐', sentences:[
+        {h:'国王的御厨里有两只罐子：', p:'guó wáng de yù chú lǐ yǒu liǎng zhī guàn zi'},
+        {h:'一只是陶的，一只是铁的。', p:'yī zhī shì táo de yī zhī shì tiě de'},
+        {h:'骄傲的铁罐看不起陶罐，', p:'jiāo ào de tiě guàn kàn bù qǐ táo guàn'},
+        {h:'常常奚落它。', p:'cháng cháng xī luò tā'},
+        {h:'“你敢碰我吗，陶罐子！”', p:'nǐ gǎn pèng wǒ ma táo guàn zi'},
+        {h:'铁罐傲慢地问。', p:'tiě guàn ào màn de wèn'}
+      ]}
+    ],
+    '第三单元·阅读':[
+      {title:'元日', sentences:[
+        {h:'爆竹声中一岁除，', p:'bào zhú shēng zhōng yī suì chú'},
+        {h:'春风送暖入屠苏。', p:'chūn fēng sòng nuǎn rù tú sū'},
+        {h:'千门万户曈曈日，', p:'qiān mén wàn hù tóng tóng rì'},
+        {h:'总把新桃换旧符。', p:'zǒng bǎ xīn táo huàn jiù fú'}
+      ]},
+      {title:'纸的发明', sentences:[
+        {h:'造纸术是中国四大发明之一，', p:'zào zhǐ shù shì zhōng guó sì dà fā míng zhī yī'},
+        {h:'是我们祖先的结晶。', p:'shì wǒ men zǔ xiān de jié jīng'},
+        {h:'东汉时代，有个叫蔡伦的人，', p:'dōng hàn shí dài yǒu gè jiào cài lún de rén'},
+        {h:'改进了造纸术。', p:'gǎi jìn le zào zhǐ shù'},
+        {h:'他把树皮、麻头、破布等原料剪碎，', p:'tā bǎ shù pí má tóu pò bù děng yuán liào jiǎn suì'},
+        {h:'捣烂成浆，晒干，就成了轻便的纸。', p:'dǎo làn chéng jiāng shài gān jiù chéng le qīng biàn de zhǐ'}
+      ]}
+    ],
+    '第四单元·阅读':[
+      {title:'花钟', sentences:[
+        {h:'鲜花朵朵，争奇斗艳，', p:'xiān huā duǒ duǒ zhēng qí dòu yàn'},
+        {h:'芬芳迷人。', p:'fēn fāng mí rén'},
+        {h:'要是我们留心观察，', p:'yào shì wǒ men liú xīn guān chá'},
+        {h:'就会发现，一天之内，', p:'jiù huì fā xiàn yī tiān zhī nèi'},
+        {h:'不同的花开放的时间是不同的。', p:'bù tóng de huā kāi fàng de shí jiān shì bù tóng de'},
+        {h:'凌晨四点，牵牛花吹起了紫色的小喇叭；', p:'líng chén sì diǎn qiān niú huā chuī qǐ le zǐ sè de xiǎo lǎ ba'}
+      ]}
+    ],
+    '第五单元·阅读':[
+      {title:'宇宙的另一边', sentences:[
+        {h:'我趴在窗台上，看着浩瀚的星空。', p:'wǒ pā zài chuāng tái shàng kàn zhe hào hàn de xīng kōng'},
+        {h:'星光洒进我的眼睛，', p:'xīng guāng sǎ jìn wǒ de yǎn jing'},
+        {h:'在我身体里汩汩流淌。', p:'zài wǒ shēn tǐ lǐ gǔ gǔ liú tǎng'},
+        {h:'告诉我一个秘密：', p:'gào su wǒ yī gè mì mì'},
+        {h:'在宇宙的另一边，', p:'zài yǔ zhòu de lìng yī biān'},
+        {h:'是这一边的倒影。', p:'shì zhè yī biān de dào yǐng'}
+      ]}
+    ],
+    '第六单元·阅读':[
+      {title:'童年的水墨画', sentences:[
+        {h:'溪边', p:'xī biān'},
+        {h:'垂柳把溪水当作梳妆的镜子，', p:'chuí liǔ bǎ xī shuǐ dàng zuò shū zhuāng de jìng zi'},
+        {h:'山溪像绿玉带一样平静。', p:'shān xī xiàng lǜ yù dài yī yàng píng jìng'},
+        {h:'人影给溪水染绿了，', p:'rén yǐng gěi xī shuǐ rǎn lǜ le'},
+        {h:'钓竿上立着一只红蜻蜓。', p:'diào gān shàng lì zhe yī zhī hóng qīng tíng'},
+        {h:'忽然扑腾一声人影碎了，', p:'hū rán pū téng yī shēng rén yǐng suì le'},
+        {h:'草地上蹦跳着鱼儿和笑声。', p:'cǎo dì shàng bèng tiào zhe yú er hé xiào shēng'}
+      ]}
+    ],
+    '第七单元·阅读':[
+      {title:'我们奇妙的世界', sentences:[
+        {h:'这是一个奇妙的世界，', p:'zhè shì yī gè qí miào de shì jiè'},
+        {h:'一切看上去都是有生命的。', p:'yī qiè kàn shàng qù dōu shì yǒu shēng mìng de'},
+        {h:'你看天空——', p:'nǐ kàn tiān kōng'},
+        {h:'清晨，太阳升起，', p:'qīng chén tài yáng shēng qǐ'},
+        {h:'带来新的一天。', p:'dài lái xīn de yī tiān'},
+        {h:'开始，天空呈粉红色，', p:'kāi shǐ tiān kōng chéng fěn hóng sè'},
+        {h:'慢慢地变成了蔚蓝色。', p:'màn màn de biàn chéng le wèi lán sè'}
+      ]}
+    ],
+    '第八单元·阅读':[
+      {title:'慢性子裁缝和急性子顾客', sentences:[
+        {h:'故事发生在冬天。', p:'gù shi fā shēng zài dōng tiān'},
+        {h:'裁缝店里走进一位顾客。', p:'cái feng diàn lǐ zǒu jìn yī wèi gù kè'},
+        {h:'顾客把一卷布料放到桌上，', p:'gù kè bǎ yī juǎn bù liào fàng dào zhuō shàng'},
+        {h:'对裁缝说：“我想做件棉袄。”', p:'duì cái feng shuō wǒ xiǎng zuò jiàn mián ǎo'},
+        {h:'裁缝说：“我让您穿上吧，', p:'cái feng shuō wǒ ràng nín chuān shàng ba'},
+        {h:'不过，我还没开始裁料呢。”', p:'bù guò wǒ hái méi kāi shǐ cái liào ne'}
+      ]}
+    ]
+  }
+};
+
+</script>
+
+<script>
 /* ============ 状态层 ============ */
 const LS = {
   get(k, def){ try{ const v = localStorage.getItem('bxd_'+k); return v==null?def:JSON.parse(v); }catch(e){ return def; } },
@@ -3247,9 +4003,9 @@ function renderMath(){
 }
 function modMath(ico,t,s,bg,fg,fn){ const e=el('div','mod'); e._fn=fn; e.innerHTML='<div class="mod-ico" style="background:'+bg+';color:'+fg+'">'+ico+'</div><div class="mod-title">'+t+'</div><div class="mod-sub">'+s+'</div>'; return e; }
 
-/* —— 字卡点读（下拉目录 + 卡片/生字表双模式） —— */
+/* —— 生字表（下拉目录 + 生字表，词语可点读） —— */
 let zidianGrade = state.profile.grade;
-let _zdMode = 'card'; // 'card' | 'table'
+let _zidianUnit = 0;
 function openZidian(){
   const optsUnits = () => {
     const u = gradeUnits(zidianGrade);
@@ -3259,27 +4015,14 @@ function openZidian(){
     '<div class="zd-head">'+
       '<div class="zd-row"><label>年级</label><div class="zd-sel" id="zgGrade"></div></div>'+
       '<div class="zd-row"><label>单元</label><div class="zd-sel" id="zgUnit"></div></div>'+
-      '<div class="zd-row"><label>模式</label><div class="zd-seg" id="zgMode">'+
-        '<button class="zd-seg-btn on" data-mode="card">卡片</button>'+
-        '<button class="zd-seg-btn" data-mode="table">生字表</button>'+
-      '</div></div>'+
     '</div>'+
-    '<div class="note mb12" id="zgNote">点字卡听读音；点击🔊播放；卡片模式支持点字发声，生字表模式可一键朗读全部。</div>'+
-    '<div id="zgView" class="char-grid"></div>'+
-    '<div class="zd-action hidden" id="zgAct"><button class="btn btn-primary btn-block" id="zgReadAll">📣 一键朗读本页全部生字</button></div>';
-  openOverlay('字卡点读', body);
+    '<div class="note mb12">点击「🔊」朗读生字，点击蓝色词语即可朗读该词。下方按钮可一键朗读全部生字。</div>'+
+    '<div id="zgView"></div>'+
+    '<div class="zd-action" id="zgAct"><button class="btn btn-primary btn-block" id="zgReadAll">📣 一键朗读本页全部生字</button></div>';
+  openOverlay('生字表', body);
 
   const gS = makeSelect(zidianGrade, GRADES.map(g=>({v:g,l:g+'册'})), v=>{ zidianGrade=v; refreshUnits(); });
   document.getElementById('zgGrade').appendChild(gS);
-
-  $all('#zgMode .zd-seg-btn').forEach(b=>{
-    b.onclick = ()=>{
-      $all('#zgMode .zd-seg-btn').forEach(x=>x.classList.remove('on'));
-      b.classList.add('on');
-      _zdMode = b.dataset.mode;
-      renderView();
-    };
-  });
 
   refreshUnits();
   function refreshUnits(){
@@ -3291,6 +4034,7 @@ function openZidian(){
       document.getElementById('zgAct').classList.add('hidden');
       return;
     }
+    document.getElementById('zgAct').classList.remove('hidden');
     _zidianUnit = 0;
     const uS = makeSelect(_zidianUnit, opts, v=>{ _zidianUnit=+v; renderView(); });
     uPick.appendChild(uS);
@@ -3300,9 +4044,7 @@ function openZidian(){
     const units = gradeUnits(zidianGrade);
     if(!units.length) return;
     const u = units[_zidianUnit] || units[0];
-    if(_zdMode==='card') drawZidian(u);
-    else drawZidianTable(u);
-    document.getElementById('zgAct').classList.toggle('hidden', _zdMode!=='table');
+    drawZidianTable(u);
   }
   document.getElementById('zgReadAll').onclick = ()=>{
     const u = gradeUnits(zidianGrade)[_zidianUnit];
@@ -3311,7 +4053,6 @@ function openZidian(){
     if(seq.length) speakSeq(seq, 800);
   };
 }
-let _zidianUnit = 0;
 function makeSelect(cur, options, onChg){
   const sel = document.createElement('select');
   sel.className = 'zd-sel-input';
@@ -3324,70 +4065,115 @@ function makeSelect(cur, options, onChg){
   sel.onchange = ()=>onChg(sel.value);
   return sel;
 }
-function drawZidian(u){
-  const grid = document.getElementById('zgView'); grid.className='char-grid'; grid.innerHTML='';
-  (u.zi||[]).forEach(z=>{
-    const t = el('div','char-tile');
-    const ws = ziWords(z).slice(0,2).join(' ');
-    t.innerHTML = '<div class="ct-c">'+z.c+'</div><div class="ct-p">'+z.py+'</div><div class="ct-w">'+ws+
-      '</div><div class="spk" style="position:absolute;top:6px;right:6px">🔊</div>';
-    t.style.position='relative';
-    t.querySelector('.spk').onclick = (e)=>{ e.stopPropagation(); speak(z.c); };
-    t.onclick = ()=>{ speak(z.c); flashTile(t); };
-    grid.appendChild(t);
-  });
-}
 function drawZidianTable(u){
-  const view = document.getElementById('zgView'); view.className=''; view.innerHTML='';
+  const view = document.getElementById('zgView'); view.innerHTML='';
   const wrap = el('div','zd-table-wrap');
   const rows = (u.zi||[]).map(z=>{
-    const ws = ziWords(z).slice(0,3).join('、');
+    const ws = ziWords(z);
+    const wHtml = ws.length
+      ? ws.map(w=>'<button class="zd-word-btn" data-w="'+w.replace(/"/g,'&quot;')+'">'+w+'</button>').join('')
+      : '<span class="zd-no-word">—</span>';
     return '<tr>'+
       '<td class="zd-td-c"><span class="zd-big">'+z.c+'</span></td>'+
       '<td class="zd-td-py">'+z.py+'</td>'+
-      '<td class="zd-td-w">'+ws+'</td>'+
+      '<td class="zd-td-w">'+wHtml+'</td>'+
       '<td class="zd-td-act"><button class="btn btn-sm zd-spk-btn" data-c="'+z.c+'">🔊 读</button></td>'+
     '</tr>';
   }).join('');
-  wrap.innerHTML = '<table class="zd-table"><thead><tr><th>生字</th><th>拼音</th><th>组词</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  wrap.innerHTML = '<table class="zd-table"><thead><tr><th>生字</th><th>拼音</th><th>组词（点击朗读）</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
   view.appendChild(wrap);
   $all('.zd-spk-btn', view).forEach(btn=>{ btn.onclick=()=>speak(btn.dataset.c); });
+  $all('.zd-word-btn', view).forEach(btn=>{ btn.onclick=()=>{ speak(btn.dataset.w); btn.classList.add('zd-word-hit'); setTimeout(()=>btn.classList.remove('zd-word-hit'),260); }; });
 }
-function flashTile(t){ t.style.background='var(--brand-soft)'; setTimeout(()=>t.style.background='',220); }
 
-/* —— 课文点读（按单元生字/词语朗读+跟读）—— */
-function openText(){
-  const body = '<div class="grade-pick" id="tgPick"></div><div class="note mb12">选择单元后，点任意条目听朗读；「跟读」会先播放再留白让你模仿。</div><div id="tgList"></div>';
-  openOverlay('课文点读', body);
-  let g = state.profile.grade;
-  const pick = document.getElementById('tgPick');
-  GRADES.forEach(gr=>{ const b=el('button', gr===g?'on':''); b.textContent=gr; b.onclick=()=>{ g=gr; $all('#tgPick button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawText(gr); }; pick.appendChild(b); });
-  drawText(g);
+/* —— 课文点读（年级目录 → 全文 → 逐句点读 + 朗读全文 + 拼音切换）—— */
+let _textGrade = state.profile.grade;
+function _lessonData(g){ const k = GM[g]||g; return LESSON[k] || {}; }
+function _lessonUnits(g){
+  // 返回 [{u:单元名, lessons:[...]}]，仅包含有课文的单元，按 TEXTBOOK 顺序排列
+  const tb = gradeUnits(g);
+  const ld = _lessonData(g);
+  const res = [];
+  (tb||[]).forEach(u=>{
+    const ls = ld[u.u];
+    if(ls && ls.length) res.push({u:u.u, lessons:ls});
+  });
+  return res;
 }
-function drawText(g){
-  const units = gradeUnits(g); const list = document.getElementById('tgList'); list.innerHTML='';
-  if(!units.length){ list.innerHTML='<div class="note">该册内容待录入。</div>'; return; }
-  units.forEach((u)=>{
+function openText(){
+  const body = '<div class="grade-pick" id="tgPick"></div><div id="tgBox"></div>';
+  openOverlay('课文点读', body);
+  const pick = document.getElementById('tgPick');
+  GRADES.forEach(gr=>{ const b=el('button', gr===_textGrade?'on':''); b.textContent=gr; b.onclick=()=>{ _textGrade=gr; $all('#tgPick button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawTextCatalog(_textGrade); }; pick.appendChild(b); });
+  drawTextCatalog(_textGrade);
+}
+function drawTextCatalog(g){
+  const box = document.getElementById('tgBox'); box.innerHTML='';
+  const units = _lessonUnits(g);
+  if(!units.length){ box.innerHTML='<div class="note">该册课文待录入。</div>'; return; }
+  units.forEach((unit)=>{
     const card = el('div','card mb');
-    card.innerHTML = '<div class="lr-title" style="margin-bottom:10px">📖 '+u.u+'</div>';
+    card.innerHTML = '<div class="lr-title" style="margin-bottom:10px">📚 '+unit.u+'</div>';
     const wrap = el('div','');
-    (u.zi||[]).forEach(z=>{
+    unit.lessons.forEach((ls, idx)=>{
       const row = el('div','list-row');
-      row.innerHTML = '<div class="lr-ico" style="background:var(--brand-soft)">'+z.c+'</div><div class="lr-main"><div class="lr-title">'+z.c+' <span style="color:var(--brand);font-size:13px">'+z.py+'</span></div><div class="lr-sub">'+(ziWords(z).join('、')||'—')+'</div></div><div class="spk">🔊</div>';
-      row.querySelector('.spk').onclick=(e)=>{e.stopPropagation();speak(z.c);};
-      row.onclick=()=>{ speak(z.c); };
+      row.innerHTML = '<div class="lr-ico" style="background:var(--brand-soft)">📖</div><div class="lr-main"><div class="lr-title">'+ls.title+'</div><div class="lr-sub">'+(ls.sentences||[]).length+' 句</div></div><div class="lr-arrow">›</div>';
+      row.onclick = ()=> drawLesson(g, unit.u, idx);
       wrap.appendChild(row);
     });
-    // 词语
-    const words = (u.zi||[]).flatMap(z=>ziWords(z)).filter(w=>w&&w.length>=2);
-    if(words.length){
-      const wr = el('div','list-row');
-      wr.innerHTML='<div class="lr-ico" style="background:var(--accent-soft)">词</div><div class="lr-main"><div class="lr-title">词语跟读</div><div class="lr-sub">'+words.slice(0,6).join('、')+'</div></div><div class="spk">🔊</div>';
-      wr.querySelector('.spk').onclick=(e)=>{e.stopPropagation(); words.slice(0,6).forEach((w,i)=>setTimeout(()=>speak(w),i*900));};
-      wrap.appendChild(wr);
-    }
-    card.appendChild(wrap); list.appendChild(card);
+    card.appendChild(wrap); box.appendChild(card);
   });
+}
+function drawLesson(g, unitName, idx){
+  const box = document.getElementById('tgBox'); box.innerHTML='';
+  const units = _lessonUnits(g);
+  const unit = units.find(x=>x.u===unitName);
+  if(!unit) return;
+  const ls = unit.lessons[idx];
+  if(!ls) return;
+
+  const head = el('div','text-toolbar');
+  head.innerHTML =
+    '<button class="btn btn-ghost btn-sm" id="tlBack">‹ 目录</button>'+
+    '<div class="text-title">'+ls.title+'</div>'+
+    '<button class="btn btn-accent btn-sm" id="tlRead">🔊 朗读全文</button>'+
+    '<button class="btn btn-ghost btn-sm" id="tlPy">隐藏拼音</button>';
+  box.appendChild(head);
+
+  const pv = el('div','text-passage'); pv.id='tlPassage';
+  (ls.sentences||[]).forEach((s, i)=>{
+    const btn = el('button','sentence-btn');
+    btn.dataset.i = i;
+    // 逐字 ruby 标注（拼音与汉字严格对齐）
+    const chars = Array.from(s.h);
+    const pys = (s.p||'').split(/\s+/).filter(Boolean);
+    let rubyHtml = '';
+    chars.forEach((ch, ci)=>{
+      if(/[\s，。、！？：“”""''（）()…—]/.test(ch)){
+        rubyHtml += '<span class="punct">'+ch+'</span>';
+      }else{
+        const py = pys[ci] || '';
+        rubyHtml += '<ruby><span class="hz">'+ch+'</span><rt>'+(py||'&nbsp;')+'</rt></ruby>';
+      }
+    });
+    btn.innerHTML = '<span class="sentence-hanzi">'+rubyHtml+'</span><span class="sentence-spk">🔊</span>';
+    btn.onclick = ()=>{ speak(s.h); btn.classList.add('sentence-playing'); setTimeout(()=>btn.classList.remove('sentence-playing'), 600); };
+    pv.appendChild(btn);
+  });
+  box.appendChild(pv);
+
+  // 交互
+  document.getElementById('tlBack').onclick = ()=> drawTextCatalog(g);
+  let showingPy = true;
+  document.getElementById('tlPy').onclick = (e)=>{
+    showingPy = !showingPy;
+    pv.classList.toggle('hide-py', !showingPy);
+    e.target.textContent = showingPy ? '隐藏拼音' : '显示拼音';
+  };
+  document.getElementById('tlRead').onclick = ()=>{
+    const seq = (ls.sentences||[]).map(s=>s.h);
+    if(seq.length) speakSeq(seq, 900);
+  };
 }
 
 /* —— 笔顺手写（沿用离线库 + 同步拼音）—— */
