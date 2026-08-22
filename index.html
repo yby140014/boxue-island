@@ -534,21 +534,38 @@ img,svg{display:block}
 .zd-word-hit{background:var(--brand)!important;color:#fff!important;transform:scale(1.06)}
 .zd-no-word{color:var(--faint)}
 .is-tablet .zd-word-btn{font-size:15px;padding:6px 14px}
+/* —— 字卡点读新版（网格 + 笔顺浮窗）—— */
+.zd-section{margin-bottom:18px}
+.zd-sec-title{font-size:13px;font-weight:800;color:var(--brand);margin:6px 4px 10px;letter-spacing:.5px}
+.zd-char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:10px}
+.zd-char-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 4px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line2);cursor:pointer;transition:all .16s;font-family:inherit;color:inherit}
+.zd-char-btn:hover{border-color:var(--brand);background:var(--brand-soft);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.zd-char-btn:active{transform:scale(.97)}
+.zd-char-btn .zd-c{font-size:30px;font-weight:800;line-height:1.1;color:var(--ink)}
+.zd-char-btn .zd-py{font-size:12px;color:var(--brand);font-weight:600}
+.is-tablet .zd-char-btn .zd-c{font-size:36px}
+.zd-word-grid{display:flex;flex-wrap:wrap;gap:8px}
+.zd-word-hit{background:var(--accent)!important;color:#fff!important}
+/* 笔顺浮窗 */
+.stroke-pop-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:80;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.stroke-pop{width:240px;background:var(--surface);border-radius:18px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.25);position:relative}
+.sp-pop-head{font-size:18px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sp-pop-py{font-size:13px;color:var(--brand);font-weight:600}
+.sp-pop-anim{width:200px;height:200px;margin:0 auto;background:var(--surface3);border-radius:12px}
 
 /* ===== 课文模块 ===== */
 .text-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .text-title{flex:1;min-width:80px;font-size:17px;font-weight:800;color:var(--ink);text-align:center}
 .is-tablet .text-title{font-size:20px}
-.text-passage{display:flex;flex-direction:column;gap:12px}
-.sentence-btn{display:flex;align-items:flex-start;gap:10px;text-align:left;width:100%;padding:16px 18px;border-radius:var(--r);
-  background:var(--surface);border:1.5px solid var(--line2);cursor:pointer;transition:all .18s;font-family:inherit;color:inherit}
-.sentence-btn:hover{border-color:var(--brand);background:var(--brand-soft);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
-.sentence-btn:active{transform:scale(.99)}
-.sentence-playing{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 14%,var(--surface))!important}
-.sentence-hanzi{flex:1;font-size:21px;line-height:2.15;font-weight:600;color:var(--ink);letter-spacing:.5px}
-.is-tablet .sentence-hanzi{font-size:25px;line-height:2.4}
-.sentence-spk{flex:0 0 auto;font-size:18px;opacity:.55;transition:opacity .18s}
-.sentence-btn:hover .sentence-spk{opacity:1}
+.text-passage{font-size:21px;line-height:2.2;font-weight:600;color:var(--ink);letter-spacing:.5px;padding:8px 4px}
+.is-tablet .text-passage{font-size:25px;line-height:2.5}
+.text-empty{text-align:center;color:var(--muted);padding:60px 20px;font-size:16px}
+/* 段落式：句子作为 inline 可点块，句间不强制换行 */
+.sentence-btn{display:inline;cursor:pointer;border-radius:6px;padding:2px 1px;transition:background .16s;font-family:inherit;color:inherit}
+.sentence-btn:hover{background:var(--brand-soft)}
+.sentence-btn.playing{background:color-mix(in srgb,var(--accent) 22%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent);border-radius:6px}
+.sentence-hanzi{font:inherit;font-weight:600}
 /* ruby 拼音严格对齐 */
 .sentence-hanzi ruby{display:inline-flex;flex-direction:column;align-items:center;line-height:1;margin:0 1px;vertical-align:top}
 .sentence-hanzi ruby .hz{font-size:21px;line-height:1.15}
@@ -559,6 +576,18 @@ img,svg{display:block}
 /* 隐藏拼音 */
 .text-passage.hide-py ruby rt{visibility:hidden;height:0;margin:0}
 .text-passage.hide-py .sentence-hanzi ruby{margin-top:0}
+/* —— 抽屉式目录（通用）—— */
+.drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:flex;justify-content:flex-start;align-items:stretch}
+.drawer-panel{width:78%;max-width:340px;height:100%;background:var(--surface);box-shadow:4px 0 24px rgba(0,0,0,.18);display:flex;flex-direction:column;animation:drawerIn .22s ease}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+.drawer-head{padding:16px 18px;font-weight:800;font-size:17px;color:var(--ink);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.drawer-close{border:none;background:transparent;font-size:26px;line-height:1;color:var(--muted);cursor:pointer;padding:0 6px}
+.drawer-body{overflow:auto;padding:10px 12px 30px;flex:1}
+.drawer-unit{font-size:13px;font-weight:700;color:var(--brand);margin:14px 6px 6px;letter-spacing:.5px}
+.drawer-unit:first-child{margin-top:4px}
+.drawer-item{padding:11px 12px;border-radius:10px;font-size:15px;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s}
+.drawer-item:hover{background:var(--brand-soft)}
+.drawer-sub{font-size:12px;color:var(--muted);font-weight:500}
 
 .audio-fab{position:absolute;bottom:calc(var(--tab-h) + var(--safe-b) + 16px);right:18px;z-index:9;
   width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
@@ -3688,6 +3717,9 @@ const LESSON = {
   }
 };
 
+const BOOKDATA={
+
+};
 </script>
 
 <script>
@@ -3726,61 +3758,81 @@ function addXP(n, x, y){
 }
 function toast(msg, type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(type?(' '+type):''); clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',1600); }
 
-/* TTS 朗读：主用百度 TTS，失败自动降级 Web Speech API */
-let _spkMode = null; // 'baidu' | 'web' | 'none'
-function _speakWeb(text){
+/* TTS 朗读：主用百度 TTS，失败自动降级 Web Speech API。
+   关键修复：原实现中百度 Audio 与 Web Speech 会同时触发，导致前两个字被重复朗读。
+   现改为单一通道串行：入口先 cancel 残留播放+全局锁防并发；百度成功才算成功，
+   超时(800ms)/播放失败/无 Audio 才降级一次 Web Speech，且降级路径互斥不并发。 */
+let _spkMode = null;        // 'baidu' | 'web' | 'none'（仅用于统计偏好，不控制并发）
+let _spkLock = false;       // 防止同一时刻两次 speak 并发
+function _speakWeb(text, onDone){
   try{
-    const ss = window.speechSynthesis; if(!ss) return false;
-    // 取消上一条，避免排队
+    const ss = window.speechSynthesis; if(!ss){ onDone && onDone(); return false; }
     ss.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN'; u.rate = 0.9; u.pitch = 1;
-    // 选中文语音
     const vs = ss.getVoices();
     const zh = vs.find(v=>/zh|cmn|Chinese/i.test(v.lang+v.name));
     if(zh) u.voice = zh;
+    let finished = false;
+    const fin = ()=>{ if(!finished){ finished=true; onDone && onDone(); } };
+    u.onend = fin; u.onerror = fin;
     ss.speak(u);
+    // 兜底：部分浏览器 onend 不触发
+    setTimeout(fin, Math.max(1200, text.length*220 + 600));
     return true;
-  }catch(e){ return false; }
+  }catch(e){ onDone && onDone(); return false; }
 }
 function speak(text, opt){
   if(!text) return;
+  if(_spkLock) return;            // 已有朗读在进行，丢弃本次调用，避免叠加
+  _spkLock = true;
   opt = opt||{};
   const spd = opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
   const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&type=3';
-  // 首次尝试检测可用通道
-  if(_spkMode===null){
-    const ss = window.speechSynthesis;
-    _spkMode = ss ? 'web' : 'none'; // 默认假设 web 可用，baidu 在 play 失败时再降级
-  }
+  // 先停掉残留的 web 语音，避免与百度叠加
+  try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+  let released = false;
+  const release = ()=>{ if(!released){ released=true; _spkLock=false; } };
+  const fallbackWeb = ()=>{
+    if(released) return;          // 百度已成功，不再降级
+    _spkMode = 'web';
+    _speakWeb(text, release);
+  };
   try{
     const a = new Audio(url);
-    a.play().then(()=>{ _spkMode='baidu'; }).catch(()=>{ if(_spkMode!=='baidu'){ _speakWeb(text); } });
-    // 若浏览器不支持 Audio 或静默失败，3s 内无 baidu 成功则降级
-    setTimeout(()=>{ if(_spkMode!=='baidu'){ _speakWeb(text); } }, 600);
+    let settled = false;
+    a.play().then(()=>{
+      settled = true; _spkMode='baidu'; release();
+    }).catch(()=>{
+      if(!settled){ settled=true; fallbackWeb(); }
+    });
+    // 800ms 内百度未成功播放 → 降级 Web Speech（仅一次）
+    setTimeout(()=>{ if(!settled){ settled=true; fallbackWeb(); } }, 800);
   }catch(e){
-    // Audio 构造失败 → 直接走 web
-    if(!_speakWeb(text)){ /* 两路都不可用，静默 */ }
+    fallbackWeb();
   }
 }
-/* TTS 序列朗读：依次播放 wordList，每词后停 gapMs（够听清的间隔） */
+/* TTS 序列朗读：依次播放 wordList，每词后停 gapMs（够听清的间隔）。
+   现基于单一通道 speak() 串行，避免与单句朗读并发重叠。 */
 let _spkChain = Promise.resolve();
 function speakSeq(list, gapMs){
   gapMs = gapMs||750;
-  if(speechSynthesis && speechSynthesis.speak){ try{ speechSynthesis.cancel(); }catch(e){} }
   _spkChain = _spkChain.then(async ()=>{
     for(let i=0;i<list.length;i++){
       const t = list[i]; if(!t) continue;
       await new Promise(res=>{
+        // 包装 speak：speak 是 fire-and-forget，这里用 onend 近似等待
         let done = false;
-        const finish = ()=>{ if(!done){ done=true; res(); } };
+        const fin = ()=>{ if(!done){ done=true; res(); } };
+        // 直接复用 web 通道做序列，避免百度串行延迟
         try{
+          const ss = window.speechSynthesis;
+          if(ss){ ss.cancel(); }
           const u = new SpeechSynthesisUtterance(t);
-          u.lang='zh-CN'; u.rate=0.85; u.onend=finish; u.onerror=finish;
-          speechSynthesis.speak(u);
-          // 单字超时兜底（避免某一字被吞而永远等不到 onend）
-          setTimeout(finish, 1400);
-        }catch(e){ finish(); }
+          u.lang='zh-CN'; u.rate=0.85; u.onend=fin; u.onerror=fin;
+          if(ss){ const vs=ss.getVoices(); const zh=vs.find(v=>/zh|cmn|Chinese/i.test(v.lang+v.name)); if(zh)u.voice=zh; ss.speak(u); }
+          setTimeout(fin, Math.max(1200, t.length*220 + 600));
+        }catch(e){ fin(); }
       });
       if(i<list.length-1) await new Promise(r=>setTimeout(r, gapMs));
     }
@@ -3945,10 +3997,8 @@ function renderChinese(){
   const mods = [
     {ico:'🔤',t:'字卡点读',s:'点字听音·拼音释义',bg:'var(--brand-soft)',fg:'#5B6CFF',fn:openZidian},
     {ico:'📖',t:'课文点读',s:'分句朗读·跟读练习',bg:'var(--accent-soft)',fg:'#FF8A3D',fn:openText},
-    {ico:'✍️',t:'笔顺手写',s:'动画演示·同步拼音',bg:'var(--brand-soft)',fg:'#8B5CF6',fn:openSpell},
-    {ico:'📝',t:'词语听写',s:'动态田字格·拼音提示',bg:'var(--success-soft)',fg:'#1FB874',fn:openTingxie},
-    {ico:'🖌️',t:'描红练习',s:'大字描红·点读范字',bg:'var(--accent-soft)',fg:'#F4577A',fn:openTrace},
-    {ico:'🧠',t:'看拼音写汉字',s:'听音选字·巩固记忆',bg:'var(--brand-soft)',fg:'#5B6CFF',fn:openPinyinQuiz},
+    {ico:'✍️',t:'练字',s:'笔顺动画·田字格描红',bg:'var(--brand-soft)',fg:'#8B5CF6',fn:openPractice},
+    {ico:'📝',t:'词语听写',s:'看拼音·4选1选字',bg:'var(--success-soft)',fg:'#1FB874',fn:openTingxie},
     {ico:'🏆',t:'字词闯关',s:'混合挑战·赢取 XP',bg:'var(--warn)',fg:'#B6790C',fn:openChallenge},
     {ico:'📊',t:'单元闯关',s:'按册检测·查漏补缺',bg:'var(--brand-soft)',fg:'#8B5CF6',fn:openUnitQuiz},
   ];
@@ -4007,51 +4057,112 @@ function modMath(ico,t,s,bg,fg,fn){ const e=el('div','mod'); e._fn=fn; e.innerHT
 let zidianGrade = state.profile.grade;
 let _zidianUnit = 0;
 function openZidian(){
-  const optsUnits = () => {
-    const u = gradeUnits(zidianGrade);
-    return u.length ? u.map((uu,i)=>({v:i, l:(i+1)+'. '+uu.u})) : [];
-  };
-  const body =
-    '<div class="zd-head">'+
-      '<div class="zd-row"><label>年级</label><div class="zd-sel" id="zgGrade"></div></div>'+
-      '<div class="zd-row"><label>单元</label><div class="zd-sel" id="zgUnit"></div></div>'+
-    '</div>'+
-    '<div class="note mb12">点击「🔊」朗读生字，点击蓝色词语即可朗读该词。下方按钮可一键朗读全部生字。</div>'+
-    '<div id="zgView"></div>'+
-    '<div class="zd-action" id="zgAct"><button class="btn btn-primary btn-block" id="zgReadAll">📣 一键朗读本页全部生字</button></div>';
-  openOverlay('生字表', body);
+  // 字卡点读：数据源优先 BOOKDATA（识字表/词语表），回退 TEXTBOOK 生字
+  const body = '<div id="zgBox"></div>';
+  openOverlay('字卡点读', body);
+  drawZidianView(zidianGrade, -1);
+}
+function drawZidianView(g, unitIdx){
+  const box = document.getElementById('zgBox'); if(!box) return;
+  box.innerHTML='';
+  const head = el('div','text-toolbar');
+  head.innerHTML =
+    '<button class="btn btn-ghost btn-sm" id="zgMenu">☰ 目录</button>'+
+    '<div class="text-title" id="zgTitle">字卡点读</div>'+
+    '<button class="btn btn-ghost btn-sm" id="zgReadAll">🔊 朗读</button>';
+  box.appendChild(head);
+  const drawer = el('div','drawer-mask'); drawer.id='zgDrawer'; drawer.style.display='none';
+  drawer.innerHTML = '<div class="drawer-panel" id="zgDrawerPanel"></div>';
+  box.appendChild(drawer);
+  const view = el('div','zd-view'); view.id='zgView';
+  box.appendChild(view);
 
-  const gS = makeSelect(zidianGrade, GRADES.map(g=>({v:g,l:g+'册'})), v=>{ zidianGrade=v; refreshUnits(); });
-  document.getElementById('zgGrade').appendChild(gS);
-
-  refreshUnits();
-  function refreshUnits(){
-    const opts = optsUnits();
-    const uPick = document.getElementById('zgUnit');
-    uPick.innerHTML = '';
-    if(!opts.length){
-      document.getElementById('zgView').innerHTML = '<div class="note">该册内容待录入。</div>';
-      document.getElementById('zgAct').classList.add('hidden');
-      return;
-    }
-    document.getElementById('zgAct').classList.remove('hidden');
-    _zidianUnit = 0;
-    const uS = makeSelect(_zidianUnit, opts, v=>{ _zidianUnit=+v; renderView(); });
-    uPick.appendChild(uS);
-    renderView();
-  }
-  function renderView(){
-    const units = gradeUnits(zidianGrade);
-    if(!units.length) return;
-    const u = units[_zidianUnit] || units[0];
-    drawZidianTable(u);
-  }
+  document.getElementById('zgMenu').onclick = ()=>{ renderZidianDrawer(g); drawer.style.display='flex'; };
+  drawer.onclick = (e)=>{ if(e.target===drawer) drawer.style.display='none'; };
   document.getElementById('zgReadAll').onclick = ()=>{
-    const u = gradeUnits(zidianGrade)[_zidianUnit];
-    if(!u) return;
-    const seq = (u.zi||[]).map(z=>z.c).filter(Boolean);
-    if(seq.length) speakSeq(seq, 800);
+    const chars = collectZidianChars(g, unitIdx);
+    if(chars.length) speakSeq(chars, 700);
   };
+
+  if(unitIdx>=0){
+    const units = zidianUnits(g);
+    const u = units[unitIdx];
+    if(u){ document.getElementById('zgTitle').textContent = u.name; renderZidianTable(view, u); return; }
+  }
+  view.innerHTML = '<div class="text-empty">☰ 点击左上角「目录」选择单元</div>';
+}
+function zidianUnits(g){
+  // 优先 BOOKDATA 识字表，回退 TEXTBOOK zi
+  const bd = (typeof BOOKDATA!=='undefined' && BOOKDATA[GM[g]||g]) ? BOOKDATA[GM[g]||g].units : null;
+  if(bd && bd.length){
+    return bd.map(u=>({ name:u.u, chars:(u.shizi||[]).map(x=>({c:x.c,py:x.py})), words:(u.ciyu||[]).map(x=>({c:x.c,py:x.py})) }));
+  }
+  return gradeUnits(g).map(u=>({ name:u.u, chars:(u.zi||[]).map(z=>({c:z.c,py:z.py})), words:[] }));
+}
+function collectZidianChars(g, unitIdx){
+  const units = zidianUnits(g);
+  const src = unitIdx>=0 ? (units[unitIdx]?[units[unitIdx]]:[]) : units;
+  return src.flatMap(u=>u.chars.map(c=>c.c));
+}
+function renderZidianDrawer(g){
+  const panel = document.getElementById('zgDrawerPanel'); if(!panel) return;
+  const units = zidianUnits(g);
+  let html = '<div class="drawer-head">'+g+' · 字卡目录<button class="drawer-close" id="zgDrawerClose">×</button></div><div class="drawer-body">';
+  if(!units.length){ html += '<div class="note">该册内容待录入。</div>'; }
+  units.forEach((u,i)=>{
+    html += '<div class="drawer-item" data-i="'+i+'">📗 '+u.name+' <span class="drawer-sub">'+(u.chars.length)+'字</span></div>';
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+  document.getElementById('zgDrawerClose').onclick = ()=>{ document.getElementById('zgDrawer').style.display='none'; };
+  $all('.drawer-item', panel).forEach(it=>{
+    it.onclick = ()=>{ drawZidianView(g, +it.dataset.i); document.getElementById('zgDrawer').style.display='none'; };
+  });
+}
+function renderZidianTable(view, u){
+  view.innerHTML='';
+  // 词语表（可点读）
+  if(u.words && u.words.length){
+    const wsec = el('div','zd-section');
+    wsec.innerHTML = '<div class="zd-sec-title">词语表（点击朗读）</div>';
+    const wgrid = el('div','zd-word-grid');
+    u.words.forEach(w=>{
+      const b=el('button','zd-word-btn'); b.textContent=w.c; b.title=w.py||'';
+      b.onclick=()=>{ speak(w.c); b.classList.add('zd-word-hit'); setTimeout(()=>b.classList.remove('zd-word-hit'),260); };
+      wgrid.appendChild(b);
+    });
+    wsec.appendChild(wgrid); view.appendChild(wsec);
+  }
+  // 识字表（点击字弹笔顺浮窗）
+  const csec = el('div','zd-section');
+  csec.innerHTML = '<div class="zd-sec-title">识字表（点击字看笔顺）</div>';
+  const cgrid = el('div','zd-char-grid');
+  u.chars.forEach(ch=>{
+    const b=el('button','zd-char-btn'); b.innerHTML='<span class="zd-c">'+ch.c+'</span><span class="zd-py">'+ch.py+'</span>';
+    b.onclick=()=>showStrokePopup(ch.c);
+    cgrid.appendChild(b);
+  });
+  csec.appendChild(cgrid); view.appendChild(csec);
+}
+/* 点击字 → 浮窗演示笔顺 */
+function showStrokePopup(c){
+  const ov = document.createElement('div'); ov.className='stroke-pop-mask';
+  ov.innerHTML = '<div class="stroke-pop">'+
+    '<div class="sp-pop-head">'+c+' · 笔顺<div class="sp-pop-py" id="spPopPy">'+ (charPy(c)||'') +'</div><button class="drawer-close" id="spPopClose">×</button></div>'+
+    '<div id="spPopAnim" class="sp-pop-anim"></div>'+
+    '<div class="row" style="justify-content:center;gap:10px;margin-top:8px"><button class="btn btn-sm" id="spPopPlay">▶ 演示笔顺</button><button class="btn btn-sm ghost" id="spPopSound">🔊 读音</button></div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
+  document.getElementById('spPopClose').onclick=()=>ov.remove();
+  document.getElementById('spPopSound').onclick=()=>speak(c);
+  let writer=null;
+  function init(){
+    if(!window.HanziWriter) return;
+    try{ writer=HanziWriter.create('spPopAnim',c,{width:200,height:200,padding:12,strokeColor:'#5B6CFF',radicalColor:'#FF8A3D',showOutline:true,strokeAnimationSpeed:1,charDataLoader:hwDataLoader}); writer.hideCharacter(); writer.showCharacter(); }catch(e){ writer=null; }
+  }
+  if(window.HanziWriter && !window.__hwFail){ init(); }
+  document.getElementById('spPopPlay').onclick=()=>{ if(writer) writer.animateCharacter(); };
 }
 function makeSelect(cur, options, onChg){
   const sel = document.createElement('select');
@@ -4064,26 +4175,6 @@ function makeSelect(cur, options, onChg){
   });
   sel.onchange = ()=>onChg(sel.value);
   return sel;
-}
-function drawZidianTable(u){
-  const view = document.getElementById('zgView'); view.innerHTML='';
-  const wrap = el('div','zd-table-wrap');
-  const rows = (u.zi||[]).map(z=>{
-    const ws = ziWords(z);
-    const wHtml = ws.length
-      ? ws.map(w=>'<button class="zd-word-btn" data-w="'+w.replace(/"/g,'&quot;')+'">'+w+'</button>').join('')
-      : '<span class="zd-no-word">—</span>';
-    return '<tr>'+
-      '<td class="zd-td-c"><span class="zd-big">'+z.c+'</span></td>'+
-      '<td class="zd-td-py">'+z.py+'</td>'+
-      '<td class="zd-td-w">'+wHtml+'</td>'+
-      '<td class="zd-td-act"><button class="btn btn-sm zd-spk-btn" data-c="'+z.c+'">🔊 读</button></td>'+
-    '</tr>';
-  }).join('');
-  wrap.innerHTML = '<table class="zd-table"><thead><tr><th>生字</th><th>拼音</th><th>组词（点击朗读）</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
-  view.appendChild(wrap);
-  $all('.zd-spk-btn', view).forEach(btn=>{ btn.onclick=()=>speak(btn.dataset.c); });
-  $all('.zd-word-btn', view).forEach(btn=>{ btn.onclick=()=>{ speak(btn.dataset.w); btn.classList.add('zd-word-hit'); setTimeout(()=>btn.classList.remove('zd-word-hit'),260); }; });
 }
 
 /* —— 课文点读（年级目录 → 全文 → 逐句点读 + 朗读全文 + 拼音切换）—— */
@@ -4101,103 +4192,118 @@ function _lessonUnits(g){
   return res;
 }
 function openText(){
-  const body = '<div class="grade-pick" id="tgPick"></div><div id="tgBox"></div>';
+  const body = '<div id="tgBox"></div>';
   openOverlay('课文点读', body);
-  const pick = document.getElementById('tgPick');
-  GRADES.forEach(gr=>{ const b=el('button', gr===_textGrade?'on':''); b.textContent=gr; b.onclick=()=>{ _textGrade=gr; $all('#tgPick button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawTextCatalog(_textGrade); }; pick.appendChild(b); });
-  drawTextCatalog(_textGrade);
+  drawTextLessonView(_textGrade, null, -1);
 }
-function drawTextCatalog(g){
-  const box = document.getElementById('tgBox'); box.innerHTML='';
+/* 课文浏览主视图：左侧抽屉目录 + 右侧课文。unitName/idx 为 null/-1 时显示目录提示 */
+function drawTextLessonView(g, unitName, idx){
+  const box = document.getElementById('tgBox'); if(!box) return;
+  box.innerHTML='';
   const units = _lessonUnits(g);
-  if(!units.length){ box.innerHTML='<div class="note">该册课文待录入。</div>'; return; }
-  units.forEach((unit)=>{
-    const card = el('div','card mb');
-    card.innerHTML = '<div class="lr-title" style="margin-bottom:10px">📚 '+unit.u+'</div>';
-    const wrap = el('div','');
-    unit.lessons.forEach((ls, idx)=>{
-      const row = el('div','list-row');
-      row.innerHTML = '<div class="lr-ico" style="background:var(--brand-soft)">📖</div><div class="lr-main"><div class="lr-title">'+ls.title+'</div><div class="lr-sub">'+(ls.sentences||[]).length+' 句</div></div><div class="lr-arrow">›</div>';
-      row.onclick = ()=> drawLesson(g, unit.u, idx);
-      wrap.appendChild(row);
-    });
-    card.appendChild(wrap); box.appendChild(card);
-  });
-}
-function drawLesson(g, unitName, idx){
-  const box = document.getElementById('tgBox'); box.innerHTML='';
-  const units = _lessonUnits(g);
-  const unit = units.find(x=>x.u===unitName);
-  if(!unit) return;
-  const ls = unit.lessons[idx];
-  if(!ls) return;
-
+  // 工具栏
   const head = el('div','text-toolbar');
   head.innerHTML =
-    '<button class="btn btn-ghost btn-sm" id="tlBack">‹ 目录</button>'+
-    '<div class="text-title">'+ls.title+'</div>'+
-    '<button class="btn btn-accent btn-sm" id="tlRead">🔊 朗读全文</button>'+
+    '<button class="btn btn-ghost btn-sm" id="tlMenu">☰ 目录</button>'+
+    '<div class="text-title" id="tlTitle">课文点读</div>'+
     '<button class="btn btn-ghost btn-sm" id="tlPy">隐藏拼音</button>';
   box.appendChild(head);
-
+  // 抽屉容器
+  const drawer = el('div','drawer-mask'); drawer.id='tlDrawer'; drawer.style.display='none';
+  drawer.innerHTML = '<div class="drawer-panel" id="tlDrawerPanel"></div>';
+  box.appendChild(drawer);
+  // 课文区
   const pv = el('div','text-passage'); pv.id='tlPassage';
+  box.appendChild(pv);
+
+  let showingPy = true;
+  const togglePy = ()=>{ showingPy=!showingPy; pv.classList.toggle('hide-py',!showingPy); document.getElementById('tlPy').textContent= showingPy?'隐藏拼音':'显示拼音'; };
+  document.getElementById('tlPy').onclick = togglePy;
+  // 打开抽屉目录
+  document.getElementById('tlMenu').onclick = ()=>{ renderTextDrawer(g); drawer.style.display='flex'; };
+  drawer.onclick = (e)=>{ if(e.target===drawer) drawer.style.display='none'; };
+
+  if(unitName && idx>=0){
+    const unit = units.find(x=>x.u===unitName);
+    const ls = unit && unit.lessons[idx];
+    if(ls){ document.getElementById('tlTitle').textContent = ls.title; renderLessonSentences(pv, ls, showingPy); return; }
+  }
+  // 默认：提示打开目录
+  pv.innerHTML = '<div class="text-empty">☰ 点击左上角「目录」选择课文</div>';
+}
+function renderTextDrawer(g){
+  const panel = document.getElementById('tlDrawerPanel'); if(!panel) return;
+  const units = _lessonUnits(g);
+  let html = '<div class="drawer-head">'+g+' · 课文目录<button class="drawer-close" id="tlDrawerClose">×</button></div><div class="drawer-body">';
+  if(!units.length){ html += '<div class="note">该册课文待录入。</div>'; }
+  units.forEach((unit)=>{
+    html += '<div class="drawer-unit">'+unit.u+'</div>';
+    unit.lessons.forEach((ls, idx)=>{
+      html += '<div class="drawer-item" data-u="'+encodeURIComponent(unit.u)+'" data-i="'+idx+'">📖 '+ls.title+' <span class="drawer-sub">'+(ls.sentences||[]).length+'句</span></div>';
+    });
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+  document.getElementById('tlDrawerClose').onclick = ()=>{ document.getElementById('tlDrawer').style.display='none'; };
+  $all('.drawer-item', panel).forEach(it=>{
+    it.onclick = ()=>{
+      const u = decodeURIComponent(it.dataset.u);
+      drawTextLessonView(g, u, +it.dataset.i);
+      document.getElementById('tlDrawer').style.display='none';
+    };
+  });
+}
+function renderLessonSentences(pv, ls, showingPy){
+  pv.className = 'text-passage'+(showingPy?'':' hide-py');
+  pv.innerHTML='';
   (ls.sentences||[]).forEach((s, i)=>{
-    const btn = el('button','sentence-btn');
+    const btn = el('span','sentence-btn');  // 改为 inline span，句间不换行
     btn.dataset.i = i;
-    // 逐字 ruby 标注（拼音与汉字严格对齐）
     const chars = Array.from(s.h);
     const pys = (s.p||'').split(/\s+/).filter(Boolean);
     let rubyHtml = '';
     chars.forEach((ch, ci)=>{
-      if(/[\s，。、！？：“”""''（）()…—]/.test(ch)){
+      if(/[\s，。、！？：“”""''（）()…—；：]/.test(ch)){
         rubyHtml += '<span class="punct">'+ch+'</span>';
       }else{
         const py = pys[ci] || '';
         rubyHtml += '<ruby><span class="hz">'+ch+'</span><rt>'+(py||'&nbsp;')+'</rt></ruby>';
       }
     });
-    btn.innerHTML = '<span class="sentence-hanzi">'+rubyHtml+'</span><span class="sentence-spk">🔊</span>';
-    btn.onclick = ()=>{ speak(s.h); btn.classList.add('sentence-playing'); setTimeout(()=>btn.classList.remove('sentence-playing'), 600); };
+    btn.innerHTML = '<span class="sentence-hanzi">'+rubyHtml+'</span>';
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      speak(s.h);
+      $all('.sentence-btn.playing', pv).forEach(x=>x.classList.remove('playing'));
+      btn.classList.add('playing');
+      setTimeout(()=>btn.classList.remove('playing'), 700);
+    };
     pv.appendChild(btn);
   });
-  box.appendChild(pv);
-
-  // 交互
-  document.getElementById('tlBack').onclick = ()=> drawTextCatalog(g);
-  let showingPy = true;
-  document.getElementById('tlPy').onclick = (e)=>{
-    showingPy = !showingPy;
-    pv.classList.toggle('hide-py', !showingPy);
-    e.target.textContent = showingPy ? '隐藏拼音' : '显示拼音';
-  };
-  document.getElementById('tlRead').onclick = ()=>{
-    const seq = (ls.sentences||[]).map(s=>s.h);
-    if(seq.length) speakSeq(seq, 900);
-  };
 }
 
-/* —— 笔顺手写（沿用离线库 + 同步拼音）—— */
+/* —— 练字（笔顺动画 + 田字格描红 合并模块）—— */
 let _spWriter=null,_spChar='',_spCtx=null,_spCanvas=null,_spRedraw=null,_spCharList=[],_spIdx=0;
-function openSpell(){
+function openPractice(){
   const g = state.profile.grade;
   const pool = (TEXTBOOK[GM[g]||g]||[]).flatMap(u=>u.zi.map(z=>z));
   _spCharList = pool.length? pool : (TEXTBOOK['三上']||[]).flatMap(u=>u.zi);
+  if(!_spCharList.length){ openOverlay('练字', '<div class="empty"><div class="em-ico">✍️</div><div class="em-t">该册内容待录入</div></div>'); return; }
   const body =
-    '<div class="note mb12">选一个字：先看左侧动画演示笔顺，右侧田字格用手指或电子笔描红；下方显示该字拼音，点拼音可听读。</div>'+
+    '<div class="note mb12">练字：左侧看笔顺动画演示，右侧在田字格描红；下方拼音可点听。下方选字区可切换练习字。</div>'+
     '<div class="grade-pick" id="spGrade"></div>'+
     '<div class="card"><div class="sp-row">'+
       '<div class="sp-col"><div class="sp-label">笔顺演示</div><div id="spAnim"></div>'+
         '<div class="sp-py" id="spPy">—</div></div>'+
-      '<div class="sp-col"><div class="sp-label">手写练习</div><canvas id="spCanvas" class="sp-canvas" width="320" height="320"></canvas>'+
+      '<div class="sp-col"><div class="sp-label">描红练习</div><canvas id="spCanvas" class="sp-canvas" width="320" height="320"></canvas>'+
         '<div class="row" style="justify-content:center;margin-top:6px"><button class="btn btn-sm" id="spPlay">▶ 演示</button><button class="btn btn-sm ghost" id="spClear">清除</button></div></div>'+
     '</div></div>'+
     '<div class="grade-pick mt" id="spPick" style="max-height:230px;overflow:auto"></div>';
-  openOverlay('笔顺手写', body);
+  openOverlay('练字', body);
   const gp = document.getElementById('spGrade');
-  GRADES.forEach(gr=>{ const b=el('button', gr===g?'on':''); b.textContent=gr; b.onclick=()=>{ const p=(TEXTBOOK[GM[gr]||gr]||[]).flatMap(u=>u.zi); if(p.length){_spCharList=p;openSpell();} else toast('该册待录入'); }; gp.appendChild(b); });
+  GRADES.forEach(gr=>{ const b=el('button', gr===g?'on':''); b.textContent=gr; b.onclick=()=>{ const p=(TEXTBOOK[GM[gr]||gr]||[]).flatMap(u=>u.zi); if(p.length){_spCharList=p;openPractice();} else toast('该册待录入'); }; gp.appendChild(b); });
   const pk = document.getElementById('spPick');
   _spCharList.forEach((z,i)=>{ const b=el('button', i===0?'on':''); b.textContent=z.c; b.onclick=()=>{ $all('#spPick button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); loadSpell(z.c); }; pk.appendChild(b); });
-  // 手写画布
   initSpellCanvas();
   loadSpell(_spCharList[0].c);
   $('#spPlay').onclick=()=>{ if(_spWriter)_spWriter.animateCharacter(); };
@@ -4229,106 +4335,58 @@ function loadSpell(c){
   if(window.HanziWriter && !window.__hwFail){ init(); }
 }
 
-/* —— 听写（动态田字格 + 每字拼音）—— */
+/* —— 词语听写（合并「看拼音写汉字」）：展示拼音/读音，4选1选字 —— */
 let tx=null;
 function openTingxie(initialGrade){
   const startG = initialGrade || state.profile.grade;
   tx={ grade:startG, items:null, idx:0 };
   function loadAndRender(){
     const pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]);
-    if(!pool.length){ openOverlay('词语听写', gradeChipsHTML(tx.grade)+'<div class="empty"><div class="em-ico">📝</div><div class="em-t">'+tx.grade+' 听写词库待录入</div></div>'); bindChips(); return; }
+    if(!pool.length){ openOverlay('词语听写', '<div class="empty"><div class="em-ico">📝</div><div class="em-t">'+tx.grade+' 听写词库待录入</div></div>'); return; }
     tx.items=shuffle(pool).slice(0,10); tx.idx=0;
     renderTingxie();
   }
-  function bindChips(){
-    const box=$('#txGradeChips'); if(!box)return;
-    $all('.grade-chip',box).forEach(ch=>{ ch.onclick=()=>{ tx.grade=ch.dataset.g; loadAndRender(); }; });
-  }
-  tx._bindChips=bindChips;
   loadAndRender();
 }
 function renderTingxie(){
-  const z = tx.items[tx.idx];
-  const chars=[...z[0]]; const pys=(z[1]||'').trim().split(/\s+/);
+  const z = tx.items[tx.idx];           // [词, 拼音]
+  const answer = z[0];                  // 正确词
+  const py = z[1]||'';
+  const chars=[...answer];
+  // 取正确字的拼音首字作提示
+  const hintPy = (charPy(chars[0])||py.split(/\s+/)[0]||'');
   const body =
-    gradeChipsHTML(tx.grade).replace('id="gradeChips"','id="txGradeChips"')+
-    '<div class="note mb12">听写（'+tx.grade+'）第 '+(tx.idx+1)+'/'+tx.items.length+' 个词：点「播放读音」听词语，在田字格里写出每个字，再「显示答案」核对。</div>'+
-    '<div class="row" style="justify-content:center;margin-bottom:10px"><button class="btn btn-primary" id="txPlay">🔊 播放读音</button></div>'+
-    '<div class="tx-grid" id="txGrid"></div>'+
-    '<div class="row" style="justify-content:center;gap:10px;margin-top:10px">'+
-      '<button class="btn btn-sm ghost" id="txClear">清除重写</button>'+
-      '<button class="btn btn-sm" id="txShow">显示答案</button>'+
-      '<button class="btn btn-sm btn-accent" id="txNext">下一个 ›</button></div>'+
+    '<div class="quiz-bar"><i id="txBar" style="width:'+(tx.idx/tx.items.length*100)+'%"></i></div>'+
+    '<div class="note center" id="txScore">第 '+(tx.idx+1)+'/'+tx.items.length+' 个词</div>'+
+    '<div class="quiz-q"><div class="quiz-py" id="txPy">'+hintPy+'</div>'+
+      '<div class="quiz-hint">听读音 / 看拼音，选出正确的词</div></div>'+
+    '<button class="btn btn-primary btn-block mb12" id="txListen">🔊 听一听</button>'+
+    '<div class="quiz-opts" id="txOpts"></div>'+
     '<div id="txMsg" class="note center mt"></div>';
   openOverlay('词语听写', body);
-  tx._bindChips();
-  const grid=$('#txGrid');
-  chars.forEach((ch,i)=>{
-    const cell=el('div','tx-cell');
-    cell.innerHTML='<div class="tx-py">'+(pys[i]||'')+'</div><canvas class="tx-box" width="150" height="150" data-ch="'+ch+'"></canvas>';
-    grid.appendChild(cell);
-    bindWrite(cell.querySelector('.tx-box'), ch, ()=>{});
-  });
-  $('#txPlay').onclick=()=>{ speak(z[0],{spd:2}); };
-  $('#txClear').onclick=()=>{ $all('#txGrid .tx-box').forEach(b=>{ const c=b.getContext('2d'); c.clearRect(0,0,b.width,b.height); }); };
-  $('#txShow').onclick=()=>{
-    $all('#txGrid .tx-box').forEach(b=>{ const c=b.getContext('2d'); const W=b.width,H=b.height; c.clearRect(0,0,W,H);
-      c.fillStyle='#5B6CFF'; c.font='bold '+(W*0.55)+'px "PingFang SC","Microsoft YaHei",sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-      c.fillText(b.dataset.ch, W/2, H/2+W*0.02); });
-    // 错题归集
-    collectWrong({subject:'chinese',type:'tingxie',q:z[0],a:z[0],wrong:false});
-    $('#txMsg').innerHTML='词语：<b>'+z[0]+'</b> · '+z[1];
-    addXP(5);
-  };
-  $('#txNext').onclick=()=>{ tx.idx++; if(tx.idx>=tx.items.length){ tx=null; openOverlay('词语听写','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">听写完成！</div><div class="em-s">已记录练习，去「成长」复习易错词吧</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>'); } else renderTingxie(); };
+  $('#txListen').onclick=()=>{ speak(answer,{spd:2}); };
+  // 4选1：正确答案 + 3个干扰词（取同册其他词）
+  const others=(WORDBOOK[GM[tx.grade]||tx.grade]||[]).map(w=>w[0]).filter(w=>w!==answer);
+  const opts=new Set([answer]);
+  while(opts.size<4 && others.length){ const o=others[Math.floor(Math.random()*others.length)]; if(o!==answer)opts.add(o); }
+  const arr=shuffle([...opts]);
+  const box=$('#txOpts'); box.innerHTML='';
+  arr.forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
+    if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
+    if(o===answer){ b.classList.add('correct'); addXP(6); collectWrong({subject:'chinese',type:'tingxie',q:py,a:answer,wrong:false}); }
+    else { b.classList.add('wrong'); $all('#txOpts .qopt').forEach(x=>{if(x.textContent===answer)x.classList.add('correct');}); collectWrong({subject:'chinese',type:'tingxie',q:py,a:answer,wrong:true}); }
+    $all('#txOpts .qopt').forEach(x=>x.classList.add('dim'));
+    $('#txMsg').innerHTML='正确答案：<b>'+answer+'</b> · '+py;
+    setTimeout(next, 850);
+  }; box.appendChild(b); });
+  function next(){ tx.idx++; if(tx.idx>=tx.items.length){ tx=null; openOverlay('词语听写','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">听写完成！</div><div class="em-s">已记录练习，去「成长」复习易错词吧</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>'); } else renderTingxie(); }
 }
 
-/* —— 描红（可手写 + 大字 + 2列 + 每格读音 + 年级切换）—— */
+/* —— 年级 chips（通用）—— */
 function gradeChipsHTML(cur){
   return '<div class="grade-chips" id="gradeChips">'+
     Object.keys(GM).map(g=>'<div class="grade-chip'+(g===cur?' active':'')+'" data-g="'+g+'">'+g+'</div>').join('')+
     '</div>';
-}
-function openTrace(initialGrade){
-  let tg = initialGrade || state.profile.grade;
-  let tu = 0; // 当前单元索引
-  function renderTrace(){
-    const units=(TEXTBOOK[GM[tg]||tg]||[]);
-    if(!units.length){ openOverlay('描红练习', gradeChipsHTML(tg)+'<div class="empty"><div class="em-ico">🖌️</div><div class="em-t">'+tg+' 内容待录入</div></div>'); bindChips(); return; }
-    if(tu>=units.length) tu=0;
-    const unitChips = '<div class="grade-chips" id="unitChips" style="position:sticky;top:46px">'+units.map((u,i)=>'<div class="grade-chip'+(i===tu?' active':'')+'" data-i="'+i+'">'+(i+1)+'.'+u.u.replace(/·.*/,'').slice(0,6)+'</div>').join('')+'</div>';
-    const body=gradeChipsHTML(tg)+ unitChips +
-      '<div class="note mb12">大字描红（'+tg+'）：在浅色范字上用手指或电子笔描摹；每格下方「🔊 读音」可点听标准普通话。共 '+units[tu].zi.length+' 字，可上下滑动。</div>'+
-      '<div class="copybook" id="cbOut"></div>';
-    openOverlay('描红练习', body);
-    bindChips();
-    const box=$('#unitChips'); if(box) $all('.grade-chip',box).forEach(ch=>{ ch.onclick=()=>{ tu=+ch.dataset.i; renderTrace(); }; });
-    const out=$('#cbOut');
-    units[tu].zi.forEach(z=>{
-      const c=z.c;
-      const cell=el('div','mh-cell');
-      cell.innerHTML='<canvas class="mh-cv" width="260" height="260"></canvas><div class="mh-spk">🔊 读音</div>';
-      out.appendChild(cell);
-      const cv=cell.querySelector('.mh-cv');
-      drawTraceGuide(cv,c);
-      bindWrite(cv,c,()=>{});
-      cell.querySelector('.mh-spk').onclick=()=>speak(c);
-    });
-  }
-  function bindChips(){
-    const box=$('#gradeChips'); if(!box)return;
-    $all('.grade-chip',box).forEach(ch=>{ ch.onclick=()=>{ tg=ch.dataset.g; tu=0; renderTrace(); }; });
-  }
-  renderTrace();
-}
-function drawTraceGuide(cv,ch){
-  const W=cv.width,H=cv.height,c=cv.getContext('2d');
-  c.clearRect(0,0,W,H); c.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line'); c.lineWidth=1.5; c.strokeRect(12,12,W-24,H-24);
-  c.beginPath();c.moveTo(W/2,12);c.lineTo(W/2,H-12);c.moveTo(12,H/2);c.lineTo(W-12,H/2);c.stroke();
-  c.setLineDash([6,6]);c.beginPath();c.moveTo(12,12);c.lineTo(W-12,H-12);c.moveTo(W-12,12);c.lineTo(12,H-12);c.stroke();c.setLineDash([]);
-  c.fillStyle=getComputedStyle(document.body).getPropertyValue('--faint'); c.globalAlpha=.45;
-  c.font='bold '+(W*0.5)+'px "PingFang SC","Microsoft YaHei",sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-  c.fillText(ch,W/2,H/2+W*0.02); c.globalAlpha=1;
 }
 
 /* —— 通用手写绑定（田字格/描红）—— */
