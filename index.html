@@ -588,6 +588,20 @@ img,svg{display:block}
 .poem-body{text-align:center}
 .poem-line{margin:14px 0;line-height:2.2}
 .poem-line .sentence-btn{margin:0 8px}
+/* 课文三种朗读模式：圈读（逐字高亮）/ 连读（全文连续）/ 跟读（逐句引导） */
+.sentence-hanzi .hz.circling{ background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent) 38%,transparent) 0 62%,transparent 63%); border-radius:50%; box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 60%,transparent); }
+.sentence-btn.follow{ background:color-mix(in srgb,var(--accent) 30%,transparent); box-shadow:0 0 0 2px var(--accent); border-radius:6px }
+.btn.reading{ background:var(--brand)!important; color:#fff!important; border-color:var(--brand)!important }
+.follow-bar{ display:flex; align-items:center; gap:8px; padding:9px 13px; margin:0 0 14px; background:color-mix(in srgb,var(--accent) 16%,transparent); border:1.5px solid color-mix(in srgb,var(--accent) 42%,transparent); border-radius:11px; color:var(--accent); font-weight:800; font-size:14px }
+.follow-bar .fb-ico{ font-size:17px; animation:pulseMic 1s ease-in-out infinite }
+@keyframes pulseMic{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.22)} }
+/* 词语表：逐字拼音（ruby 对齐，与课文点读一致） */
+.word-ruby{ display:inline-flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; line-height:1; }
+.word-ruby ruby{ display:inline-flex; flex-direction:column; align-items:center; line-height:1; margin:0 1px; vertical-align:top }
+.word-ruby ruby .hz{ font-size:15px; line-height:1.15 }
+.word-ruby ruby rt{ font-size:9px; color:var(--brand); line-height:1.1; font-weight:600; margin-bottom:1px; user-select:none }
+.zd-word-btn.word-ruby-btn{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; padding:6px 10px; line-height:1.1 }
+.zd-word-btn.word-ruby-btn .sentence-hanzi{ margin:0 }
 /* —— 抽屉式目录（通用）—— */
 .drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:flex;justify-content:flex-start;align-items:stretch}
 .drawer-panel{width:78%;max-width:340px;height:100%;background:var(--surface);box-shadow:4px 0 24px rgba(0,0,0,.18);display:flex;flex-direction:column;animation:drawerIn .22s ease}
@@ -6913,24 +6927,25 @@ function renderZidianDrawer(g){
 }
 function renderZidianTable(view, u){
   view.innerHTML='';
-  // 词语表（可点读）
+  // 词语表（逐字拼音 + 可点读）：采用与课文点读一致的 ruby 对齐，拼音紧贴汉字
   if(u.words && u.words.length){
     const wsec = el('div','zd-section');
-    wsec.innerHTML = '<div class="zd-sec-title">词语表（点击朗读）</div>';
+    wsec.innerHTML = '<div class="zd-sec-title">词语表（拼音对照 · 点击朗读）</div>';
     const wgrid = el('div','zd-word-grid');
     u.words.forEach(w=>{
-      const b=el('button','zd-word-btn'); b.textContent=w.c; b.title=w.py||'';
-      b.onclick=()=>{ speak(w.c); b.classList.add('zd-word-hit'); setTimeout(()=>b.classList.remove('zd-word-hit'),260); };
+      const b=el('button','zd-word-btn word-ruby-btn'); b.title=w.c+' '+(w.py||'');
+      b.innerHTML = wordRuby(w.c, w.py);
+      b.onclick=(e)=>{ e.stopPropagation(); speak(w.c); b.classList.add('zd-word-hit'); setTimeout(()=>b.classList.remove('zd-word-hit'),260); };
       wgrid.appendChild(b);
     });
     wsec.appendChild(wgrid); view.appendChild(wsec);
   }
-  // 识字表（点击字弹笔顺浮窗）
+  // 识字表（点击字弹笔顺浮窗）：字在上、拼音在下，单字本身已对齐，仅做防御性去空格
   const csec = el('div','zd-section');
   csec.innerHTML = '<div class="zd-sec-title">识字表（点击字看笔顺）</div>';
   const cgrid = el('div','zd-char-grid');
   u.chars.forEach(ch=>{
-    const b=el('button','zd-char-btn'); b.innerHTML='<span class="zd-c">'+ch.c+'</span><span class="zd-py">'+ch.py+'</span>';
+    const b=el('button','zd-char-btn'); b.innerHTML='<span class="zd-c">'+ch.c+'</span><span class="zd-py">'+(ch.py||'').trim()+'</span>';
     b.onclick=()=>showStrokePopup(ch.c);
     cgrid.appendChild(b);
   });
@@ -6971,6 +6986,8 @@ function makeSelect(cur, options, onChg){
 
 /* —— 课文点读（年级目录 → 全文 → 逐句点读 + 朗读全文 + 拼音切换）—— */
 let _textGrade = state.profile.grade;
+let _curLesson = null;       // 当前打开的课文（供三种朗读模式取句子）
+let _readMode = null;        // 'circle' | 'link' | 'follow' | null
 function _lessonData(g){ const k = GM[g]||g; return LESSON[k] || {}; }
 function _lessonUnits(g){
   // 返回 [{u:单元名, lessons:[...]}]，仅包含有课文的单元，按 TEXTBOOK 顺序排列
@@ -6992,6 +7009,7 @@ function openText(){
 function drawTextLessonView(g, unitName, idx){
   const box = document.getElementById('tgBox'); if(!box) return;
   box.innerHTML='';
+  _stopAllAudio(); _readMode=null; _curLesson=null;   // 切换课文时重置朗读状态
   const units = _lessonUnits(g);
   let curLs = null;
   // 工具栏
@@ -6999,9 +7017,16 @@ function drawTextLessonView(g, unitName, idx){
   head.innerHTML =
     '<button class="btn btn-ghost btn-sm" id="tlMenu">☰ 目录</button>'+
     '<div class="text-title" id="tlTitle">课文点读</div>'+
-    '<button class="btn btn-ghost btn-sm" id="tlReadAll">🔊 全文朗读</button>'+
+    '<button class="btn btn-ghost btn-sm" id="tlCircle" data-mode="circle">🔵 圈读</button>'+
+    '<button class="btn btn-ghost btn-sm" id="tlLink" data-mode="link">🔗 连读</button>'+
+    '<button class="btn btn-ghost btn-sm" id="tlFollow" data-mode="follow">🎤 跟读</button>'+
+    '<button class="btn btn-ghost btn-sm" id="tlStop" style="display:none">⏹ 停止</button>'+
     '<button class="btn btn-ghost btn-sm" id="tlPy">隐藏拼音</button>';
   box.appendChild(head);
+  // 跟读提示条
+  const fbar = el('div','follow-bar'); fbar.id='tlFollowBar'; fbar.style.display='none';
+  fbar.innerHTML = '<span class="fb-ico">🎤</span><span id="tlFollowTxt">请跟读</span>';
+  box.appendChild(fbar);
   // 年级选择行
   const gwrap = el('div','grade-pick'); gwrap.id='tlGrade';
   GRADES.forEach(gr=>{ const b=el('button', gr===g?'on':''); b.textContent=gr; b.onclick=()=>{ _textGrade=gr; drawTextLessonView(gr, null, -1); }; gwrap.appendChild(b); });
@@ -7017,11 +7042,11 @@ function drawTextLessonView(g, unitName, idx){
   let showingPy = true;
   const togglePy = ()=>{ showingPy=!showingPy; pv.classList.toggle('hide-py',!showingPy); document.getElementById('tlPy').textContent= showingPy?'隐藏拼音':'显示拼音'; };
   document.getElementById('tlPy').onclick = togglePy;
-  // 全文朗读：依次读全文句子，重复点击会先停掉上一次
-  document.getElementById('tlReadAll').onclick = ()=>{
-    if(curLs && (curLs.sentences||[]).length){ speakSeq(curLs.sentences.map(s=>s.tts||s.h), 450); }
-    else toast('请先从目录选择课文');
-  };
+  // 三种朗读模式
+  document.getElementById('tlCircle').onclick = readCircle;
+  document.getElementById('tlLink').onclick   = readLink;
+  document.getElementById('tlFollow').onclick = readFollow;
+  document.getElementById('tlStop').onclick   = stopRead;
   // 打开抽屉目录
   document.getElementById('tlMenu').onclick = ()=>{ renderTextDrawer(g); drawer.style.display='flex'; };
   drawer.onclick = (e)=>{ if(e.target===drawer) drawer.style.display='none'; };
@@ -7029,10 +7054,70 @@ function drawTextLessonView(g, unitName, idx){
   if(unitName && idx>=0){
     const unit = units.find(x=>x.u===unitName);
     const ls = unit && unit.lessons[idx];
-    if(ls){ curLs = ls; document.getElementById('tlTitle').textContent = ls.title; renderLessonSentences(pv, ls, showingPy); return; }
+    if(ls){ curLs = ls; _curLesson = ls; document.getElementById('tlTitle').textContent = ls.title; renderLessonSentences(pv, ls, showingPy); return; }
   }
   // 默认：提示打开目录
   pv.innerHTML = '<div class="text-empty">☰ 点击左上角「目录」选择课文</div>';
+}
+/* —— 课文三种朗读模式 —— */
+function _lessonForRead(){
+  if(!_curLesson || !(_curLesson.sentences||[]).length){ toast('请先从目录选择课文'); return null; }
+  return _curLesson;
+}
+function _clearReadHL(){
+  const pv = document.getElementById('tlPassage'); if(!pv) return;
+  $all('.hz.circling', pv).forEach(x=>x.classList.remove('circling'));
+  $all('.sentence-btn.follow', pv).forEach(x=>x.classList.remove('follow'));
+}
+function _setReadBtns(){
+  const on = !!_readMode;
+  const stop = document.getElementById('tlStop'); if(stop) stop.style.display = on ? '' : 'none';
+  $all('#tlCircle,#tlLink,#tlFollow').forEach(b=>{ if(b) b.classList.toggle('reading', on && b.dataset.mode===_readMode); });
+}
+function stopRead(){ _stopAllAudio(); _readMode=null; _clearReadHL(); const fb=document.getElementById('tlFollowBar'); if(fb) fb.style.display='none'; _setReadBtns(); }
+/* 圈读：逐字高亮（圈）跟随朗读，培养指读习惯 */
+function readCircle(){
+  const ls = _lessonForRead(); if(!ls) return;
+  stopRead(); _readMode='circle'; _setReadBtns();
+  const pv = document.getElementById('tlPassage');
+  const hzs = $all('.sentence-hanzi .hz', pv);
+  let i=0; const gen=_seqGen, stepMs=520;
+  (function step(){
+    if(gen!==_seqGen) return;
+    if(i>=hzs.length){ _readMode=null; _clearReadHL(); _setReadBtns(); return; }
+    const hz = hzs[i++];
+    hz.classList.add('circling');
+    speak(hz.textContent);
+    setTimeout(()=>{ if(gen===_seqGen) hz.classList.remove('circling'); }, stepMs-70);
+    setTimeout(step, stepMs);
+  })();
+}
+/* 连读：全文连续朗读（原「全文朗读」） */
+function readLink(){
+  const ls = _lessonForRead(); if(!ls) return;
+  stopRead(); _readMode='link'; _setReadBtns();
+  speakSeq(ls.sentences.map(s=>s.tts||s.h), 450);
+}
+/* 跟读：逐句播放→高亮→提示跟读→下一句（引导式，无需麦克风） */
+function readFollow(){
+  const ls = _lessonForRead(); if(!ls) return;
+  stopRead(); _readMode='follow'; _setReadBtns();
+  const pv = document.getElementById('tlPassage');
+  const btns = $all('.sentence-btn', pv);
+  const fb = document.getElementById('tlFollowBar'); const ftxt = document.getElementById('tlFollowTxt');
+  let i=0; const gen=_seqGen;
+  if(fb) fb.style.display='';
+  (function step(){
+    if(gen!==_seqGen) return;
+    if(i>=btns.length){ _readMode=null; if(fb) fb.style.display='none'; _clearReadHL(); _setReadBtns(); return; }
+    const btn = btns[i++];
+    btn.classList.add('follow');
+    speak(btn.__tts || btn.textContent);
+    const dur = Math.max(1500, btn.textContent.replace(/\s/g,'').length*320 + 800);
+    setTimeout(()=>{ if(gen===_seqGen) btn.classList.remove('follow'); }, dur);
+    if(ftxt) ftxt.textContent = '听一听，然后跟读 （'+i+'/'+btns.length+'）';
+    setTimeout(step, dur + 2800);   // 听 + 留时间跟读
+  })();
 }
 function renderTextDrawer(g){
   const panel = document.getElementById('tlDrawerPanel'); if(!panel) return;
@@ -7055,6 +7140,27 @@ function renderTextDrawer(g){
       document.getElementById('tlDrawer').style.display='none';
     };
   });
+}
+/* 词语表逐字拼音：与 makeSentenceBtn 同一套「相邻 token 循环清洗 + 标点紧贴」对齐逻辑，
+   让词语表与课文点读保持一致的拼音-汉字对齐质量（词语内不含标点，但仍做防御清洗）。 */
+function wordRuby(c, py){
+  const rawH = (c||'').replace(/\s+/g, '');
+  const chars = Array.from(rawH);
+  let rawP = (py||'')
+    .replace(/\s+([，。！？；：、”“）（…—《》·〈〉"'\-.,;:!?()\[\]{}<>\/\\\\_+=\*&@#\$%\^`~｜])/g, '$1')
+    .replace(/([，。！？；：、”“）（…—《》·〈〉"'\-.,;:!?()\[\]{}<>\/\\\\_+=\*&@#\$%\^`~｜])\s+/g, '$1')
+    .replace(/ {2,}/g, ' ');
+  const pys = rawP.split(/\s+/).filter(Boolean);
+  let rubyHtml = '', pi = 0;
+  chars.forEach((ch)=>{
+    if(/[\s，。、！？：“”""''（）()…—；：《》·〈〉]/.test(ch)){
+      rubyHtml += '<span class="punct">'+ch+'</span>';
+    }else{
+      const p = pys[pi++] || '';
+      rubyHtml += '<ruby><rt>'+(p||'&nbsp;')+'</rt><span class="hz">'+ch+'</span></ruby>';
+    }
+  });
+  return '<span class="sentence-hanzi word-ruby">'+rubyHtml+'</span>';
 }
 /* 单句可点读按钮：拼音(rt)在汉字(hz)上方；拼音与汉字按"汉字序"逐字对齐（标点不占拼音位） */
 function makeSentenceBtn(s){
@@ -7082,6 +7188,7 @@ function makeSentenceBtn(s){
     }
   });
   btn.innerHTML = '<span class="sentence-hanzi">'+rubyHtml+'</span>';
+  btn.__tts = s.tts||s.h;   // 供「跟读」模式按句取音
   btn.onclick = (e)=>{
     e.stopPropagation();
     speak(s.tts||s.h);   /* tts 为多音字同音替换版（如 长zhǎng→掌），读音正确且不影响显示 */
