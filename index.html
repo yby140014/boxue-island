@@ -588,6 +588,10 @@ img,svg{display:block}
 .poem-body{text-align:center}
 .poem-line{margin:14px 0;line-height:2.2}
 .poem-line .sentence-btn{margin:0 8px}
+.text-lesson-title{font-size:22px;font-weight:800;color:var(--ink);text-align:center;margin:4px 0 14px}
+.is-tablet .text-lesson-title{font-size:26px}
+.poem-name{font-size:20px;font-weight:800;color:var(--ink);text-align:center;letter-spacing:1px;margin:18px 0 2px}
+.is-tablet .poem-name{font-size:24px}
 /* 课文三种朗读模式：圈读（逐字高亮）/ 连读（全文连续）/ 跟读（逐句引导） */
 .sentence-hanzi .hz.circling{ background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent) 38%,transparent) 0 62%,transparent 63%); border-radius:50%; box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 60%,transparent); }
 .sentence-btn.follow{ background:color-mix(in srgb,var(--accent) 30%,transparent); box-shadow:0 0 0 2px var(--accent); border-radius:6px }
@@ -7027,14 +7031,17 @@ function drawTextLessonView(g, unitName, idx){
   const fbar = el('div','follow-bar'); fbar.id='tlFollowBar'; fbar.style.display='none';
   fbar.innerHTML = '<span class="fb-ico">🎤</span><span id="tlFollowTxt">请跟读</span>';
   box.appendChild(fbar);
-  // 年级选择行
+  // 年级选择行（目录的一部分，置于课文题目上方）
   const gwrap = el('div','grade-pick'); gwrap.id='tlGrade';
   GRADES.forEach(gr=>{ const b=el('button', gr===g?'on':''); b.textContent=gr; b.onclick=()=>{ _textGrade=gr; drawTextLessonView(gr, null, -1); }; gwrap.appendChild(b); });
   box.appendChild(gwrap);
-  // 抽屉容器
+  // 抽屉容器（目录抽屉，点 ☰ 目录 弹出）
   const drawer = el('div','drawer-mask'); drawer.id='tlDrawer'; drawer.style.display='none';
   drawer.innerHTML = '<div class="drawer-panel" id="tlDrawerPanel"></div>';
   box.appendChild(drawer);
+  // 课文题目（课文的一部分，显示在年级选择下方）
+  const ltitle = el('div','text-lesson-title'); ltitle.id='tlLessonTitle'; ltitle.style.display='none';
+  box.appendChild(ltitle);
   // 课文区
   const pv = el('div','text-passage'); pv.id='tlPassage';
   box.appendChild(pv);
@@ -7054,9 +7061,15 @@ function drawTextLessonView(g, unitName, idx){
   if(unitName && idx>=0){
     const unit = units.find(x=>x.u===unitName);
     const ls = unit && unit.lessons[idx];
-    if(ls){ curLs = ls; _curLesson = ls; document.getElementById('tlTitle').textContent = ls.title; renderLessonSentences(pv, ls, showingPy); return; }
+    if(ls){
+      curLs = ls; _curLesson = ls;
+      const lt = document.getElementById('tlLessonTitle');   // 课文题目显示在年级选择下方
+      lt.textContent = ls.title; lt.style.display='';
+      renderLessonSentences(pv, ls, showingPy); return;
+    }
   }
-  // 默认：提示打开目录
+  // 默认：提示打开目录（隐藏课文题目）
+  const lt0 = document.getElementById('tlLessonTitle'); if(lt0) lt0.style.display='none';
   pv.innerHTML = '<div class="text-empty">☰ 点击左上角「目录」选择课文</div>';
 }
 /* —— 课文三种朗读模式 —— */
@@ -7209,10 +7222,27 @@ function renderLessonSentences(pv, ls, showingPy){
   const sents = ls.sentences||[];
   if(ls.poem){
     pv.classList.add('poem-body');
-    for(let i=0;i<sents.length;i+=2){
-      const line = el('div','poem-line');
-      sents.slice(i,i+2).forEach(s=>{ line.appendChild(makeSentenceBtn(s)); });
-      pv.appendChild(line);
+    // 古诗二首/寓言二则 等多首合课：按 {br:1} 分段；每段首句为「诗名/篇名」（无句末标点且较短），单独成行
+    const groups = [[]];
+    sents.forEach(s=>{ if(s.br){ if(groups[groups.length-1].length) groups.push([]); } else groups[groups.length-1].push(s); });
+    const isNameLine = (h)=>{ const t=h||''; return t.length>0 && t.length<=8 && !/[，。！？；：、！？\s]$/.test(t); };
+    const isSet = groups.length>1 && groups.every(g=>g.length>1 && isNameLine(g[0].h));
+    if(isSet){
+      groups.forEach(g=>{
+        const nameEl = el('div','poem-name'); nameEl.textContent = g[0].h; pv.appendChild(nameEl);
+        const lines = g.slice(1);
+        for(let i=0;i<lines.length;i+=2){
+          const line = el('div','poem-line');
+          lines.slice(i,i+2).forEach(s=>{ line.appendChild(makeSentenceBtn(s)); });
+          pv.appendChild(line);
+        }
+      });
+    } else {
+      for(let i=0;i<sents.length;i+=2){
+        const line = el('div','poem-line');
+        sents.slice(i,i+2).forEach(s=>{ line.appendChild(makeSentenceBtn(s)); });
+        pv.appendChild(line);
+      }
     }
     return;
   }
