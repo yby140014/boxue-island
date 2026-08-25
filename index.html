@@ -572,7 +572,8 @@ img,svg{display:block}
 .sentence-hanzi ruby{display:inline-flex;flex-direction:column;align-items:center;line-height:1;margin:0 1px;vertical-align:top}
 .sentence-hanzi ruby .hz{font-size:21px;line-height:1.15}
 .sentence-hanzi ruby rt{font-size:11px;color:var(--brand);line-height:1.1;font-weight:600;letter-spacing:0;margin-bottom:2px;user-select:none}
-.sentence-hanzi .punct{display:inline-block;margin:0 1px}
+.sentence-hanzi .punct{display:inline;margin:0;padding:0;line-height:inherit}
+.sentence-hanzi .hz.digit{font-size:18px;letter-spacing:0;color:var(--ink);opacity:.85}
 .is-tablet .sentence-hanzi ruby .hz{font-size:25px}
 .is-tablet .sentence-hanzi ruby rt{font-size:13px}
 /* 隐藏拼音 */
@@ -4714,7 +4715,7 @@ const LESSON = {
         {h:'指明了中国革命胜利的道路。', p:'zhǐ míng le zhōng guó gé mìng shèng lì de dào lù。'}
       ]},
       {title:'朱德的扁担', sentences:[
-        {h:'1928年，', p:'1928nián，'},
+        {h:'1928年，', p:'nián，'},
         {h:'朱德同志带领队伍到井冈山，', p:'zhū dé tóng zhì dài lǐng duì wu dào jǐng gāng shān，'},
         {h:'跟毛泽东同志会师了。', p:'gēn máo zé dōng tóng zhì huì shī le。'},
         {h:'红军在山上，', p:'hóng jūn zài shān shàng，'},
@@ -4751,7 +4752,7 @@ const LESSON = {
         {h:'火红火红的凤凰花开了，', p:'huǒ hóng huǒ hóng de fèng huáng huā kāi le，'},
         {h:'傣族人民一年一度的泼水节又到了。', p:'dǎi zú rén mín yì nián yí dù de pō shuǐ jié yòu dào le。'},
         {br:1},
-        {h:'1961年的泼水节，', p:'1961nián de pō shuǐ jié，'},
+        {h:'1961年的泼水节，', p:'nián de pō shuǐ jié，'},
         {h:'傣族人民特别高兴，', p:'dǎi zú rén mín tè bié gāo xìng，'},
         {h:'因为敬爱的周恩来总理和他们一起过泼水节。', p:'yīn wèi jìng ài de zhōu ēn lái zǒng lǐ hé tā men yì qǐ guò pō shuǐ jié。'},
         {br:1},
@@ -4791,12 +4792,12 @@ const LESSON = {
         {h:'是那么开心！', p:'shì nà me kāi xīn！'},
         {br:1},
         {h:'多么幸福哇，', p:'duō me xìng fú wā，'},
-        {h:'1961年的泼水节！', p:'1961nián de pō shuǐ jié！'},
+        {h:'1961年的泼水节！', p:'nián de pō shuǐ jié！'},
         {h:'多么令人难忘啊，', p:'duō me lìng rén nán wàng a，'},
-        {h:'1961年的泼水节！', p:'1961nián de pō shuǐ jié！'}
+        {h:'1961年的泼水节！', p:'nián de pō shuǐ jié！'}
       ]},
       {title:'刘胡兰', sentences:[
-        {h:'1947年1月12日，', p:'1947nián1yuè12rì，'},
+        {h:'1947年1月12日，', p:'nián yuè rì，'},
         {h:'天阴沉沉的，', p:'tiān yīn chén chén de，'},
         {h:'国民党反动派包围了云周西村。', p:'guó mín dǎng fǎn dòng pài bāo wéi le yún zhōu xī cūn。'},
         {h:'由于叛徒的出卖，', p:'yóu yú pàn tú de chū mài，'},
@@ -5187,14 +5188,14 @@ const LESSON = {
         {h:'这是多么美好的礼物啊！”', p:'zhè shì duō me měi hǎo de lǐ wù a！”'}
       ]},
       {title:'邓小平爷爷植树', sentences:[
-        {h:'1987年4月5日，', p:'1987nián4yuè5rì，'},
+        {h:'1987年4月5日，', p:'nián yuè rì，'},
         {h:'是个令人难忘的日子。', p:'shì gè lìng rén nán wàng de rì zi。'},
         {br:1},
         {h:'这一天，', p:'zhè yì tiān，'},
         {h:'碧空如洗，', p:'bì kōng rú xǐ，'},
         {h:'万里无云。', p:'wàn lǐ wú yún。'},
         {h:'在北京天坛公园植树的人群里，', p:'zài běi jīng tiān tán gōng yuán zhí shù de rén qún lǐ，'},
-        {h:'83岁高龄的邓小平爷爷格外引人注目。', p:'83suì gāo líng de dèng xiǎo píng yé ye gé wài yǐn rén zhù mù。'},
+        {h:'83岁高龄的邓小平爷爷格外引人注目。', p:'suì gāo líng de dèng xiǎo píng yé ye gé wài yǐn rén zhù mù。'},
         {h:'只见他手握铁锹，', p:'zhǐ jiàn tā shǒu wò tiě qiāo，'},
         {h:'兴致勃勃地挖着树坑，', p:'xìng zhì bó bó dì wā zhe shù kēng，'},
         {h:'额头已经布满汗珠，', p:'é tóu yǐ jīng bù mǎn hàn zhū，'},
@@ -7168,6 +7169,8 @@ function wordRuby(c, py){
   chars.forEach((ch)=>{
     if(/[\s，。、！？：“”""''（）()…—；：《》·〈〉]/.test(ch)){
       rubyHtml += '<span class="punct">'+ch+'</span>';
+    }else if(/[0-9]/.test(ch)){
+      rubyHtml += '<span class="hz digit">'+ch+'</span>';
     }else{
       const p = pys[pi++] || '';
       rubyHtml += '<ruby><rt>'+(p||'&nbsp;')+'</rt><span class="hz">'+ch+'</span></ruby>';
@@ -7195,6 +7198,9 @@ function makeSentenceBtn(s){
   chars.forEach((ch)=>{
     if(/[\s，。、！？：“”""''（）()…—；：《》·〈〉]/.test(ch)){
       rubyHtml += '<span class="punct">'+ch+'</span>';
+    }else if(/[0-9]/.test(ch)){
+      /* 数字/年份不显示拼音，直接渲染为纯文本 */
+      rubyHtml += '<span class="hz digit">'+ch+'</span>';
     }else{
       const py = pys[pi++] || '';
       rubyHtml += '<ruby><rt>'+(py||'&nbsp;')+'</rt><span class="hz">'+ch+'</span></ruby>';
