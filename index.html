@@ -6665,7 +6665,9 @@ function showScreen(name){
 $all('.tab').forEach(t=> t.onclick = ()=> showScreen(t.dataset.screen));
 
 /* 子视图（原生感滑入） */
+let _ovCloseTimer = null;
 function openOverlay(title, bodyHtml, actHtml){
+  if(_ovCloseTimer){ clearTimeout(_ovCloseTimer); _ovCloseTimer = null; }
   const ov = document.getElementById('overlay');
   ov.innerHTML = '<div class="ov-head"><div class="ov-back" id="ovBack">‹</div><div class="ov-title">'+title+'</div>'+
     (actHtml?'<div class="ov-act" id="ovAct">'+actHtml+'</div>':'<div></div>')+'</div><div class="ov-body" id="ovBody">'+bodyHtml+'</div>';
@@ -6673,7 +6675,7 @@ function openOverlay(title, bodyHtml, actHtml){
   document.getElementById('ovBack').onclick = closeOverlay;
   return ov;
 }
-function closeOverlay(){ const ov=document.getElementById('overlay'); ov.classList.remove('open'); setTimeout(()=>{ov.innerHTML='';},320); }
+function closeOverlay(){ const ov=document.getElementById('overlay'); ov.classList.remove('open'); if(_ovCloseTimer) clearTimeout(_ovCloseTimer); _ovCloseTimer = setTimeout(()=>{ ov.innerHTML=''; _ovCloseTimer=null; },320); }
 
 /* ============ 顶部信息 ============ */
 function syncHeader(){
@@ -6846,19 +6848,17 @@ function renderMath(){
       '<div class="hero-num">北师大版 · '+g+'</div>'+
       '<div class="hero-cap">口算范围：'+d.ops.map(o=>opName[o]).join('、')+' · 上限 '+d.max+'</div></div></div></div>'+
     '<div class="section-title">先学后练 <span class="st-sub">知识点演示</span></div>'+
-    '<div class="mod-grid">'+
-      modMath('📚','数学知识点','长度/质量/时间·图形·应用题','var(--brand-soft)','#5B6CFF',openMathTeach)+
-    '</div>'+
+    '<div class="mod-grid" id="mgTeach"></div>'+
     '<div class="section-title">数学模块 <span class="st-sub">闯关练习</span></div>'+
-    '<div class="mod-grid">'+
-      modMath('🔢','口算挑战','计时心算·错题归集','var(--brand-soft)','#5B6CFF',openSuan)+
-      modMath('📏','单位换算','km/m/dm/cm/mm·t/kg/g','var(--accent-soft)','#FF8A3D',openConvert)+
-      modMath('🔷','图形认知','周长公式·图形辨认','var(--success-soft)','#1FB874',openShape)+
-      modMath('🧩','应用题闯关','分步提示·理清思路','var(--brand-soft)','#8B5CF6',openWordProb)+
-    '</div>';
-  $all('.mod', s).forEach(card=>{ card.onclick = card._fn; });
+    '<div class="mod-grid" id="mgPlay"></div>';
+  document.getElementById('mgTeach').appendChild(modMath('📚','数学知识点','长度/质量/时间·图形·应用题','var(--brand-soft)','#5B6CFF',openMathTeach));
+  const mg = document.getElementById('mgPlay');
+  mg.appendChild(modMath('🔢','口算挑战','计时心算·错题归集','var(--brand-soft)','#5B6CFF',openSuan));
+  mg.appendChild(modMath('📏','单位换算','km/m/dm/cm/mm·t/kg/g','var(--accent-soft)','#FF8A3D',openConvert));
+  mg.appendChild(modMath('🔷','图形认知','周长公式·图形辨认','var(--success-soft)','#1FB874',openShape));
+  mg.appendChild(modMath('🧩','应用题闯关','分步提示·理清思路','var(--brand-soft)','#8B5CF6',openWordProb));
 }
-function modMath(ico,t,s,bg,fg,fn){ const e=el('div','mod'); e._fn=fn; e.innerHTML='<div class="mod-ico" style="background:'+bg+';color:'+fg+'">'+ico+'</div><div class="mod-title">'+t+'</div><div class="mod-sub">'+s+'</div>'; return e; }
+function modMath(ico,t,s,bg,fg,fn){ const e=el('div','mod'); e._fn=fn; e.onclick=fn; e.innerHTML='<div class="mod-ico" style="background:'+bg+';color:'+fg+'">'+ico+'</div><div class="mod-title">'+t+'</div><div class="mod-sub">'+s+'</div>'; return e; }
 
 /* —— 生字表（下拉目录 + 生字表，词语可点读） —— */
 let zidianGrade = state.profile.grade;
@@ -7338,8 +7338,17 @@ function openTingxie(initialGrade){
   const startG = initialGrade || state.profile.grade;
   tx={ grade:startG, items:null, idx:0 };
   function loadAndRender(){
-    const pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]);
-    if(!pool.length){ openOverlay('词语听写', '<div class="empty"><div class="em-ico">📝</div><div class="em-t">'+tx.grade+' 听写词库待录入</div></div>'); return; }
+    let pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]);
+    // 兜底：若词库为空，用本册生字的词语(wd)现场组词，避免「待录入」卡死
+    if(!pool.length){
+      const chars=(TEXTBOOK[GM[tx.grade]||tx.grade]||[]).flatMap(u=>u.zi);
+      const gen=[];
+      chars.forEach(z=>{ (z.wd||'').split('、').forEach(w=>{ if(w && w!==z.c && w.length<=4 && !/[，。、]/.test(w)) gen.push([w, '' ]); }); });
+      if(gen.length) pool=dedupeWords(gen);
+    }
+    if(!pool.length){ openOverlay('词语听写', '<div class="empty"><div class="em-ico">📝</div><div class="em-t">'+tx.grade+' 暂无可听写词语</div></div>'); return; }
+    // 补全拼音（兜底词可能无拼音）
+    pool = pool.map(w=> w[1] ? w : [w[0], wordPy(w[0])]);
     tx.items=shuffle(pool).slice(0,10); tx.idx=0;
     renderTingxie();
   }
@@ -7512,10 +7521,95 @@ function startUnitQuiz(u,title){
 
 /* ============ 数学（知识点演示 + 闯关）============ */
 function mathDiff(g){ if(g==='一上'||g==='一下')return {max:20,ops:['+','-']}; if(g==='二上'||g==='二下')return {max:100,ops:['+','-','×']}; return {max:100,ops:['+','-','×','÷']}; }
+/* 年级大小比较：a 是否 ≥ b（一上最小，三下最大） */
+function gradeGE(a,b){ const order=['一上','一下','二上','二下','三上','三下']; return (order.indexOf(a)>=0?order.indexOf(a):0) >= (order.indexOf(b)>=0?order.indexOf(b):0); }
 
-/* 北师大版三年级（上）核心知识点演示 */
-function openMathTeach(){
-  const kp = [
+/* 各年级北师大版知识点映射（详见 boxue-math skill · knowledge_points.md）。
+   缺失年级回退三上。 */
+const MATH_KP = {
+  '一上':[
+    {t:'20以内加减', c:'➕', items:[
+      ['进位加·凑十法','9+几 → 拆小数凑十，如 9+5=9+1+4=14'],
+      ['退位减·破十法','15-9 → 10-9=1，1+5=6'],
+      ['加减混算','从左到右，有括号先算括号里'],
+    ]},
+    {t:'认识钟表', c:'🕐', items:[
+      ['整时','分针指12，时针指几就是几时'],
+      ['半时','分针指6，时针过几就是几时半'],
+    ]},
+    {t:'位置与顺序', c:'🧭', items:[
+      ['上下前后左右','以观察者自己为准判断方向'],
+      ['第几 vs 几个','序数是排队位置，基数是总数'],
+    ]},
+    {t:'认识图形（立体）', c:'🧊', items:[
+      ['长方体/正方体','能稳稳放住，有平平的面'],
+      ['圆柱/球','球易滚，圆柱能滚也能立'],
+    ]},
+  ],
+  '一下':[
+    {t:'100以内加减', c:'🔢', items:[
+      ['整十数加减','30+20=50，70-40=30'],
+      ['两位数加一位数(进位)','28+5=33，先算8+5=13再+20'],
+      ['两位数减一位数(退位)','32-7=25，先算12-7=5再+20'],
+    ]},
+    {t:'人民币', c:'💴', items:[
+      ['元角分','1元=10角，1角=10分'],
+      ['付钱组合','1元=10张1角；5角+5角=1元'],
+    ]},
+    {t:'找规律', c:'🔁', items:[
+      ['颜色/形状规律','按周期重复：红蓝红蓝…'],
+      ['数字规律','+2、+5、递减数列'],
+    ]},
+    {t:'分类与整理', c:'🗂️', items:[
+      ['按特征分类','按形状/颜色/用途分组'],
+      ['象形统计图','数一数、比多少'],
+    ]},
+  ],
+  '二上':[
+    {t:'100以内连加连减', c:'🧮', items:[
+      ['连加','23+25+17，分步或凑整'],
+      ['连减','90-25-38，从左到右'],
+      ['加减混合','同级运算从左到右'],
+    ]},
+    {t:'表内乘法', c:'✖️', items:[
+      ['乘法意义','几个相同加数的和 → 乘法'],
+      ['2~6口诀','如 3×4=12，三四十二'],
+      ['乘加乘减','先乘后加减'],
+    ]},
+    {t:'长度单位', c:'📏', items:[
+      ['厘米 cm','手指宽约1cm'],
+      ['米 m','1m=100cm，课桌约1m'],
+      ['线段','有两个端点，能量长度'],
+    ]},
+    {t:'观察物体', c:'👀', items:[
+      ['不同方向','前/侧/上看同一物体形状不同'],
+      ['立体 vs 平面','立体图能看出厚度'],
+    ]},
+  ],
+  '二下':[
+    {t:'表内除法', c:'➗', items:[
+      ['平均分','分成几份 / 每份几个'],
+      ['除法意义','已知积和一个因数求另一个'],
+      ['用口诀求商','三四十二 → 12÷3=4'],
+    ]},
+    {t:'混合运算', c:'🧮', items:[
+      ['先乘除后加减','2+3×4=14'],
+      ['有括号先算括号','(2+3)×4=20'],
+    ]},
+    {t:'有余数的除法', c:'📐', items:[
+      ['余数<除数','余数一定比除数小'],
+      ['关系式','被除数=除数×商+余数'],
+    ]},
+    {t:'万以内数的认识', c:'🔢', items:[
+      ['数位','个、十、百、千、万'],
+      ['读写','从高位起，末尾0不读'],
+    ]},
+    {t:'克与千克', c:'⚖️', items:[
+      ['1kg=1000g','两瓶水≈1kg'],
+      ['称量','轻小用g，较重用kg'],
+    ]},
+  ],
+  '三上':[
     {t:'长度单位', c:'📏', items:[
       ['千米 km','1 km = 1000 m（操场2圈半≈1km）'],
       ['米 m','课桌约1m长，身高约1.3m'],
@@ -7548,8 +7642,39 @@ function openMathTeach(){
       ['归一问题','先求单一量再求总数'],
       ['分步作答','圈关键词→列式→写单位→答'],
     ]},
-  ];
-  let html = '<div class="note mb12">先学知识点，再做练习更扎实。点任意卡片展开要点。</div><div class="teach-list" id="teachList">';
+  ],
+  '三下':[
+    {t:'面积', c:'🔳', items:[
+      ['面积单位','cm²、dm²、m²；1m²=100dm²=10000cm²'],
+      ['长方形面积','长×宽'],
+      ['正方形面积','边长×边长'],
+      ['面积 vs 周长','表面大小 vs 一周长度，不混淆'],
+    ]},
+    {t:'两位数乘除', c:'✖️', items:[
+      ['两位数乘两位数','拆十位/个位分步算'],
+      ['两位数除一位数','从高位除起，商对齐数位'],
+    ]},
+    {t:'小数的初步认识', c:'🔢', items:[
+      ['读写','0.1、0.5；1.25元=1元2角5分'],
+      ['比较大小','先比整数部分'],
+    ]},
+    {t:'年月日', c:'📅', items:[
+      ['大小月','1/3/5/7/8/10/12为31天；4/6/9/11为30天'],
+      ['平闰年','平年365天，闰年366天；年份÷4（整百÷400）'],
+      ['24时制','下午3时=15:00'],
+    ]},
+    {t:'复式统计表', c:'📊', items:[
+      ['合并单式表','把多张表合成一张'],
+      ['读表比较','提信息、做对比'],
+    ]},
+  ],
+};
+
+/* 北师大版数学知识点（按年级自适应） */
+function openMathTeach(){
+  const g = state.profile.grade;
+  const kp = (MATH_KP[g]||MATH_KP['三上']);
+  let html = '<div class="note mb12">'+g+' · 先学知识点，再做练习更扎实。点任意卡片展开要点。</div><div class="teach-list" id="teachList">';
   kp.forEach((k,i)=>{
     html += '<div class="teach-card" data-i="'+i+'"><div class="teach-head"><span class="teach-ico">'+k.c+'</span><span class="teach-t">'+k.t+'</span><span class="teach-ar">›</span></div>'+
       '<div class="teach-body" id="tb'+i+'">'+k.items.map(it=>'<div class="teach-row"><b>'+it[0]+'</b><span>'+it[1]+'</span></div>').join('')+'</div></div>';
@@ -7600,15 +7725,24 @@ function openConvert(){
   round();
 }
 
-/* —— 图形认知闯关 —— */
+/* —— 图形认知闯关（按年级随机） —— */
 function openShape(){
-  const Q = [
-    {q:'长方形周长公式', a:'(长+宽)×2', opt:['(长+宽)×2','长×宽','边长×4'], hint:'封闭一周的长度'},
-    {q:'正方形周长公式', a:'边长×4', opt:['边长×4','(长+宽)×2','边长×边长'], hint:'四条边相等'},
-    {q:'下面哪个是封闭图形？', a:'圆', opt:['圆','线段','角'], hint:'首尾相连'},
-    {q:'1平方分米 ≈ 边长多少的正方形', a:'1分米', opt:['1分米','1厘米','1米'], hint:'面积单位'},
-    {q:'周长相等的两个长方形，面积一定相等吗？', a:'不一定', opt:['不一定','一定相等','无法判断'], hint:'举例：长6宽2 vs 长5宽3'},
+  const g = state.profile.grade;
+  // 按年级的题型池：低年级偏辨认，高年级偏周长/面积计算
+  const POOL = [
+    {q:'长方形周长公式', a:'(长+宽)×2', opt:['(长+宽)×2','长×宽','边长×4','长+宽'], hint:'封闭图形一周的长度', min:['二上']},
+    {q:'正方形周长公式', a:'边长×4', opt:['边长×4','(长+宽)×2','边长×边长','4×边长'], hint:'四条边都相等', min:['二上']},
+    {q:'下面哪个是封闭图形？', a:'圆', opt:['圆','线段','角','射线'], hint:'首尾相连', min:['一上']},
+    {q:'1平方分米 ≈ 边长多少的正方形', a:'1分米', opt:['1分米','1厘米','1米','1毫米'], hint:'面积单位', min:['三下']},
+    {q:'周长相等的两个长方形，面积一定相等吗？', a:'不一定', opt:['不一定','一定相等','无法判断','都相等'], hint:'举例：长6宽2 vs 长5宽3', min:['三上']},
+    {q:'一个边长5cm的正方形，周长是？', a:'20cm', opt:['20cm','10cm','25cm','15cm'], hint:'边长×4', min:['三上']},
+    {q:'长8cm宽2cm的长方形，周长是？', a:'20cm', opt:['20cm','16cm','10cm','12cm'], hint:'(长+宽)×2', min:['三上']},
+    {q:'下面哪个物体能稳稳放住？', a:'正方体', opt:['正方体','球','圆柱','圆锥'], hint:'有平平的面', min:['一上']},
+    {q:'长方体有几个面？', a:'6个', opt:['6个','4个','8个','12个'], hint:'上下前后左右', min:['二上']},
+    {q:'长4cm宽3cm的长方形面积是？', a:'12cm²', opt:['12cm²','14cm²','7cm²','10cm²'], hint:'长×宽', min:['三下']},
   ];
+  const avail = POOL.filter(p=> (p.min||['一上']).some(m=> gradeGE(g,m)) );
+  const Q = shuffle(avail.slice()).slice(0, Math.min(6, avail.length));
   let score=0,total=0,cur=null;
   function round(){
     if(total>=Q.length){ finish(); return; }
@@ -7629,27 +7763,47 @@ function openShape(){
     state.progress.practiceCount++; state.progress.mathTotal+=Q.length; state.progress.mathCorrect+=score; saveState();
     openOverlay('图形认知','<div class="empty"><div class="em-ico">🔷</div><div class="em-t">完成！答对 '+score+'/'+Q.length+'</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
   }
-  round();
-}
+  round();}
 
-/* —— 应用题闯关（分步提示）—— */
+/* —— 应用题闯关（按年级随机生成 + 分步提示）—— */
 function openWordProb(){
-  const P = [
-    {s:'小明有12颗糖，分给3个小朋友，平均每人几颗？', a:4, step:['求平均数→总数÷份数','12÷3']},
-    {s:'一本书85页，小红每天看9页，几天能看完？', a:10, step:['85÷9=9余4','剩余4页还需1天','共10天']},
-    {s:'操场长60米宽40米，周长多少米？', a:200, step:['长方形周长=(长+宽)×2','(60+40)×2','=200']},
-    {s:'一箱苹果30元，买4箱送1箱，买4箱实际得到几箱？', a:5, step:['买4箱','送1箱','共5箱']},
-    {s:'火车每小时120千米，3小时行多少千米？', a:360, step:['速度×时间=路程','120×3','=360']},
-  ];
+  const g = state.profile.grade;
+  // 应用题生成器（模板 + 随机数值），按年级选用
+  const GEN = {
+    // 求和（一上可用）
+    sum:()=>{ const a=rand(5,20),b=rand(5,20); return {s:`小明有${a}颗糖，妈妈又给了他${b}颗，现在一共有几颗？`, a:a+b, step:['求总数→把两部分相加',`${a}+${b}`,`=${a+b}`]}; },
+    // 求剩余（一上可用）
+    left:()=>{ const a=rand(15,30),b=rand(5,14); const t=a-b; return {s:`原来有${a}个苹果，吃了${b}个，还剩几个？`, a:t, step:['求剩余→总数减去吃掉的',`${a}-${b}`,`=${t}`]}; },
+    // 平均分（二下可用）
+    avg:()=>{ const n=rand(2,5),each=rand(2,6); const s=n*each; return {s:`${s}颗糖平均分给${n}个小朋友，每人几颗？`, a:each, step:['求每份→总数÷份数',`${s}÷${n}`,`=${each}`]}; },
+    // 倍数（二下可用）
+    mult:()=>{ const base=rand(3,9),k=rand(2,4); return {s:`小红有${base}支笔，小明的笔是她的${k}倍，小明有几支？`, a:base*k, step:['求倍数→用乘法',`${base}×${k}`,`=${base*k}`]}; },
+    // 长方形周长（三上可用）
+    peri:()=>{ const L=rand(20,60),W=rand(10,40); return {s:`操场长${L}米、宽${W}米，周长多少米？`, a:(L+W)*2, step:['长方形周长=(长+宽)×2',`(${L}+${W})×2`,`=${(L+W)*2}`]}; },
+    // 速度×时间（三上可用）
+    dist:()=>{ const v=rand(40,120),t=rand(2,5); return {s:`火车每小时${v}千米，行驶${t}小时，共行多少千米？`, a:v*t, step:['路程=速度×时间',`${v}×${t}`,`=${v*t}`]}; },
+    // 归一（三上可用）
+    unit:()=>{ const u=rand(3,9),n=rand(3,6); return {s:`一盒铅笔${u}元，买${n}盒要多少钱？`, a:u*n, step:['先求单一量（已知）','再求总数→单价×数量',`${u}×${n}=${u*n}`]}; },
+  };
+  // 各年级可用题型
+  const GRADE_GEN = {
+    '一上':['sum','left'], '一下':['sum','left'],
+    '二上':['sum','left','avg'], '二下':['sum','left','avg','mult'],
+    '三上':['sum','left','avg','mult','peri','dist','unit'],
+    '三下':['sum','left','avg','mult','peri','dist','unit'],
+  };
+  const keys = (GRADE_GEN[g]||GRADE_GEN['三上']);
+  const N = Math.min(6, keys.length);
+  const picked = shuffle(keys.slice()).slice(0,N).map(k=>GEN[k]());
   let score=0,total=0,cur=null,stepIdx=0;
   function round(){
-    if(total>=P.length){ finish(); return; }
-    cur=P[total]; stepIdx=0;
+    if(total>=picked.length){ finish(); return; }
+    cur=picked[total]; stepIdx=0;
     render();
   }
   function render(){
-    openOverlay('应用题', '<div class="quiz-bar"><i id="wBar" style="width:'+(total/P.length*100)+'%"></i></div>'+
-      '<div class="note center" id="wScore">第 '+(total+1)+'/'+P.length+' 题 · 答对 '+score+'</div>'+
+    openOverlay('应用题', '<div class="quiz-bar"><i id="wBar" style="width:'+(total/picked.length*100)+'%"></i></div>'+
+      '<div class="note center" id="wScore">第 '+(total+1)+'/'+picked.length+' 题 · 答对 '+score+'</div>'+
       '<div class="quiz-q"><div class="quiz-py" id="wQ" style="font-size:24px;text-align:left;line-height:1.5">'+cur.s+'</div></div>'+
       '<div class="wp-steps" id="wSteps"></div>'+
       '<button class="btn btn-ghost btn-block mb12" id="wStep">👉 看第一步提示</button>'+
@@ -7667,8 +7821,8 @@ function openWordProb(){
     }; box.appendChild(b); });
   }
   function finish(){
-    state.progress.practiceCount++; state.progress.mathTotal+=P.length; state.progress.mathCorrect+=score; saveState();
-    openOverlay('应用题','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">完成！答对 '+score+'/'+P.length+'</div><div class="em-s">善用「分步提示」能帮你理清思路</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
+    state.progress.practiceCount++; state.progress.mathTotal+=picked.length; state.progress.mathCorrect+=score; saveState();
+    openOverlay('应用题','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">完成！答对 '+score+'/'+picked.length+'</div><div class="em-s">善用「分步提示」能帮你理清思路</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
   }
   round();
 }
@@ -7798,6 +7952,10 @@ function importData(e){
 
 /* ============ 工具：拼音查字、错题归集、随机 ============ */
 function charPy(c){ if(PINYIN && PINYIN[c]) return PINYIN[c]; if(window.SPELL_PY && SPELL_PY[c]) return SPELL_PY[c]; return ''; }
+/* 整词拼音：逐字取 charPy 拼接（PINYIN 表已覆盖全部生字） */
+function wordPy(w){ return [...w].map(c=>charPy(c)).filter(Boolean).join(' '); }
+/* 词语去重（按词面） */
+function dedupeWords(arr){ const seen=new Set(),out=[]; arr.forEach(x=>{ const k=x[0]; if(!seen.has(k)){ seen.add(k); out.push(x); } }); return out; }
 function collectWrong(it){
   // it: {subject,type,q,a,wrong}
   if(!it.wrong) return; // 仅收集答错
@@ -7808,6 +7966,8 @@ function collectWrong(it){
   saveState();
 }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+/* 闭区间随机整数 [min,max] */
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
 /* 笔顺数据加载器（优先内置，回退 CDN） */
 function hwDataLoader(char, onComplete){
