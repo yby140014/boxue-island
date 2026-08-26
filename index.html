@@ -7736,6 +7736,8 @@ const EXAMPLES = {
   '时间计算':[{s:'从 8:00 到 8:30，经过几分钟？', steps:['思路：结束 − 开始，统一成分钟','列式：8:30 − 8:00','答：30 分钟']}],
   '图形与周长':[{s:'长方形长 6 宽 4，周长是多少？', steps:['思路：周长 = (长 + 宽) × 2','列式：(6 + 4) × 2','计算：10 × 2 = 20','答：20']}],
   '应用题类型':[{s:'小明有 12 元，小红是他的 3 倍，两人共几元？', steps:['思路：先求小红，再求和','列式：12 × 3 = 36，12 + 36','答：48 元']}],
+  '三上|长度单位':[{s:'3 千米 = （ ）米', steps:['思路：千米→米是大化小，×1000','列式：3 × 1000','答：3000 米']},{s:'5 米 = （ ）厘米', steps:['思路：米→厘米是大化小，×100','列式：5 × 100','答：500 厘米']}],
+  '三上|质量单位':[{s:'2 吨 = （ ）千克', steps:['思路：吨→千克是大化小，×1000','列式：2 × 1000','答：2000 千克']}],
 };
 function openMathTeach(){
   const GRADES=['一上','一下','二上','二下','三上','三下'];
@@ -7768,7 +7770,7 @@ function openTopic(t, g){
   openOverlay(t, body);
   lecturePlayer(t, g, document.getElementById('lecBox'));
   if(dm.bind) dm.bind(document.getElementById('tdDemo'));
-  renderExamples(t, document.getElementById('tdEx'));
+  renderExamples(t, g, document.getElementById('tdEx'));
   renderHW(t, g, document.getElementById('tdHw'));
 }
 /* 视频/语音讲解：图形动画(<svg>场景) + 浏览器语音合成(speechSynthesis) 是默认完整实现，零外部资源、开箱即用。
@@ -8032,8 +8034,8 @@ const TRAP_GEN = {
 };
 function advQuiz(t,g){ const f=ADV_GEN[t]; return f? f() : topicQuiz(t,g); }
 function trapQuiz(t,g){ const f=TRAP_GEN[t]; return f? f() : advQuiz(t,g); }
-function renderExamples(t, root){
-  const list=(EXAMPLES[t]||[]);
+function renderExamples(t, g, root){
+  const list=(EXAMPLES[g+'|'+t]||EXAMPLES[t]||[]);
   if(!list.length){ root.innerHTML='<div class="note">该知识点暂无例题，先做互动练习吧～</div>'; return; }
   root.innerHTML = list.map((ex,i)=>{
     return '<div class="ex-card"><div class="ex-q">例'+(i+1)+'：'+ex.s+'</div><div class="ex-steps" id="exSteps'+i+'"></div><button class="btn btn-ghost btn-block mt" id="exShow'+i+'">👉 看解析</button></div>';
