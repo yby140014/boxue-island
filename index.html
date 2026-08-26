@@ -427,6 +427,27 @@ img,svg{display:block}
 .qopt.dim{opacity:.4}
 .quiz-bar{height:8px;border-radius:var(--pill);background:var(--surface3);overflow:hidden;margin-bottom:18px}
 .quiz-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .3s}
+/* 听写题型切换 */
+.mode-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.mode-tab{flex:1 1 0;min-width:72px;text-align:center;padding:8px 6px;border-radius:10px;font-size:12.5px;font-weight:600;
+  background:var(--surface);border:2px solid var(--line2);color:var(--muted);cursor:pointer;transition:.15s}
+.mode-tab.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+.quiz-word{font-size:40px;font-weight:800;color:var(--brand);letter-spacing:4px}
+.quiz-cloze{font-size:22px;font-weight:600;color:var(--ink);line-height:1.6}
+.quiz-cloze .__{color:var(--brand)}
+/* 背诵默写 */
+.rec-card{padding:12px 14px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow-sm);border:2px solid var(--line2);margin-bottom:10px;cursor:pointer;transition:.15s}
+.rec-card:hover{border-color:var(--brand)}
+.rec-t{font-size:16px;font-weight:700;color:var(--ink)}
+.rec-a{font-size:12px;color:var(--muted);margin-top:2px}
+.rc-line{margin-bottom:12px}
+.rc-py{font-size:13px;color:var(--brand);letter-spacing:1px;margin-bottom:3px;line-height:1.5}
+.rc-chars{font-size:24px;font-weight:700;color:var(--ink);letter-spacing:3px;line-height:1.7}
+.rc-ch{cursor:pointer;border-radius:6px;padding:0 1px}
+.rc-ch:hover{background:var(--brand-soft)}
+.rc-sp{color:var(--muted);font-size:18px}
+.row-between{display:flex;gap:10px;align-items:center}
+.row-between .btn{flex:1}
 
 /* 知识点演示 */
 .teach-list{display:flex;flex-direction:column;gap:10px}
@@ -6839,6 +6860,7 @@ function renderChinese(){
     {ico:'📖',t:'课文点读',s:'分句朗读·跟读练习',bg:'var(--accent-soft)',fg:'#FF8A3D',fn:openText},
     {ico:'✍️',t:'练字',s:'笔顺动画·田字格描红',bg:'var(--brand-soft)',fg:'#8B5CF6',fn:openPractice},
     {ico:'📝',t:'词语听写',s:'看拼音·4选1选字',bg:'var(--success-soft)',fg:'#1FB874',fn:openTingxie},
+    {ico:'📜',t:'背诵默写',s:'古诗跟读·默写巩固',bg:'var(--accent-soft)',fg:'#FF8A3D',fn:openRecite},
     {ico:'🏆',t:'字词闯关',s:'混合挑战·赢取 XP',bg:'var(--warn)',fg:'#B6790C',fn:openChallenge},
     {ico:'📊',t:'单元闯关',s:'按册检测·查漏补缺',bg:'var(--brand-soft)',fg:'#8B5CF6',fn:openUnitQuiz},
   ];
@@ -7365,12 +7387,123 @@ function loadSpell(c){
 
 /* —— 词语听写（统一数据源：词库优先，回退本册生字组词）—— */
 let tx=null;
-function openTingxie(initialGrade){
+/* —— 背诵默写数据（统编版一~二下 古诗 + 日积月累，拼音运行时由 wordPy 生成，非臆造）—— */
+const RECITE = {
+  '一上':[
+    {t:'咏鹅',a:'〔唐〕骆宾王',l:['鹅，鹅，鹅，曲项向天歌。','白毛浮绿水，红掌拨清波。']},
+    {t:'江南',a:'汉乐府',l:['江南可采莲，莲叶何田田。','鱼戏莲叶间。鱼戏莲叶东，','鱼戏莲叶西，鱼戏莲叶南，鱼戏莲叶北。']},
+    {t:'画',a:'〔唐〕王维',l:['远看山有色，近听水无声。','春去花还在，人来鸟不惊。']},
+    {t:'悯农（其二）',a:'〔唐〕李绅',l:['锄禾日当午，汗滴禾下土。','谁知盘中餐，粒粒皆辛苦。']},
+    {t:'日积月累',a:'',l:['一年之计在于春，一日之计在于晨。','一寸光阴一寸金，寸金难买寸光阴。']},
+  ],
+  '一下':[
+    {t:'春晓',a:'〔唐〕孟浩然',l:['春眠不觉晓，处处闻啼鸟。','夜来风雨声，花落知多少。']},
+    {t:'赠汪伦',a:'〔唐〕李白',l:['李白乘舟将欲行，忽闻岸上踏歌声。','桃花潭水深千尺，不及汪伦送我情。']},
+    {t:'静夜思',a:'〔唐〕李白',l:['床前明月光，疑是地上霜。','举头望明月，低头思故乡。']},
+    {t:'寻隐者不遇',a:'〔唐〕贾岛',l:['松下问童子，言师采药去。','只在此山中，云深不知处。']},
+    {t:'日积月累',a:'《论语》',l:['敏而好学，不耻下问。','不知则问，不能则学。']},
+  ],
+  '二上':[
+    {t:'梅花',a:'〔宋〕王安石',l:['墙角数枝梅，凌寒独自开。','遥知不是雪，为有暗香来。']},
+    {t:'小儿垂钓',a:'〔唐〕胡令能',l:['蓬头稚子学垂纶，侧坐莓苔草映身。','路人借问遥招手，怕得鱼惊不应人。']},
+    {t:'登鹳雀楼',a:'〔唐〕王之涣',l:['白日依山尽，黄河入海流。','欲穷千里目，更上一层楼。']},
+    {t:'望庐山瀑布',a:'〔唐〕李白',l:['日照香炉生紫烟，遥看瀑布挂前川。','飞流直下三千尺，疑是银河落九天。']},
+    {t:'日积月累',a:'',l:['有山皆图画，无水不文章。','一畦春韭绿，十里稻花香。']},
+  ],
+  '二下':[
+    {t:'村居',a:'〔清〕高鼎',l:['草长莺飞二月天，拂堤杨柳醉春烟。','儿童散学归来早，忙趁东风放纸鸢。']},
+    {t:'咏柳',a:'〔唐〕贺知章',l:['碧玉妆成一树高，万条垂下绿丝绦。','不知细叶谁裁出，二月春风似剪刀。']},
+    {t:'晓出净慈寺送林子方',a:'〔宋〕杨万里',l:['毕竟西湖六月中，风光不与四时同。','接天莲叶无穷碧，映日荷花别样红。']},
+    {t:'绝句',a:'〔唐〕杜甫',l:['两个黄鹂鸣翠柳，一行白鹭上青天。','窗含西岭千秋雪，门泊东吴万里船。']},
+    {t:'日积月累',a:'',l:['予人玫瑰，手有余香。','平时肯帮人，急时有人帮。']},
+  ],
+  '三上':[], '三下':[],
+};
+/* —— 易错字辨析（真实常见混淆字对，clue 句中 __ 为填空位）—— */
+const ERRCHAR = [
+  {s:'我__经写完作业了。',a:'已',b:'己'},
+  {s:'从__口处排队进馆。',a:'入',b:'人'},
+  {s:'黄__高原在北方。',a:'土',b:'士'},
+  {s:'周__我们一起去玩。',a:'末',b:'未'},
+  {s:'__鸦喝水靠石子。',a:'乌',b:'鸟'},
+  {s:'走累了__息一下。',a:'休',b:'体'},
+  {s:'__天天气真好。',a:'晴',b:'睛'},
+  {s:'我__家里写作业。',a:'在',b:'再'},
+  {s:'我们__见吧！',a:'再',b:'在'},
+  {s:'__是位女生同学。',a:'她',b:'他'},
+  {s:'他高兴__跳起来。',a:'得',b:'的'},
+  {s:'走__教室要轻轻的。',a:'进',b:'近'},
+  {s:'每天认真做__业。',a:'作',b:'做'},
+  {s:'远__的地方有山。',a:'处',b:'外'},
+];
+/* —— 选词填空句库（简单语法句，__ 为填空位；target 为正确词）—— */
+const SENT = {
+  '朋友':'我和__一起做游戏。','太阳':'__从东方慢慢升起。','学校':'我每天开心去__。',
+  '看书':'妹妹坐在窗边__。','水果':'苹果是一种__。','下雨':'明天可能会__。',
+  '高兴':'考试满分我很__。','老师':'__教我们认字。','月亮':'__挂在夜空里。',
+  '春天':'__到了，花儿开了。','冬天':'__会下雪。','新年':'__到了放鞭炮。',
+  '水':'口渴了要喝__。','火':'__可以烧饭。','山':'远处有一座__。',
+  '花':'花园里开满__。','鸟':'树上有一只__。','风':'__吹过树叶响。',
+};
+/* —— 背诵默写模块 —— */
+function openRecite(){
+  const g = state.profile.grade;
+  const grades = ['一上','一下','二上','二下','三上','三下'];
+  const list = (g2)=> (RECITE[g2]||[]).length
+    ? (RECITE[g2]||[]).map((p,i)=>'<div class="rec-card" data-g="'+g2+'" data-i="'+i+'"><div class="rec-t">'+p.t+'</div><div class="rec-a">'+(p.a||'')+'</div></div>').join('')
+    : '<div class="empty"><div class="em-ico">📜</div><div class="em-t">该册古诗待录入</div></div>';
+  const body =
+    '<div class="note mb8">背诵默写：跟读古诗 / 日积月累，开启默写模式逐字巩固。</div>'+
+    '<select id="recGrade" class="sel">'+grades.map(x=>'<option value="'+x+'"'+(x===g?' selected':'')+'>'+x+'</option>').join('')+'</select>'+
+    '<div id="recList" class="mt">'+list(g)+'</div>';
+  openOverlay('背诵默写', body);
+  $('#recGrade').onchange=()=>{ document.getElementById('recList').innerHTML=list($('#recGrade').value); bindRec(); };
+  function bindRec(){ $all('#recList .rec-card').forEach(c=> c.onclick=()=>openReciteItem(c.dataset.g, +c.dataset.i)); }
+  bindRec();
+}
+function openReciteItem(g, i){
+  const p = (RECITE[g]||[])[i]; if(!p) return;
+  const linesHtml = p.l.map(ln=>{
+    const py = wordPy(ln);
+    const chars=[...ln].map(ch=> (ch && /[一-龥]/.test(ch))?'<span class="rc-ch" data-c="'+ch+'">'+ch+'</span>':('<span class="rc-sp">'+ch+'</span>')).join('');
+    return '<div class="rc-line"><div class="rc-py">'+py+'</div><div class="rc-chars">'+chars+'</div></div>';
+  }).join('');
+  const body =
+    '<div class="note mb8">'+g+' · <b>'+p.t+'</b>'+(p.a?' · '+p.a:'')+'</div>'+
+    '<div id="rcBox">'+linesHtml+'</div>'+
+    '<div class="row-between mt"><button class="btn btn-primary" id="rcPlay">🔊 朗读</button>'+
+    '<button class="btn btn-ghost" id="rcHide">👁️ 默写模式</button></div>'+
+    '<div class="note center mt" id="rcTip"></div>'+
+    '<button class="btn btn-success btn-block mt" id="rcDone">✅ 我会背了</button>';
+  openOverlay(p.t, body);
+  $('#rcPlay').onclick=()=>speak(p.l.join('。'),{spd:1,lang:'zh'});
+  $('#rcHide').onclick=()=>{
+    const on = $('#rcHide').classList.toggle('on');
+    $all('#rcBox .rc-ch').forEach(sp=>{ sp.textContent = on? '□' : sp.dataset.c; });
+    $('#rcHide').textContent = on? '👁️ 显示原文' : '👁️ 默写模式';
+  };
+  $('#rcDone').onclick=()=>{ const k='recite_'+g+'_'+i; state.progress.recited=state.progress.recited||{}; state.progress.recited[k]=true; saveState(); $('#rcTip').textContent='已记录：你会背《'+p.t+'》啦！'; };
+}
+
+function openTingxie(initialGrade, mode){
   const startG = initialGrade || state.profile.grade;
-  tx={ grade:startG, items:null, idx:0, allWords:[] };
+  tx={ grade:startG, items:null, idx:0, allWords:[], mode: mode||'word' };
   function loadAndRender(){
-    // 1) 统一数据源：优先 WORDBOOK，回退本册生字组词（wd 字段）
-    let pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]).map(w=> Array.isArray(w)? [w[0], w[1]||''] : [w, '']);
+    // 1) 统一数据源：优先 BOOKDATA 课本生字词（识字表/写字表/词语表），回退 WORDBOOK 通用词，再回退本册生字组词
+    let pool = [];
+    const _bd = (typeof BOOKDATA!=='undefined') ? (BOOKDATA[GM[tx.grade]||tx.grade]) : null;
+    if(_bd && _bd.units && _bd.units.length){
+      const _w=[];
+      _bd.units.forEach(u=>{
+        (u.shizi||[]).forEach(x=> _w.push([x.c, x.py||'']));
+        (u.xiezi||[]).forEach(x=> _w.push([x.c, '']));
+        (u.ciyu||[]).forEach(x=> _w.push([x.c, x.py||'']));
+      });
+      pool = dedupeWords(_w);
+    }
+    if(!pool.length){
+      pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]).map(w=> Array.isArray(w)? [w[0], w[1]||''] : [w, '']);
+    }
     if(!pool.length){
       const chars=(TEXTBOOK[GM[tx.grade]||tx.grade]||[]).flatMap(u=>u.zi);
       const gen=[];
@@ -7384,8 +7517,9 @@ function openTingxie(initialGrade){
     let allWords = pool.map(w=>w[0]);
     if(allWords.length<4){
       const extra=[];
-      Object.keys(WORDBOOK).forEach(k=>{ (WORDBOOK[k]||[]).forEach(w=>{ const t=Array.isArray(w)?w[0]:w; if(t && !allWords.includes(t) && !extra.includes(t)) extra.push(t); }); });
-      allWords = allWords.concat(shuffle(extra).slice(0, 12));
+      if(typeof BOOKDATA!=='undefined'){ Object.keys(BOOKDATA).forEach(k=>{ (BOOKDATA[k].units||[]).forEach(u=>{ (u.shizi||[]).concat(u.ciyu||[]).forEach(x=>{ if(x.c && !extra.includes(x.c)) extra.push(x.c); }); }); }); }
+      if(typeof WORDBOOK!=='undefined'){ Object.keys(WORDBOOK).forEach(k=>{ (WORDBOOK[k]||[]).forEach(w=>{ const t=Array.isArray(w)?w[0]:w; if(t && !extra.includes(t)) extra.push(t); }); }); }
+      allWords = allWords.concat(shuffle(extra).slice(0, 20));
     }
     tx.allWords = allWords;
     tx.items = shuffle(pool).slice(0, Math.min(10, pool.length)); tx.idx=0;
@@ -7394,37 +7528,66 @@ function openTingxie(initialGrade){
   loadAndRender();
 }
 function renderTingxie(){
-  const z = tx.items[tx.idx];           // [词, 拼音]
-  const answer = z[0];                  // 正确词
+  const MODES=[{k:'word',t:'看拼音写词'},{k:'py',t:'看词写拼音'},{k:'cloze',t:'选词填空'},{k:'err',t:'易错字辨析'}];
+  const mode = tx.mode||'word';
+  const z = tx.items[tx.idx];
+  const answer = z[0];
   const py = z[1]||'';
-  const chars=[...answer];
-  // 取正确字的拼音首字作提示
-  const hintPy = (charPy(chars[0])||py.split(/\s+/)[0]||'');
+  let promptHtml='', opts=[], correctVal='', listenFn=()=>{}, msgFn=(o)=>'';
+  if(mode==='py'){
+    const myPy = wordPy(answer);
+    const others = tx.items.filter(x=>x[0]!==answer).map(x=>wordPy(x[0])).filter(Boolean);
+    const set=new Set([myPy]);
+    while(set.size<4 && others.length){ set.add(others[Math.floor(Math.random()*others.length)]); }
+    opts=shuffle([...set]); correctVal=myPy; listenFn=()=>speak(answer,{spd:2});
+    promptHtml='<div class="quiz-word">'+answer+'</div><div class="quiz-hint">看汉字，选出正确的拼音</div>';
+    msgFn=(o)=> (o===myPy?'正确！<b>'+answer+'</b> 的拼音是 '+myPy : '正确拼音：<b>'+myPy+'</b>（'+answer+'）');
+  } else if(mode==='cloze'){
+    let s = SENT[answer]||null, target=answer;
+    if(!s){ const keys=Object.keys(SENT); target=keys[Math.floor(Math.random()*keys.length)]; s=SENT[target]; }
+    promptHtml='<div class="quiz-cloze">'+s.replace('__','＿＿')+'</div><div class="quiz-hint">选词填空</div>';
+    const set=new Set([target]);
+    const dist=tx.allWords.filter(w=>w!==target && w.length<=4);
+    while(set.size<4 && dist.length){ set.add(dist[Math.floor(Math.random()*dist.length)]); }
+    if(set.size<4){ ['春天','太阳','朋友','老师','学校','月亮','高兴','下雨'].forEach(e=>{ if(set.size<4)set.add(e); }); }
+    opts=shuffle([...set]); correctVal=target; listenFn=()=>speak(target);
+    msgFn=(o)=> (o===target?'正确！填「<b>'+target+'</b>」': '正确答案：「<b>'+target+'</b>」');
+  } else if(mode==='err'){
+    const ent = ERRCHAR[Math.floor(Math.random()*ERRCHAR.length)];
+    promptHtml='<div class="quiz-cloze">'+ent.s.replace('__','＿＿')+'</div><div class="quiz-hint">易错字辨析：选出正确的字</div>';
+    opts=shuffle([ent.a, ent.b]); correctVal=ent.a; listenFn=()=>speak(ent.s.replace('__',ent.a));
+    msgFn=(o)=> (o===ent.a?'正确！用「<b>'+ent.a+'</b>」': '正确应为「<b>'+ent.a+'</b>」（'+ent.b+' 是易错字）');
+  } else {
+    const hintPy = (charPy([...answer][0])||py.split(/\s+/)[0]||'');
+    promptHtml='<div class="quiz-py" id="txPy">'+hintPy+'</div><div class="quiz-hint">听读音 / 看拼音，选出正确的词</div>';
+    const oset=new Set([answer]);
+    const others=tx.allWords.filter(w=>w!==answer);
+    while(oset.size<4 && others.length){ oset.add(others[Math.floor(Math.random()*others.length)]); }
+    opts=shuffle([...oset]); correctVal=answer; listenFn=()=>speak(answer,{spd:2});
+    msgFn=(o)=> (o===answer?'正确答案：<b>'+answer+'</b> · '+py : '正确答案：<b>'+answer+'</b> · '+py);
+  }
+  const tabs = MODES.map(m=>'<div class="mode-tab'+(m.k===mode?' on':'')+'" data-m="'+m.k+'">'+m.t+'</div>').join('');
   const body =
+    '<div class="mode-tabs" id="txModes">'+tabs+'</div>'+
     '<div class="quiz-bar"><i id="txBar" style="width:'+(tx.idx/Math.max(1,tx.items.length)*100)+'%"></i></div>'+
-    '<div class="note center" id="txScore">第 '+(tx.idx+1)+'/'+tx.items.length+' 个词</div>'+
-    '<div class="quiz-q"><div class="quiz-py" id="txPy">'+hintPy+'</div>'+
-      '<div class="quiz-hint">听读音 / 看拼音，选出正确的词</div></div>'+
+    '<div class="note center" id="txScore">第 '+(tx.idx+1)+'/'+tx.items.length+' 个 · '+MODES.find(m=>m.k===mode).t+'</div>'+
+    '<div class="quiz-q">'+promptHtml+'</div>'+
     '<button class="btn btn-primary btn-block mb12" id="txListen">🔊 听一听</button>'+
     '<div class="quiz-opts" id="txOpts"></div>'+
     '<div id="txMsg" class="note center mt"></div>';
   openOverlay('词语听写', body);
-  $('#txListen').onclick=()=>{ speak(answer,{spd:2}); };
-  // 4选1：正确答案 + 3个干扰词（与题目同源，杜绝只剩 1 个选项）
-  const others = tx.allWords.filter(w=>w!==answer);
-  const opts=new Set([answer]);
-  while(opts.size<4 && others.length){ const o=others[Math.floor(Math.random()*others.length)]; if(o!==answer)opts.add(o); }
-  const arr=shuffle([...opts]);
+  $('#txListen').onclick=listenFn;
+  $all('#txModes .mode-tab').forEach(t=> t.onclick=()=>{ tx.mode=t.dataset.m; renderTingxie(); });
   const box=$('#txOpts'); box.innerHTML='';
-  arr.forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
+  shuffle(opts).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
     if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
-    if(o===answer){ b.classList.add('correct'); addXP(6); collectWrong({subject:'chinese',type:'tingxie',q:py,a:answer,wrong:false}); }
-    else { b.classList.add('wrong'); $all('#txOpts .qopt').forEach(x=>{if(x.textContent===answer)x.classList.add('correct');}); collectWrong({subject:'chinese',type:'tingxie',q:py,a:answer,wrong:true}); }
+    if(o===correctVal){ b.classList.add('correct'); addXP(6); }
+    else { b.classList.add('wrong'); $all('#txOpts .qopt').forEach(x=>{if(x.textContent===correctVal)x.classList.add('correct');}); collectWrong({subject:'chinese',type:'tingxie',q:answer,a:correctVal,wrong:true}); }
     $all('#txOpts .qopt').forEach(x=>x.classList.add('dim'));
-    $('#txMsg').innerHTML='正确答案：<b>'+answer+'</b> · '+py;
+    $('#txMsg').innerHTML=msgFn(o);
     setTimeout(next, 850);
   }; box.appendChild(b); });
-  function next(){ tx.idx++; if(tx.idx>=tx.items.length){ tx=null; openOverlay('词语听写','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">听写完成！</div><div class="em-s">已记录练习，去「成长」复习易错词吧</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>'); } else renderTingxie(); }
+  function next(){ tx.idx++; if(tx.idx>=tx.items.length){ tx=null; openOverlay('词语听写','<div class="empty"><div class="em-ico">🎉</div><div class="em-t">练习完成！</div><div class="em-s">已记录练习，去「成长」复习易错词吧</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>'); } else renderTingxie(); }
 }
 
 /* —— 年级 chips（通用）—— */
