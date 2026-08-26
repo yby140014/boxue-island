@@ -442,9 +442,40 @@ img,svg{display:block}
 .teach-row:last-child{border-bottom:none}
 .teach-row b{color:var(--brand);flex:0 0 96px}
 .teach-row span{color:var(--ink2)}
+/* 视频语音讲解（网课式） */
+.teach-sel{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.teach-sel label{font-size:14px;font-weight:700;color:var(--ink2)}
+.teach-sel .sel{padding:10px 14px;font-size:15px;border-radius:10px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);min-width:150px}
+.lec{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r-sm);overflow:hidden}
+.lec-v{width:100%;aspect-ratio:16/9;background:#0c1220;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.lec-sim{color:#dfe7ff}
+.lec-scene{width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center}
+.lec-scene.flash{animation:lecFlash .5s}
+@keyframes lecFlash{0%{filter:brightness(1)}50%{filter:brightness(1.4)}100%{filter:brightness(1)}}
+.lec-board{width:78%;height:60%;background:#13315c;border:3px solid #2b5da8;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:10px;box-shadow:inset 0 0 24px rgba(0,0,0,.45)}
+.lec-chalk{color:#eaf2ff;font-size:clamp(14px,3.6vw,20px);font-weight:700;text-align:center;line-height:1.4}
+.lec-teacher{position:absolute;right:10px;bottom:8px;font-size:34px}
+.lec-caption{position:absolute;left:0;right:0;bottom:0;background:rgba(8,12,22,.8);color:#fff;font-size:14px;padding:8px 12px;line-height:1.4;min-height:20px}
+.lec-bar{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2)}
+.lec-prog{font-size:13px;color:var(--ink2);font-weight:600}
+.lec-script{max-height:168px;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.ls-line{font-size:14px;line-height:1.5;color:var(--ink2);padding:6px 10px;border-radius:8px;border:1px solid transparent}
+.ls-line.on{background:var(--brand-soft);color:var(--brand-ink);border-color:var(--brand);font-weight:700}
+.lec-nav{display:flex;gap:10px;padding:0 12px 12px;background:var(--surface)}
+.lec-nav .btn{flex:1}
 /* 应用题分步 */
 .wp-steps{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
 .wp-step{background:var(--brand-soft);color:var(--brand-ink);padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:600}
+/* 例题演示卡片 */
+.ex-card{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r-sm);box-shadow:var(--shadow-sm);padding:14px 16px;margin-bottom:12px}
+.ex-q{font-size:15.5px;font-weight:700;color:var(--ink);line-height:1.5;margin-bottom:6px}
+.ex-steps{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.ex-step{background:var(--brand-soft);color:var(--brand-ink);padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:600;line-height:1.5}
+/* 分层作业切换标签 */
+.hw-tabs{display:flex;gap:8px;margin-bottom:12px}
+.hw-tab{flex:1;text-align:center;padding:9px 4px;border-radius:10px;font-size:13.5px;font-weight:700;color:var(--ink2);background:var(--surface2);border:1px solid var(--line2);cursor:pointer;transition:all .15s}
+.hw-tab.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.hw-item{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r-sm);box-shadow:var(--shadow-sm);padding:14px 16px;margin-bottom:12px}
 
 /* Result toast */
 .toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-b) + 20px);transform:translateX(-50%) translateY(20px);
@@ -7678,24 +7709,49 @@ const MATH_KP = {
   ],
 };
 
-/* 北师大版数学知识点（按年级聚合：一上+一下→一年级；互动教学 + 课后作业） */
+/* 例题演示：每知识点配 1~2 道例题，含「思路→列式→计算→答」分步（教材口径，不臆造） */
+const EXAMPLES = {
+  '20以内加减':[{s:'9 + 6 = ?', steps:['思路：用凑十法，把 6 拆成 1 和 5','列式：9 + 6 = 9 + 1 + 5','计算：10 + 5 = 15','答：9 + 6 = 15']}],
+  '认识钟表':[{s:'分针指向 12，时针指向 8，是几时？', steps:['思路：分针指 12 是整时，时针指几就是几时','列式：时针 → 8','答：8 时']}],
+  '位置与顺序':[{s:'“从左数第 3 个”和“3 个”，意思一样吗？', steps:['思路：第 3 是序数(位置)，3 个是基数(数量)','举例：第 3 个只有 1 个，3 个有 3 个','答：不一样']}],
+  '认识图形（立体）':[{s:'下面哪个能稳稳放住？', steps:['思路：有平平的面才能放稳','分析：球会滚，正方体有 6 个平面','答：正方体']}],
+  '100以内加减':[{s:'28 + 5 = ?', steps:['思路：个位 8 + 5 = 13，满十进一','列式：28 + 5','计算：20 + 13 = 33','答：33']}],
+  '人民币':[{s:'1 元 = （ ）角', steps:['思路：元角分相邻进率是 10','列式：1 元 = 10 角','答：10 角']}],
+  '找规律':[{s:'2、4、6、8、（ ）', steps:['思路：每次 +2','列式：8 + 2','答：10']}],
+  '分类与整理':[{s:'红色 5 个、蓝色 3 个，一共几个？', steps:['思路：按类数，再相加','列式：5 + 3','答：8 个']}],
+  '100以内连加连减':[{s:'23 + 25 + 17 = ?', steps:['思路：从左到右，或先凑整','列式：23 + 25 = 48，48 + 17 = 65','答：65']}],
+  '表内乘法':[{s:'3 × 4 = ?', steps:['思路：3 个 4 相加，用乘法口诀','列式：三四十二','答：12']}],
+  '长度单位':[{s:'1 米 = （ ）厘米', steps:['思路：米→厘米是大化小，×100','列式：1 × 100','答：100 厘米']}],
+  '观察物体':[{s:'从正面看正方体，看到什么形状？', steps:['思路：正方体的每个面都是正方形','答：正方形']}],
+  '表内除法':[{s:'12 ÷ 3 = ?', steps:['思路：想口诀“三四十二”','列式：12 ÷ 3 = 4','答：4']}],
+  '混合运算':[{s:'2 + 3 × 4 = ?', steps:['思路：先乘除后加减','列式：先算 3 × 4 = 12，再 +2','计算：2 + 12 = 14','答：14']}],
+  '有余数的除法':[{s:'14 ÷ 4 = ?', steps:['思路：4×3=12 余 2，且余数 < 除数','列式：14 ÷ 4 = 3……2','答：3 余 2']}],
+  '万以内数的认识':[{s:'3 个千、2 个百、5 个十、1 个一，组成几？', steps:['思路：按数位组合','列式：3000 + 200 + 50 + 1','答：3251']}],
+  '克与千克':[{s:'1 千克 = （ ）克', steps:['思路：千克→克是大化小，×1000','列式：1 × 1000','答：1000 克']}],
+  '面积':[{s:'长方形长 5 宽 3，面积是多少？', steps:['思路：面积 = 长 × 宽','列式：5 × 3','答：15']}],
+  '两位数乘除':[{s:'23 × 12 = ?', steps:['思路：拆十位、个位分步：23×10 + 23×2','列式：230 + 46','答：276']}],
+  '小数的初步认识':[{s:'0.5 元 = （ ）角', steps:['思路：0.5 元 = 5 角','答：5 角']}],
+  '年月日':[{s:'2024 年是平年还是闰年？', steps:['思路：年份÷4，整百年÷400','列式：2024 ÷ 4 = 506（整除）','答：闰年，全年 366 天']}],
+  '复式统计表':[{s:'男生 8 人、女生 6 人，一共几人？', steps:['思路：把两组合并相加','列式：8 + 6','答：14 人']}],
+  '时间计算':[{s:'从 8:00 到 8:30，经过几分钟？', steps:['思路：结束 − 开始，统一成分钟','列式：8:30 − 8:00','答：30 分钟']}],
+  '图形与周长':[{s:'长方形长 6 宽 4，周长是多少？', steps:['思路：周长 = (长 + 宽) × 2','列式：(6 + 4) × 2','计算：10 × 2 = 20','答：20']}],
+  '应用题类型':[{s:'小明有 12 元，小红是他的 3 倍，两人共几元？', steps:['思路：先求小红，再求和','列式：12 × 3 = 36，12 + 36','答：48 元']}],
+};
 function openMathTeach(){
-  const fam = state.profile.grade.startsWith('一')?'一年级':(state.profile.grade.startsWith('二')?'二年级':'三年级');
-  let html='<div class="note mb12">数学知识点按年级聚合（上册 + 下册）。点主题进入「图形动画讲解 + 课后作业」。</div>';
-  html+='<div class="teach-fam" id="teachFam">'+['一年级','二年级','三年级'].map(f=>'<div class="tf-chip'+(f===fam?' on':'')+'" data-f="'+f+'">'+f+'</div>').join('')+'</div>';
+  const GRADES=['一上','一下','二上','二下','三上','三下'];
+  const cur = (GRADES.indexOf(state.profile.grade)>=0)? state.profile.grade : '三上';
+  let html='<div class="note mb12">用下拉框选择年级，下方立即加载该年级的数学知识点；点主题进入「视频语音讲解 + 互动练习」。</div>';
+  html+='<div class="teach-sel"><label>选择年级</label><select id="teachGrade" class="sel">'+GRADES.map(g=>'<option value="'+g+'"'+(g===cur?' selected':'')+'>'+g+'</option>').join('')+'</select></div>';
   html+='<div id="teachBody"></div>';
   openOverlay('数学知识点', html);
-  $all('#teachFam .tf-chip').forEach(c=> c.onclick=()=>renderFamily(c.dataset.f));
-  renderFamily(fam);
-  function renderFamily(f){
-    const fg = f==='一年级'?['一上','一下']:(f==='二年级'?['二上','二下']:['三上','三下']);
-    let bh='';
-    fg.forEach(gd=>{
-      const kp=MATH_KP[gd]||[];
-      bh+='<div class="section-title">'+gd+' <span class="st-sub">'+kp.length+' 个知识点</span></div><div class="teach-list">';
-      kp.forEach(t=>{ bh+='<div class="teach-card" data-t="'+encodeURIComponent(t.t)+'" data-g="'+gd+'"><div class="teach-head"><span class="teach-ico">'+t.c+'</span><span class="teach-t">'+t.t+'</span><span class="teach-ar">›</span></div></div>'; });
-      bh+='</div>';
-    });
+  const sel=document.getElementById('teachGrade');
+  sel.onchange=()=>renderGrade(sel.value);
+  renderGrade(cur);
+  function renderGrade(g){
+    const kp=MATH_KP[g]||[];
+    let bh='<div class="section-title">'+g+' <span class="st-sub">'+kp.length+' 个知识点</span></div><div class="teach-list">';
+    kp.forEach(t=>{ bh+='<div class="teach-card" data-t="'+encodeURIComponent(t.t)+'" data-g="'+g+'"><div class="teach-head"><span class="teach-ico">'+t.c+'</span><span class="teach-t">'+t.t+'</span><span class="teach-ar">›</span></div></div>'; });
+    bh+='</div>';
     const body=document.getElementById('teachBody'); body.innerHTML=bh;
     $all('#teachBody .teach-card').forEach(card=> card.onclick=()=>openTopic(decodeURIComponent(card.dataset.t), card.dataset.g));
   }
@@ -7704,12 +7760,93 @@ function openTopic(t, g){
   const kp=(MATH_KP[g]||[]).find(x=>x.t===t); if(!kp) return;
   const dm=topicDemo(t, g);
   const body='<div class="note mb8">'+g+' · <b>'+t+'</b></div>'+
+    '<div class="section-title mt">🎬 视频语音讲解 <span class="st-sub">网课式 · 可播放/暂停</span></div><div id="lecBox"></div>'+
     '<div class="teach-detail">'+ kp.items.map(it=>'<div class="td-row"><b>'+it[0]+'</b><span>'+it[1]+'</span></div>').join('') +'</div>'+
+    '<div class="section-title mt">📝 例题演示 <span class="st-sub">分步讲解 · 思路→列式→计算→答</span></div><div id="tdEx"></div>'+
     '<div class="section-title mt">互动演示</div><div id="tdDemo">'+dm.html+'</div>'+
-    '<div class="section-title mt">课后作业 <span class="st-sub">举一反三</span></div><div id="tdHw"></div>';
+    '<div class="section-title mt">课后作业 <span class="st-sub">基础 / 进阶 / 易错 · 举一反三</span></div><div id="tdHw"></div>';
   openOverlay(t, body);
+  lecturePlayer(t, g, document.getElementById('lecBox'));
   if(dm.bind) dm.bind(document.getElementById('tdDemo'));
+  renderExamples(t, document.getElementById('tdEx'));
   renderHW(t, g, document.getElementById('tdHw'));
+}
+/* 视频/语音讲解：图形动画(<svg>场景) + 浏览器语音合成(speechSynthesis) 是默认完整实现，零外部资源、开箱即用。
+   KP_MEDIA 为【可选增强】：若日后有真实教学音视频，按 KP_MEDIA[年级][知识点]={video,audio} 填表，
+   即自动切换为 <video>+<audio> 播放；不填则始终走图形+语音讲解，无需任何补充。 */
+const KP_MEDIA = {};
+/* 网课式知识点讲解：图形动画场景(<svg>)随讲解逐句高亮 + 浏览器语音合成(speechSynthesis) 同步朗读讲解词 */
+function lecturePlayer(t, g, root){
+  root = root || document.getElementById('lecBox');
+  if(!root) return;
+  const media = (KP_MEDIA[g] && KP_MEDIA[g][t]) || null;
+  const kp = (MATH_KP[g]||[]).find(x=>x.t===t);
+  const lines = ['同学们好，今天我们一起来学习《'+t+'》。'];
+  (kp?kp.items:[]).forEach(it=> lines.push(it[0]+'：'+it[1]));
+  lines.push('讲完啦，下面做几道课后作业巩固一下吧！');
+
+  root.innerHTML =
+    '<div class="lec">'+
+      (media
+        ? '<video id="lecV" class="lec-v" controls preload="metadata" src="'+media.video+'"></video>'
+        : '<div class="lec-v lec-sim" id="lecV"><div class="lec-scene" id="lecScene"></div><div class="lec-caption" id="lecCap"></div></div>')+
+      (media && media.audio ? '<audio id="lecA" src="'+media.audio+'"></audio>' : '')+
+      '<div class="lec-bar"><button class="btn btn-primary" id="lecPlay">▶ 播放讲解</button><span class="lec-prog" id="lecProg">0 / '+lines.length+'</span></div>'+
+      '<div class="lec-script" id="lecScript">'+ lines.map((s,i)=>'<div class="ls-line" data-i="'+i+'">'+(i+1)+'. '+s+'</div>').join('') +'</div>'+
+      '<div class="lec-nav"><button class="btn btn-ghost" id="lecPrev">‹ 上一个知识点</button><button class="btn btn-ghost" id="lecNext">下一个知识点 ›</button></div>'+
+    '</div>';
+
+  const v = root.querySelector('#lecV');
+  const playBtn = root.querySelector('#lecPlay');
+  const prog = root.querySelector('#lecProg');
+  const script = root.querySelector('#lecScript');
+  const cap = root.querySelector('#lecCap');
+  const scene = root.querySelector('#lecScene');
+  let idx = -1, playing = false, pausedMid = false;
+
+  function drawScene(){
+    if(!scene) return;
+    const vis = topicVisual(t) || '';
+    scene.innerHTML = '<div class="lec-board">'+(vis || '<div class="lec-chalk">📐 黑板讲解：'+t+'</div>')+'</div><div class="lec-teacher">👩‍🏫</div>';
+  }
+  function showLine(i){
+    idx = i;
+    script.querySelectorAll('.ls-line').forEach(el=> el.classList.toggle('on', (+el.dataset.i)===i));
+    if(cap) cap.textContent = lines[i];
+    if(scene){ scene.classList.remove('flash'); void scene.offsetWidth; scene.classList.add('flash'); }
+    prog.textContent = (i+1)+' / '+lines.length;
+  }
+  function speak(i){
+    try{
+      if(window.speechSynthesis){
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(lines[i]);
+        u.lang = 'zh-CN'; u.rate = 0.95; u.pitch = 1;
+        u.onend = ()=>{ if(playing && !pausedMid && idx < lines.length-1){ showLine(idx+1); speak(idx+1); } };
+        window.speechSynthesis.speak(u);
+      }
+    }catch(e){}
+  }
+  function play(){
+    if(playing) return;
+    playing = true; pausedMid = false; playBtn.textContent = '⏸ 暂停讲解';
+    if(media && v && v.tagName === 'VIDEO'){ try{ v.play(); }catch(e){} return; }
+    if(idx < 0) showLine(0);
+    speak(idx < 0 ? 0 : idx);
+  }
+  function pause(){
+    if(!playing) return;
+    playing = false; playBtn.textContent = '▶ 播放讲解';
+    if(media && v && v.tagName === 'VIDEO'){ try{ v.pause(); }catch(e){} return; }
+    if(window.speechSynthesis && window.speechSynthesis.speaking){ window.speechSynthesis.pause(); pausedMid = true; }
+  }
+  playBtn.onclick = ()=>{ if(playing) pause(); else play(); };
+  drawScene(); showLine(0);
+
+  const kpList = (MATH_KP[g]||[]);
+  const myIdx = kpList.findIndex(x=>x.t===t);
+  root.querySelector('#lecPrev').onclick = ()=>{ const p = kpList[myIdx-1]; if(p) openTopic(p.t, g); };
+  root.querySelector('#lecNext').onclick = ()=>{ const n = kpList[myIdx+1]; if(n) openTopic(n.t, g); };
 }
 /* 互动演示：图形/动画 + 生成练习 */
 function topicDemo(t, g){
@@ -7725,9 +7862,19 @@ function topicDemo(t, g){
 }
 /* 课后作业：3 题 + 可重练（举一反三） */
 function renderHW(t, g, root){
+  const TIERS=[
+    {key:'basic', label:'🌱 基础', gen:()=>topicQuiz(t,g)},
+    {key:'adv', label:'🚀 进阶', gen:()=>advQuiz(t,g)},
+    {key:'trap', label:'⚠️ 易错', gen:()=>trapQuiz(t,g)},
+  ];
+  let curTier=0;
   function render(){
-    root.innerHTML=''; let correct=0, answered=0;
-    const qs=[topicQuiz(t,g),topicQuiz(t,g),topicQuiz(t,g)];
+    root.innerHTML='';
+    const tabs=el('div','hw-tabs');
+    TIERS.forEach((ti,i)=>{ const tb=el('div','hw-tab'+(i===curTier?' on':'')); tb.textContent=ti.label; tb.onclick=()=>{ curTier=i; render(); }; tabs.appendChild(tb); });
+    root.appendChild(tabs);
+    let correct=0, answered=0;
+    const qs=[TIERS[curTier].gen(),TIERS[curTier].gen(),TIERS[curTier].gen()];
     qs.forEach((q,idx)=>{
       const card=el('div','hw-item');
       card.innerHTML='<div class="hw-q">'+(idx+1)+'. '+q.q+'</div>'+(q.hint?'<div class="quiz-hint">'+q.hint+'</div>':'')+'<div class="quiz-opts" id="hw'+idx+'"></div>';
@@ -7856,20 +8003,87 @@ const TOPIC_GEN = {
   '复式统计表':TEACH_Q.stat, '合并单式表':TEACH_Q.stat, '读表比较':TEACH_Q.stat,
   '应用题类型':TEACH_Q.word, '和差问题':TEACH_Q.word, '倍数问题':TEACH_Q.mulMeaning, '归一问题':TEACH_Q.mulMeaning, '分步作答':TEACH_Q.word,
 };
+/* —— 易错陷阱题生成器（针对各知识点常见错误）—— */
+function trapAddSub(){ const a=rand(8,15); return {q:`${a} + 5 与 ${a} − 5，哪个结果大？`, a:'加法大', opts:['加法大','减法大','一样大'], hint:'加会变多，减会变少'}; }
+function trapMirror(){ return {q:'小明在镜子里看到钟表是 3 时，实际是几时？', a:'9 时', opts:['9 时','3 时','6 时'], hint:'镜子左右相反'}; }
+function trapPeri(){ const L=rand(20,60),W=rand(10,40); return {q:`长方形长 ${L} 宽 ${W}，面积和周长一样吗？`, a:'不一样', opts:['不一样','一样','相等'], hint:'面积是面的大小，周长是边一周'}; }
+function trapRem(){ const d=rand(3,7); return {q:`□ ÷ ${d} = …… ☆，☆ 最大是几？`, a:d-1, opts:[d-1,d,d+1], hint:'余数要比除数小'}; }
+function trapUnit(){ return {q:'一根绳子长 2 米，用掉 80 厘米，还剩多少厘米？', a:120, opts:[120,28,200], hint:'先统一单位：2 米 = 200 厘米'}; }
+function trapParen(){ const a=rand(2,5),b=rand(2,4); return {q:`${a} + ${b} × 2 与 (${a} + ${b}) × 2 相等吗？`, a:'不相等', opts:['不相等','相等'], hint:'有括号先算括号里的'}; }
+function trapDecimal(){ return {q:'0.1 + 0.1 + 0.1 = ?', a:0.3, opts:[0.3,0.12,3], hint:'3 个 0.1 相加 = 0.3'}; }
+function trapTime(){ return {q:'一节课 40 分钟，从 8:20 开始，几时几分结束？', a:'9:00', opts:['9:00','8:60','8:40'], hint:'20 + 40 = 60 分 = 1 时'}; }
+function trapShapeArea(){ const L=rand(10,20),W=rand(5,10); return {q:`长 ${L} 宽 ${W} 的长方形，周长和面积数值相等吗？`, a:'不能比', opts:['不能比','一定相等','一定不等'], hint:'单位不同(厘米 vs 平方厘米)，不能直接比'}; }
+/* 进阶 / 易错 分层映射（按知识点标题；同名跨册知识点共用） */
+const ADV_GEN = {
+  '20以内加减':()=>TEACH_Q.make10(), '认识钟表':()=>TEACH_Q.half(), '位置与顺序':()=>TEACH_Q.whichOrder(), '认识图形（立体）':()=>TEACH_Q.cubeFace(),
+  '100以内加减':()=>TEACH_Q.carryAdd(), '人民币':()=>TEACH_Q.rmb(), '找规律':()=>TEACH_Q.pattern(), '分类与整理':()=>TEACH_Q.象形(),
+  '100以内连加连减':()=>TEACH_Q.add100(), '表内乘法':()=>TEACH_Q.mulAddSub(), '长度单位':()=>TEACH_Q.km(), '观察物体':()=>TEACH_Q.observe(),
+  '表内除法':()=>TEACH_Q.divPoem(), '混合运算':()=>TEACH_Q.parenOp(), '有余数的除法':()=>TEACH_Q.remLess(), '万以内数的认识':()=>TEACH_Q.wan(), '克与千克':()=>TEACH_Q.t1000(),
+  '面积':()=>TEACH_Q.areaVsPeri(), '两位数乘除':()=>TEACH_Q.twobymul(), '小数的初步认识':()=>TEACH_Q.decimalCmp(), '年月日':()=>TEACH_Q.bigMonth(), '复式统计表':()=>TEACH_Q.stat(),
+  '时间计算':()=>TEACH_Q.mixOp(), '图形与周长':()=>TEACH_Q.periRect(), '应用题类型':()=>TEACH_Q.mulMeaning(), '质量单位':()=>TEACH_Q.t1000(),
+};
+const TRAP_GEN = {
+  '20以内加减':()=>trapAddSub(), '认识钟表':()=>trapMirror(), '位置与顺序':()=>TEACH_Q.direction(), '认识图形（立体）':()=>TEACH_Q.shapeRoll(),
+  '100以内加减':()=>TEACH_Q.breakSub(), '人民币':()=>trapUnit(), '找规律':()=>TEACH_Q.pattern(), '分类与整理':()=>TEACH_Q.象形(),
+  '100以内连加连减':()=>trapParen(), '表内乘法':()=>TEACH_Q.mulAddSub(), '长度单位':()=>trapUnit(), '观察物体':()=>TEACH_Q.observe(),
+  '表内除法':()=>trapRem(), '混合运算':()=>trapParen(), '有余数的除法':()=>trapRem(), '万以内数的认识':()=>TEACH_Q.wan(), '克与千克':()=>trapUnit(),
+  '面积':()=>trapShapeArea(), '两位数乘除':()=>trapParen(), '小数的初步认识':()=>trapDecimal(), '年月日':()=>TEACH_Q.leap(), '复式统计表':()=>TEACH_Q.stat(),
+  '时间计算':()=>trapTime(), '图形与周长':()=>trapPeri(), '应用题类型':()=>trapParen(), '质量单位':()=>trapUnit(),
+};
+function advQuiz(t,g){ const f=ADV_GEN[t]; return f? f() : topicQuiz(t,g); }
+function trapQuiz(t,g){ const f=TRAP_GEN[t]; return f? f() : advQuiz(t,g); }
+function renderExamples(t, root){
+  const list=(EXAMPLES[t]||[]);
+  if(!list.length){ root.innerHTML='<div class="note">该知识点暂无例题，先做互动练习吧～</div>'; return; }
+  root.innerHTML = list.map((ex,i)=>{
+    return '<div class="ex-card"><div class="ex-q">例'+(i+1)+'：'+ex.s+'</div><div class="ex-steps" id="exSteps'+i+'"></div><button class="btn btn-ghost btn-block mt" id="exShow'+i+'">👉 看解析</button></div>';
+  }).join('');
+  list.forEach((ex,i)=>{
+    const showBtn=document.getElementById('exShow'+i); if(!showBtn)return;
+    showBtn.onclick=()=>{
+      const box=document.getElementById('exSteps'+i);
+      if(box.childElementCount){ box.innerHTML=''; showBtn.textContent='👉 看解析'; return; }
+      ex.steps.forEach(s=>{ const d=el('div','ex-step'); d.textContent='· '+s; box.appendChild(d); });
+      showBtn.textContent='收起解析';
+    };
+  });
+}
 function topicQuiz(t, g){
   if(TOPIC_GEN[t]) return TOPIC_GEN[t]();
   return wpFallback(g);
 }
 /* 图形/动画演示（内联 SVG） */
 function topicVisual(t){
+  // —— 计算类 ——
+  if(t==='20以内加减') return svgBlocks(rand(8,18));
+  if(t==='100以内加减') return svgTensOnes(rand(23,78));
+  if(t==='100以内连加连减'||t==='混合运算') return svgTensOnes(rand(45,92));
+  if(t==='表内乘法') return svgArray(rand(2,4), rand(3,5));
+  if(t==='表内除法') return svgArray(rand(2,4), rand(2,4));
+  if(t==='有余数的除法') return svgGroups(rand(13,22), rand(3,5));
+  if(t==='两位数乘除') return svgAreaModel();
+  // —— 数与代数 ——
+  if(t==='万以内数的认识') return svgPlaceValue(rand(2000,9000));
+  if(t==='小数的初步认识') return svgDecimals();
+  // —— 钟表 / 时间 ——
   if(t==='认识钟表'||t==='整时'||t==='24时制') return svgClock(rand(1,12),0);
   if(t==='半时') return svgClock(rand(1,11),30);
+  if(t==='时间计算') return svgClock(3,45);
+  if(t==='年月日') return svgCalendar();
+  // —— 长度 / 质量 ——
   if(t==='厘米 cm'||t==='长度单位'||t==='米 m'||t==='分米 dm'||t==='毫米 mm') return svgRuler(rand(5,12));
-  if(t==='进位加·凑十法'||t==='退位减·破十法'||t==='加减混算') return svgBlocks(rand(11,18));
+  if(t==='克与千克'||t==='质量单位') return svgBalance();
+  // —— 图形 ——
   if(t.indexOf('长方形')>=0||t.indexOf('正方形')>=0||t==='图形与周长'||t==='周长'||t==='面积'||t==='面积 vs 周长') return svgRect(rand(25,50),rand(15,35));
   if(t.indexOf('图形')>=0||t==='长方体/正方体'||t==='圆柱/球'||t==='观察物体'||t==='不同方向'||t==='立体 vs 平面') return svgShapes();
+  // —— 生活 / 其他 ——
   if(t.indexOf('人民币')>=0||t==='元角分'||t==='付钱组合') return svgCoins();
-  return '';
+  if(t==='位置与顺序') return svgPosition();
+  if(t==='找规律') return svgSequence();
+  if(t==='分类与整理') return svgSort();
+  if(t==='应用题类型') return svgWordScene();
+  if(t==='复式统计表') return svgBars();
+  return svgChalk(t);
 }
 function svgClock(h, m){
   const cx=60,cy=60,r=46; const a1=(h%12 + m/60)*30*Math.PI/180;
@@ -7889,6 +8103,31 @@ function svgShapes(){ return '<svg width="160" height="80" viewBox="0 0 160 80">
 function svgCoins(){ return '<svg width="140" height="70" viewBox="0 0 140 70"><circle cx="30" cy="35" r="20" fill="#FFE08A" stroke="#E0A800" stroke-width="2"/><text x="30" y="40" font-size="13" text-anchor="middle" fill="#E0A800">1元</text>'+
   '<circle cx="80" cy="35" r="16" fill="#FFE08A" stroke="#E0A800" stroke-width="2"/><text x="80" y="39" font-size="11" text-anchor="middle" fill="#E0A800">5角</text>'+
   '<circle cx="120" cy="35" r="13" fill="#FFE08A" stroke="#E0A800" stroke-width="2"/><text x="120" y="39" font-size="9" text-anchor="middle" fill="#E0A800">1角</text></svg>'; }
+/* —— 以下为本次补齐的知识点图形（全部内联 SVG，无需任何外部资源）—— */
+function svgTensOnes(num){ const tens=Math.floor(num/10), ones=num%10; const w=16+tens*22+Math.max(ones,1)*12+8; let s='<svg width="'+w+'" height="74" viewBox="0 0 '+w+' 74">';
+  for(let i=0;i<tens;i++){ s+='<rect x="'+(8+i*22)+'" y="8" width="18" height="44" rx="2" fill="#5B6CFF"/>'; }
+  for(let i=0;i<ones;i++){ s+='<rect x="'+(8+tens*22+i*12)+'" y="58" width="10" height="10" rx="2" fill="#FF8A3D"/>'; }
+  s+='<text x="'+(w/2)+'" y="72" font-size="10" text-anchor="middle" fill="#5B6CFF">'+num+' = '+tens+'个十 + '+ones+'个一</text></svg>'; return s; }
+function svgArray(rows, cols){ let dots=''; for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ dots+='<circle cx="'+(18+c*16)+'" cy="'+(14+r*16)+'" r="5" fill="#5B6CFF"/>'; }
+  const w=18+cols*16, h=14+rows*16; return '<svg width="'+w+'" height="'+(h+16)+'" viewBox="0 0 '+w+' '+(h+16)+'">'+dots+'<text x="'+(w/2)+'" y="'+(h+14)+'" font-size="10" text-anchor="middle" fill="#5B6CFF">'+rows+' × '+cols+' = '+(rows*cols)+'</text></svg>'; }
+function svgGroups(total, per){ const rem=total%per, grouped=total-rem; let dots=''; for(let i=0;i<total;i++){ const col=i%10, row=Math.floor(i/10); const x=14+col*15, y=12+row*16; dots+='<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+(i<grouped?'#5B6CFF':'#FF8A3D')+'"/>'; }
+  const rows=Math.ceil(total/10); return '<svg width="170" height="'+(12+rows*16+16)+'" viewBox="0 0 170 '+(12+rows*16+16)+'">'+dots+'<text x="85" y="'+(12+rows*16+14)+'" font-size="9" text-anchor="middle" fill="#FF8A3D">'+total+' ÷ '+per+' = '+Math.floor(total/per)+' 余 '+rem+'</text></svg>'; }
+function svgPlaceValue(num){ const s=(''+num).padStart(4,'0'); const labels=['千','百','十','个']; let boxes='';
+  for(let i=0;i<4;i++){ const x=10+i*34; boxes+='<rect x="'+x+'" y="10" width="28" height="34" rx="3" fill="#EAF0FF" stroke="#5B6CFF" stroke-width="2"/><text x="'+(x+14)+'" y="33" font-size="18" text-anchor="middle" fill="#222">'+s[i]+'</text><text x="'+(x+14)+'" y="54" font-size="10" text-anchor="middle" fill="#5B6CFF">'+labels[i]+'</text>'; }
+  return '<svg width="150" height="64" viewBox="0 0 150 64">'+boxes+'</svg>'; }
+function svgBalance(){ return '<svg width="140" height="90" viewBox="0 0 140 90"><line x1="70" y1="10" x2="70" y2="70" stroke="#5B6CFF" stroke-width="3"/><line x1="20" y1="40" x2="120" y2="40" stroke="#5B6CFF" stroke-width="3"/><line x1="20" y1="40" x2="20" y2="60" stroke="#5B6CFF" stroke-width="2"/><line x1="120" y1="40" x2="120" y2="60" stroke="#5B6CFF" stroke-width="2"/><circle cx="20" cy="66" r="8" fill="#FF8A3D"/><rect x="112" y="56" width="16" height="14" rx="2" fill="#5B6CFF"/><text x="70" y="84" font-size="10" text-anchor="middle" fill="#5B6CFF">天平秤</text></svg>'; }
+function svgSequence(){ const arr=[2,4,6,8,'?']; let boxes=''; for(let i=0;i<arr.length;i++){ const x=10+i*28; boxes+='<rect x="'+x+'" y="20" width="24" height="30" rx="4" fill="'+(arr[i]==='?'?'#FFF3E0':'#EAF0FF')+'" stroke="#5B6CFF" stroke-width="2"/><text x="'+(x+12)+'" y="40" font-size="14" text-anchor="middle" fill="#222">'+arr[i]+'</text>'; }
+  return '<svg width="150" height="60" viewBox="0 0 150 60">'+boxes+'<text x="75" y="58" font-size="9" text-anchor="middle" fill="#FF8A3D">每次 +2</text></svg>'; }
+function svgSort(){ return '<svg width="150" height="70" viewBox="0 0 150 70"><rect x="14" y="20" width="50" height="40" rx="4" fill="#EAF0FF" stroke="#5B6CFF"/><circle cx="39" cy="44" r="9" fill="#5B6CFF"/><rect x="86" y="20" width="50" height="40" rx="4" fill="#FFE0CC" stroke="#FF8A3D"/><rect x="108" y="38" width="14" height="14" rx="2" fill="#FF8A3D"/><text x="39" y="66" font-size="9" text-anchor="middle" fill="#5B6CFF">圆形</text><text x="111" y="66" font-size="9" text-anchor="middle" fill="#FF8A3D">方形</text></svg>'; }
+function svgPosition(){ return '<svg width="150" height="100" viewBox="0 0 150 100"><rect x="65" y="45" width="22" height="22" rx="4" fill="#FF8A3D"/><text x="76" y="38" font-size="11" text-anchor="middle" fill="#5B6CFF">上 ↑</text><text x="76" y="84" font-size="11" text-anchor="middle" fill="#5B6CFF">↓ 下</text><text x="22" y="60" font-size="11" text-anchor="middle" fill="#5B6CFF">← 左</text><text x="128" y="60" font-size="11" text-anchor="middle" fill="#5B6CFF">右 →</text></svg>'; }
+function svgDecimals(){ return '<svg width="160" height="50" viewBox="0 0 160 50"><rect x="10" y="18" width="140" height="14" rx="3" fill="#EAF0FF" stroke="#5B6CFF"/><rect x="10" y="18" width="70" height="14" fill="#5B6CFF"/><line x1="80" y1="12" x2="80" y2="38" stroke="#FF8A3D" stroke-width="2"/><text x="80" y="46" font-size="10" text-anchor="middle" fill="#FF8A3D">0.5</text><text x="14" y="14" font-size="9" fill="#5B6CFF">0</text><text x="146" y="14" font-size="9" fill="#5B6CFF">1</text></svg>'; }
+function svgCalendar(){ let cells=''; for(let i=0;i<7;i++){ const x=14+(i%7)*14, y=34+Math.floor(i/7)*14; cells+='<circle cx="'+(x+7)+'" cy="'+(y+7)+'" r="4" fill="'+(i===9?'#FF8A3D':'#cdd7ff')+'"/>'; }
+  return '<svg width="120" height="100" viewBox="0 0 120 100"><rect x="10" y="10" width="100" height="84" rx="6" fill="#fff" stroke="#5B6CFF" stroke-width="2"/><rect x="10" y="10" width="100" height="18" fill="#5B6CFF"/><text x="60" y="23" font-size="11" text-anchor="middle" fill="#fff">月</text>'+cells+'<text x="60" y="98" font-size="9" text-anchor="middle" fill="#FF8A3D">今天</text></svg>'; }
+function svgBars(){ const hs=[40,64,28]; let bars=''; for(let i=0;i<3;i++){ const x=24+i*40; bars+='<rect x="'+x+'" y="'+(80-hs[i])+'" width="24" height="'+hs[i]+'" rx="2" fill="#5B6CFF"/>'; }
+  return '<svg width="150" height="90" viewBox="0 0 150 90"><line x1="16" y1="80" x2="140" y2="80" stroke="#5B6CFF"/>'+bars+'</svg>'; }
+function svgWordScene(){ return '<svg width="130" height="80" viewBox="0 0 130 80"><path d="M30 40 Q65 80 100 40 Z" fill="#FFE0CC" stroke="#FF8A3D" stroke-width="2"/><circle cx="45" cy="42" r="9" fill="#FF5B5B"/><circle cx="65" cy="40" r="9" fill="#FF5B5B"/><circle cx="85" cy="42" r="9" fill="#FF5B5B"/><text x="65" y="74" font-size="10" text-anchor="middle" fill="#FF8A3D">? 个</text></svg>'; }
+function svgAreaModel(){ return '<svg width="120" height="90" viewBox="0 0 120 90"><rect x="20" y="20" width="80" height="50" fill="#EAF0FF" stroke="#5B6CFF" stroke-width="2"/><line x1="60" y1="20" x2="60" y2="70" stroke="#FF8A3D" stroke-width="2"/><line x1="20" y1="45" x2="100" y2="45" stroke="#FF8A3D" stroke-width="2"/><text x="40" y="46" font-size="10" text-anchor="middle" fill="#5B6CFF">拆</text><text x="80" y="46" font-size="10" text-anchor="middle" fill="#5B6CFF">分</text><text x="60" y="14" font-size="9" text-anchor="middle" fill="#FF8A3D">两位数乘法·分块算</text></svg>'; }
+function svgChalk(t){ return '<svg width="200" height="56" viewBox="0 0 200 56"><rect x="4" y="4" width="192" height="48" rx="5" fill="#2E3A4A"/><text x="100" y="34" font-size="15" text-anchor="middle" fill="#fff">📐 '+t+'</text></svg>'; }
 
 /* —— 单位换算闯关 —— */
 function openConvert(){
