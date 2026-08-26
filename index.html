@@ -7332,24 +7332,32 @@ function loadSpell(c){
   if(window.HanziWriter && !window.__hwFail){ init(); }
 }
 
-/* —— 词语听写（合并「看拼音写汉字」）：展示拼音/读音，4选1选字 —— */
+/* —— 词语听写（统一数据源：词库优先，回退本册生字组词）—— */
 let tx=null;
 function openTingxie(initialGrade){
   const startG = initialGrade || state.profile.grade;
-  tx={ grade:startG, items:null, idx:0 };
+  tx={ grade:startG, items:null, idx:0, allWords:[] };
   function loadAndRender(){
-    let pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]);
-    // 兜底：若词库为空，用本册生字的词语(wd)现场组词，避免「待录入」卡死
+    // 1) 统一数据源：优先 WORDBOOK，回退本册生字组词（wd 字段）
+    let pool = (WORDBOOK[GM[tx.grade]||tx.grade]||[]).map(w=> Array.isArray(w)? [w[0], w[1]||''] : [w, '']);
     if(!pool.length){
       const chars=(TEXTBOOK[GM[tx.grade]||tx.grade]||[]).flatMap(u=>u.zi);
       const gen=[];
-      chars.forEach(z=>{ (z.wd||'').split('、').forEach(w=>{ if(w && w!==z.c && w.length<=4 && !/[，。、]/.test(w)) gen.push([w, '' ]); }); });
-      if(gen.length) pool=dedupeWords(gen);
+      chars.forEach(z=>{ ziWords(z).forEach(w=>{ if(w && w!==z.c && w.length<=4) gen.push([w, wordPy(w)]); }); });
+      pool = dedupeWords(gen);
     }
     if(!pool.length){ openOverlay('词语听写', '<div class="empty"><div class="em-ico">📝</div><div class="em-t">'+tx.grade+' 暂无可听写词语</div></div>'); return; }
-    // 补全拼音（兜底词可能无拼音）
-    pool = pool.map(w=> w[1] ? w : [w[0], wordPy(w[0])]);
-    tx.items=shuffle(pool).slice(0,10); tx.idx=0;
+    // 2) 补全拼音
+    pool = pool.map(w=> [w[0], w[1]||wordPy(w[0])]);
+    // 3) 干扰词来源与题目同源（统一数据源），不足 4 个时用其他册词库补足
+    let allWords = pool.map(w=>w[0]);
+    if(allWords.length<4){
+      const extra=[];
+      Object.keys(WORDBOOK).forEach(k=>{ (WORDBOOK[k]||[]).forEach(w=>{ const t=Array.isArray(w)?w[0]:w; if(t && !allWords.includes(t) && !extra.includes(t)) extra.push(t); }); });
+      allWords = allWords.concat(shuffle(extra).slice(0, 12));
+    }
+    tx.allWords = allWords;
+    tx.items = shuffle(pool).slice(0, Math.min(10, pool.length)); tx.idx=0;
     renderTingxie();
   }
   loadAndRender();
@@ -7362,7 +7370,7 @@ function renderTingxie(){
   // 取正确字的拼音首字作提示
   const hintPy = (charPy(chars[0])||py.split(/\s+/)[0]||'');
   const body =
-    '<div class="quiz-bar"><i id="txBar" style="width:'+(tx.idx/tx.items.length*100)+'%"></i></div>'+
+    '<div class="quiz-bar"><i id="txBar" style="width:'+(tx.idx/Math.max(1,tx.items.length)*100)+'%"></i></div>'+
     '<div class="note center" id="txScore">第 '+(tx.idx+1)+'/'+tx.items.length+' 个词</div>'+
     '<div class="quiz-q"><div class="quiz-py" id="txPy">'+hintPy+'</div>'+
       '<div class="quiz-hint">听读音 / 看拼音，选出正确的词</div></div>'+
@@ -7371,8 +7379,8 @@ function renderTingxie(){
     '<div id="txMsg" class="note center mt"></div>';
   openOverlay('词语听写', body);
   $('#txListen').onclick=()=>{ speak(answer,{spd:2}); };
-  // 4选1：正确答案 + 3个干扰词（取同册其他词）
-  const others=(WORDBOOK[GM[tx.grade]||tx.grade]||[]).map(w=>w[0]).filter(w=>w!==answer);
+  // 4选1：正确答案 + 3个干扰词（与题目同源，杜绝只剩 1 个选项）
+  const others = tx.allWords.filter(w=>w!==answer);
   const opts=new Set([answer]);
   while(opts.size<4 && others.length){ const o=others[Math.floor(Math.random()*others.length)]; if(o!==answer)opts.add(o); }
   const arr=shuffle([...opts]);
@@ -7520,7 +7528,7 @@ function startUnitQuiz(u,title){
 }
 
 /* ============ 数学（知识点演示 + 闯关）============ */
-function mathDiff(g){ if(g==='一上'||g==='一下')return {max:20,ops:['+','-']}; if(g==='二上'||g==='二下')return {max:100,ops:['+','-','×']}; return {max:100,ops:['+','-','×','÷']}; }
+function mathDiff(g){ if(g==='一上'||g==='一下')return {max:20,ops:['+','-'],addMax:20,mulMax:0,hasMul:false,hasDiv:false}; if(g==='二上'||g==='二下')return {max:100,ops:['+','-','×'],addMax:100,mulMax:81,hasMul:true,hasDiv:g==='二下'}; return {max:10000,ops:['+','-','×','÷'],addMax:10000,mulMax:1000,hasMul:true,hasDiv:true}; }
 /* 年级大小比较：a 是否 ≥ b（一上最小，三下最大） */
 function gradeGE(a,b){ const order=['一上','一下','二上','二下','三上','三下']; return (order.indexOf(a)>=0?order.indexOf(a):0) >= (order.indexOf(b)>=0?order.indexOf(b):0); }
 
@@ -7670,21 +7678,217 @@ const MATH_KP = {
   ],
 };
 
-/* 北师大版数学知识点（按年级自适应） */
+/* 北师大版数学知识点（按年级聚合：一上+一下→一年级；互动教学 + 课后作业） */
 function openMathTeach(){
-  const g = state.profile.grade;
-  const kp = (MATH_KP[g]||MATH_KP['三上']);
-  let html = '<div class="note mb12">'+g+' · 先学知识点，再做练习更扎实。点任意卡片展开要点。</div><div class="teach-list" id="teachList">';
-  kp.forEach((k,i)=>{
-    html += '<div class="teach-card" data-i="'+i+'"><div class="teach-head"><span class="teach-ico">'+k.c+'</span><span class="teach-t">'+k.t+'</span><span class="teach-ar">›</span></div>'+
-      '<div class="teach-body" id="tb'+i+'">'+k.items.map(it=>'<div class="teach-row"><b>'+it[0]+'</b><span>'+it[1]+'</span></div>').join('')+'</div></div>';
-  });
-  html += '</div>';
+  const fam = state.profile.grade.startsWith('一')?'一年级':(state.profile.grade.startsWith('二')?'二年级':'三年级');
+  let html='<div class="note mb12">数学知识点按年级聚合（上册 + 下册）。点主题进入「图形动画讲解 + 课后作业」。</div>';
+  html+='<div class="teach-fam" id="teachFam">'+['一年级','二年级','三年级'].map(f=>'<div class="tf-chip'+(f===fam?' on':'')+'" data-f="'+f+'">'+f+'</div>').join('')+'</div>';
+  html+='<div id="teachBody"></div>';
   openOverlay('数学知识点', html);
-  $all('#teachList .teach-card').forEach(card=>{
-    card.querySelector('.teach-head').onclick=()=> card.classList.toggle('open');
-  });
+  $all('#teachFam .tf-chip').forEach(c=> c.onclick=()=>renderFamily(c.dataset.f));
+  renderFamily(fam);
+  function renderFamily(f){
+    const fg = f==='一年级'?['一上','一下']:(f==='二年级'?['二上','二下']:['三上','三下']);
+    let bh='';
+    fg.forEach(gd=>{
+      const kp=MATH_KP[gd]||[];
+      bh+='<div class="section-title">'+gd+' <span class="st-sub">'+kp.length+' 个知识点</span></div><div class="teach-list">';
+      kp.forEach(t=>{ bh+='<div class="teach-card" data-t="'+encodeURIComponent(t.t)+'" data-g="'+gd+'"><div class="teach-head"><span class="teach-ico">'+t.c+'</span><span class="teach-t">'+t.t+'</span><span class="teach-ar">›</span></div></div>'; });
+      bh+='</div>';
+    });
+    const body=document.getElementById('teachBody'); body.innerHTML=bh;
+    $all('#teachBody .teach-card').forEach(card=> card.onclick=()=>openTopic(decodeURIComponent(card.dataset.t), card.dataset.g));
+  }
 }
+function openTopic(t, g){
+  const kp=(MATH_KP[g]||[]).find(x=>x.t===t); if(!kp) return;
+  const dm=topicDemo(t, g);
+  const body='<div class="note mb8">'+g+' · <b>'+t+'</b></div>'+
+    '<div class="teach-detail">'+ kp.items.map(it=>'<div class="td-row"><b>'+it[0]+'</b><span>'+it[1]+'</span></div>').join('') +'</div>'+
+    '<div class="section-title mt">互动演示</div><div id="tdDemo">'+dm.html+'</div>'+
+    '<div class="section-title mt">课后作业 <span class="st-sub">举一反三</span></div><div id="tdHw"></div>';
+  openOverlay(t, body);
+  if(dm.bind) dm.bind(document.getElementById('tdDemo'));
+  renderHW(t, g, document.getElementById('tdHw'));
+}
+/* 互动演示：图形/动画 + 生成练习 */
+function topicDemo(t, g){
+  const vis=topicVisual(t);
+  const html = (vis?'<div class="demo-vis">'+vis+'</div>':'')+
+    '<div class="demo-quiz" id="demoQuiz"></div>'+
+    '<button class="btn btn-ghost btn-block mt" id="demoGen">🔄 生成互动练习</button>';
+  return { html, bind(root){ const box=root.querySelector('#demoQuiz'); const gen=root.querySelector('#demoGen');
+    function show(){ const q=topicQuiz(t,g); box.innerHTML='<div class="dq-q">'+q.q+'</div>'+(q.hint?'<div class="quiz-hint">'+q.hint+'</div>':'')+'<div class="quiz-opts" id="dqOpts"></div>';
+      const ob=box.querySelector('#dqOpts'); boxOptsInto(ob, q, ()=>{}); }
+    gen.onclick=show; show();
+  }};
+}
+/* 课后作业：3 题 + 可重练（举一反三） */
+function renderHW(t, g, root){
+  function render(){
+    root.innerHTML=''; let correct=0, answered=0;
+    const qs=[topicQuiz(t,g),topicQuiz(t,g),topicQuiz(t,g)];
+    qs.forEach((q,idx)=>{
+      const card=el('div','hw-item');
+      card.innerHTML='<div class="hw-q">'+(idx+1)+'. '+q.q+'</div>'+(q.hint?'<div class="quiz-hint">'+q.hint+'</div>':'')+'<div class="quiz-opts" id="hw'+idx+'"></div>';
+      root.appendChild(card);
+      boxOptsInto(card.querySelector('#hw'+idx), q, ()=>{ answered++; if(answered>=3){ const tip=el('div','note center mt'); tip.textContent='本组答对 '+correct+'/3 · 点「再练一组」举一反三'; root.appendChild(tip); } }, ()=>{ correct++; });
+    });
+    const again=el('button','btn btn-ghost btn-block mt'); again.textContent='🔄 再练一组（举一反三）'; again.onclick=()=>render(); root.appendChild(again);
+  }
+  render();
+}
+/* 把选项渲染进容器 ob，处理对错与计分 */
+function boxOptsInto(ob, q, onAll, onCorrect){
+  const opts=buildQuizOpts(q);
+  shuffle(opts).forEach(o=>{ const b=el('div','qopt'); b.textContent=(''+o); b.onclick=()=>{
+    if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
+    if((''+o)===(''+q.a)){ b.classList.add('correct'); addXP(2); if(onCorrect) onCorrect(); }
+    else { b.classList.add('wrong'); ob.querySelectorAll('.qopt').forEach(x=>{ if((''+x.textContent)===(''+q.a)) x.classList.add('correct'); }); collectWrong({subject:'math',type:'teach',q:q.q,a:''+q.a,wrong:true}); }
+    ob.querySelectorAll('.qopt').forEach(x=>x.classList.add('dim'));
+    if(onAll) onAll();
+  }; ob.appendChild(b); });
+}
+function buildQuizOpts(q){
+  if(q.opts && q.opts.length){ const s=new Set([q.a]); q.opts.forEach(o=>s.add(o)); return shuffle([...s]).slice(0,4); }
+  const a=q.a; if(isNaN(+a)) return [a];
+  const opts=new Set([a]); const mag=Math.max(2, Math.round(Math.abs(+a)*0.15));
+  let guard=0;
+  while(opts.size<4 && guard++<60){ const off=Math.floor(Math.random()*mag*2+1)-mag; const w=(+a)+off; if(w>=0 && (''+w)!==(''+a) && !opts.has(w)) opts.add(w); }
+  return [...opts];
+}
+/* 知识点互动题生成器（按主题匹配，覆盖北师大一~三年级） */
+function wpFallback(g){
+  const fns={
+    '一上':()=>{ const a=rand(5,20),b=rand(5,20); return {q:`小明有 ${a} 颗糖，妈妈又给 ${b} 颗，共几颗？`, a:a+b, hint:'两部分相加'}; },
+    '一下':()=>{ const a=rand(15,40),b=rand(5,15); return {q:`有 ${a} 个苹果，吃了 ${b} 个，剩几个？`, a:a-b, hint:'总数减吃掉'}; },
+    '二上':()=>{ const e=rand(2,6),n=rand(2,5); return {q:`每盒 ${e} 块糖，${n} 盒共几块？`, a:e*n, hint:'乘法'}; },
+    '二下':()=>{ const n=rand(2,5),e=rand(2,6),s=n*e; return {q:`${s} 颗糖平均分给 ${n} 人，每人几颗？`, a:e, hint:'除法'}; },
+    '三上':()=>{ const L=rand(20,60),W=rand(10,40); return {q:`操场长 ${L} 米宽 ${W} 米，周长？`, a:(L+W)*2, hint:'(长+宽)×2'}; },
+    '三下':()=>{ const L=rand(10,30),W=rand(5,20); return {q:`长方形长 ${L} 厘米宽 ${W} 厘米，面积？`, a:L*W, hint:'长×宽'}; },
+  };
+  return (fns[g]||fns['三上'])();
+}
+const TEACH_Q = {
+  clock:()=>{ const h=rand(1,12); return {q:`时针指向 ${h}，分针指向 12，是几时？`, a:h+'时', opts:[h+'时',((h%12)+1)+'时',h+'时半'], hint:'分针指12→整时'}; },
+  half:()=>{ const h=rand(1,11); return {q:`分针指向 6，时针在 ${h} 和 ${h+1} 之间，是几时半？`, a:h+'时半', opts:[h+'时',h+'时半',(h+1)+'时'], hint:'分针指6→半时'}; },
+  cm:()=>{ const n=rand(3,12); return {q:`线段共 ${n} 格，每格 1 厘米，长几厘米？`, a:n, hint:'数格子'}; },
+  mm:()=>{ return {q:'1 厘米 = （ ）毫米', a:10, opts:[10,100,1000], hint:'1cm=10mm'}; },
+  dm:()=>{ return {q:'1 米 = （ ）分米', a:10, opts:[10,100], hint:'1m=10dm'}; },
+  m100:()=>{ return {q:'1 米 = （ ）厘米', a:100, opts:[10,100,1000], hint:'1m=100cm'}; },
+  km:()=>{ return {q:'1 千米 = （ ）米', a:1000, opts:[10,100,1000], hint:'1km=1000m'}; },
+  g1000:()=>{ return {q:'1 千克 = （ ）克', a:1000, opts:[100,1000], hint:'1kg=1000g'}; },
+  t1000:()=>{ return {q:'1 吨 = （ ）千克', a:1000, opts:[100,1000], hint:'1t=1000kg'}; },
+  weighKg:()=>{ return {q:'较重的物体用哪个单位？', a:'千克', opts:['千克','克'], hint:'重→kg/t'}; },
+  make10:()=>{ const a9=rand(2,9),n=10-a9,b=rand(1,9); return {q:`${a9+n} + ${b} = ?（凑十法）`, a:(a9+n)+b, hint:`把 ${b} 拆成 ${n} 和 ${b-n}`}; },
+  break10:()=>{ const a=rand(11,18),b=rand(2,9); return {q:`${a} - ${b} = ?（破十法）`, a:a-b, hint:`10-${b}=${10-b}，${a-10}+${10-b}=${a-b}`}; },
+  add20:()=>{ const a=rand(5,20),b=rand(5,20); return {q:`${a} + ${b} = ?`, a:a+b, hint:'相加'}; },
+  add100:()=>{ const a=rand(20,90),b=rand(10,60); return {q:`${a} + ${b} = ?`, a:a+b, hint:'相加'}; },
+  tensAdd:()=>{ const a=rand(2,9)*10,b=rand(1,8)*10; return {q:`${a} + ${b} = ?`, a:a+b, hint:'整十相加'}; },
+  carryAdd:()=>{ const a0=rand(25,89),b=rand(4,9); return {q:`${a0} + ${b} = ?`, a:a0+b, hint:'个位满十进一'}; },
+  breakSub:()=>{ const a0=rand(21,89),b=rand(3,9); return {q:`${a0} - ${b} = ?`, a:a0-b, hint:'个位不够减，从十位退一'}; },
+  mul:()=>{ const a=rand(2,9),b=rand(2,9); return {q:`${a} × ${b} = ?`, a:a*b, hint:'乘法口诀'}; },
+  mul26:()=>{ const a=rand(2,6),b=rand(2,6); return {q:`${a} × ${b} = ?`, a:a*b, hint:'口诀'}; },
+  mulMeaning:()=>{ const e=rand(2,6),n=rand(2,5); return {q:`每盘 ${e} 个，共 ${n} 盘，一共几个？`, a:e*n, hint:'几个相同加数→乘法'}; },
+  mulAddSub:()=>{ const a=rand(2,5),b=rand(2,4),c=rand(1,5); return {q:`${a} × ${b} + ${c} = ?`, a:a*b+c, hint:'先乘后加'}; },
+  div:()=>{ const b=rand(2,9),q=rand(2,9),a=b*q; return {q:`${a} ÷ ${b} = ?`, a:q, hint:'除法'}; },
+  divPoem:()=>{ const b=rand(2,9),q=rand(2,9),a=b*q; return {q:`${a} ÷ ${b} = ?（用口诀）`, a:q, hint:'口诀求商'}; },
+  divMeaning:()=>{ const b=rand(2,9),q=rand(2,9),a=b*q; return {q:`${a} 平均分成 ${b} 份，每份几？`, a:q, hint:'平均分'}; },
+  mixOp:()=>{ const a=rand(10,40),b=rand(2,5),c=rand(2,4); return {q:`${a} + ${b} × ${c} = ?`, a:a+b*c, hint:'先乘除后加减'}; },
+  parenOp:()=>{ const a=rand(2,9),b=rand(2,9),c=rand(10,40); return {q:`(${a} + ${b}) × ${c} = ?`, a:(a+b)*c, hint:'先算括号里'}; },
+  remDiv:()=>{ const per=rand(3,6),q=rand(2,5),rem=rand(1,per-1),total=per*q+rem; return {q:`${total} 个苹果，每 ${per} 个一盘，能放满几盘？`, a:q, hint:`余 ${rem} 个`}; },
+  remLess:()=>{ const d=rand(3,7); return {q:`□ ÷ ${d} = ……☆，☆最大是几？`, a:d-1, opts:[d-1,d,d+1], hint:'余数要比除数小'}; },
+  wan:()=>{ const th=rand(1,9),h=rand(0,9),t=rand(0,9),o=rand(0,9); return {q:`${th}个千、${h}个百、${t}个十、${o}个一，组成几？`, a:th*1000+h*100+t*10+o, hint:'按数位组合'}; },
+  place:()=>{ const th=rand(1,9),h=rand(0,9),t=rand(0,9),o=rand(0,9); return {q:`${th}个千、${h}个百、${t}个十、${o}个一，组成几？`, a:th*1000+h*100+t*10+o, hint:'按数位组合'}; },
+  rmb:()=>{ const price=[3,5,8,10,12][rand(0,4)],ch=rand(1,9),pay=price+ch; return {q:`文具盒 ${price} 元，付 ${pay} 元，找回几元？`, a:ch, hint:'付的-花的'}; },
+  yuanjiao:()=>{ return {q:'1 元 = （ ）角', a:10, opts:[10,100], hint:'1元=10角'}; },
+  pattern:()=>{ const k=rand(2,5),st=rand(1,9),m=st+4*k; return {q:`${st}、${st+k}、${st+2*k}、${st+3*k}、（ ）`, a:m, hint:`每次+${k}`}; },
+  sortCount:()=>{ const r=rand(3,8),b=rand(3,8),y=rand(3,8); return {q:`红 ${r} 个、蓝 ${b} 个、黄 ${y} 个，一共几个？`, a:r+b+y, hint:'分类相加'}; },
+ 象形:()=>{ const r=rand(3,8),b=rand(3,8); return {q:`统计图：红 ${r} 个、蓝 ${b} 个，红的比蓝多几个？`, a:r-b, hint:'大数减小数'}; },
+  posOrder:()=>{ const n=rand(8,15),front=rand(1,n-2); return {q:`${n} 人排队，小明前面有 ${front} 人，后面还有几人？`, a:n-front-1, hint:'总数-前面-自己'}; },
+  direction:()=>{ const opts=['上','下','前','后','左','右']; const a=opts[rand(0,5)]; return {q:`小红在小明的（ ）面？`, a:a, opts:shuffle(opts.slice()).slice(0,4), hint:'以观察者为准'}; },
+  whichOrder:()=>{ const n=rand(8,15),front=rand(1,n-2); return {q:`${n} 人排队，小明前面有 ${front} 人，他是第几个？`, a:front+1, hint:'前面的人+自己'}; },
+  shapeRoll:()=>{ return {q:'下面哪个容易滚动？', a:'球', opts:['球','正方体','长方体'], hint:'球没有平平的面'}; },
+  cubeFace:()=>{ return {q:'长方体有几个面？', a:'6个', opts:['6个','4个','8个'], hint:'上下前后左右'}; },
+  shapeStand:()=>{ return {q:'下面哪个能稳稳放住？', a:'正方体', opts:['正方体','球','圆柱'], hint:'有平平的面'}; },
+  observe:()=>{ return {q:'从正面看正方体，看到什么形状？', a:'正方形', opts:['正方形','圆','三角形'], hint:'正方体的面都是正方形'}; },
+  periRect:()=>{ const L=rand(20,80),W=rand(10,50); return {q:`长方形长 ${L} 米宽 ${W} 米，周长？`, a:(L+W)*2, hint:'(长+宽)×2'}; },
+  periSquare:()=>{ const s=rand(5,20); return {q:`正方形边长 ${s} 厘米，周长？`, a:s*4, hint:'边长×4'}; },
+  areaRect:()=>{ const L=rand(10,30),W=rand(5,20); return {q:`长方形长 ${L} 厘米宽 ${W} 厘米，面积？`, a:L*W, hint:'长×宽'}; },
+  areaSquare:()=>{ const s=rand(5,20); return {q:`正方形边长 ${s} 厘米，面积？`, a:s*s, hint:'边长×边长'}; },
+  areaUnit:()=>{ return {q:'1 平方米 = （ ）平方分米', a:100, opts:[10,100,1000], hint:'1m²=100dm²'}; },
+  areaVsPeri:()=>{ const L=rand(10,30),W=rand(5,20); return {q:`长方形长 ${L} 宽 ${W}，它的面积是多少？`, a:L*W, hint:'长×宽（注意不是周长）'}; },
+  twobymul:()=>{ const a=rand(12,39),b=rand(12,29); return {q:`${a} × ${b} = ?`, a:a*b, hint:'拆分计算'}; },
+  twobydiv:()=>{ const b=rand(3,9),q=rand(11,Math.floor(99/b)),a=b*q; return {q:`${a} ÷ ${b} = ?`, a:q, hint:'从高位除起'}; },
+  decimalAdd:()=>{ const x=(rand(1,9))/10,y=(rand(1,9))/10; const s=(x+y).toFixed(1); return {q:`${x.toFixed(1)} + ${y.toFixed(1)} = ?`, a:parseFloat(s), hint:'小数点对齐'}; },
+  decimalCmp:()=>{ const x=rand(1,9),y=rand(1,9); const big=x>y?x:y; return {q:`0.${x} 和 0.${y}，哪个大？`, a:'0.'+big, opts:['0.'+x,'0.'+y], hint:'先比十分位'}; },
+  dateQ:()=>{ return {q:'第二季度（4、5、6月）共多少天？', a:91, opts:[90,91,92], hint:'30+31+30'}; },
+  bigMonth:()=>{ return {q:'下面哪个月是大月（31天）？', a:'1月', opts:['1月','4月','9月'], hint:'1/3/5/7/8/10/12是大月'}; },
+  leap:()=>{ return {q:'平年一年多少天？', a:365, opts:[365,366], hint:'平年365，闰年366'}; },
+  stat:()=>{ const f=rand(5,15),b=rand(5,15),v=rand(5,15); return {q:`足球 ${f} 人、篮球 ${b} 人、排球 ${v} 人，共几人？`, a:f+b+v, hint:'相加'}; },
+  word:()=>wpFallback(g),
+};
+const TOPIC_GEN = {
+  '认识钟表':TEACH_Q.clock, '整时':TEACH_Q.clock, '半时':TEACH_Q.half,
+  '厘米 cm':TEACH_Q.cm, '毫米 mm':TEACH_Q.mm, '分米 dm':TEACH_Q.dm, '米 m':TEACH_Q.m100, '长度单位':TEACH_Q.m100,
+  '千米 km':TEACH_Q.km, '质量单位':TEACH_Q.g1000, '吨 t':TEACH_Q.t1000, '千克 kg':TEACH_Q.g1000, '克 g':TEACH_Q.g1000, '称量':TEACH_Q.weighKg,
+  '进位加·凑十法':TEACH_Q.make10, '退位减·破十法':TEACH_Q.break10, '加减混算':TEACH_Q.add20,
+  '20以内加减':TEACH_Q.add20, '100以内加减':TEACH_Q.add100, '整十数加减':TEACH_Q.tensAdd, '两位数加一位数(进位)':TEACH_Q.carryAdd, '两位数减一位数(退位)':TEACH_Q.breakSub,
+  '100以内连加连减':TEACH_Q.add100, '连加':TEACH_Q.add100, '连减':TEACH_Q.add100, '加减混合':TEACH_Q.add100,
+  '表内乘法':TEACH_Q.mul, '乘法意义':TEACH_Q.mulMeaning, '2~6口诀':TEACH_Q.mul26, '乘加乘减':TEACH_Q.mulAddSub,
+  '表内除法':TEACH_Q.div, '平均分':TEACH_Q.divMeaning, '除法意义':TEACH_Q.divMeaning, '用口诀求商':TEACH_Q.divPoem,
+  '混合运算':TEACH_Q.mixOp, '先乘除后加减':TEACH_Q.mixOp, '有括号先算括号':TEACH_Q.parenOp,
+  '有余数的除法':TEACH_Q.remDiv, '余数<除数':TEACH_Q.remLess, '关系式':TEACH_Q.remDiv,
+  '万以内数的认识':TEACH_Q.wan, '数位':TEACH_Q.place, '读写':TEACH_Q.wan,
+  '克与千克':TEACH_Q.g1000,
+  '人民币':TEACH_Q.rmb, '元角分':TEACH_Q.yuanjiao, '付钱组合':TEACH_Q.rmb,
+  '找规律':TEACH_Q.pattern, '颜色/形状规律':TEACH_Q.pattern, '数字规律':TEACH_Q.pattern,
+  '分类与整理':TEACH_Q.sortCount, '按特征分类':TEACH_Q.sortCount, '象形统计图':TEACH_Q.象形,
+  '位置与顺序':TEACH_Q.posOrder, '上下前后左右':TEACH_Q.direction, '第几 vs 几个':TEACH_Q.whichOrder,
+  '认识图形（立体）':TEACH_Q.shapeRoll, '长方体/正方体':TEACH_Q.cubeFace, '圆柱/球':TEACH_Q.shapeStand,
+  '观察物体':TEACH_Q.observe, '不同方向':TEACH_Q.observe, '立体 vs 平面':TEACH_Q.observe,
+  '时间计算':TEACH_Q.mixOp, '时刻 vs 时段':TEACH_Q.mixOp, '经过时间':TEACH_Q.mixOp, '24时制':TEACH_Q.clock, '一天':TEACH_Q.g1000,
+  '图形与周长':TEACH_Q.periRect, '周长':TEACH_Q.periRect, '长方形周长':TEACH_Q.periRect, '正方形周长':TEACH_Q.periSquare, '面积':TEACH_Q.areaRect,
+  '面积单位':TEACH_Q.areaUnit, '长方形面积':TEACH_Q.areaRect, '正方形面积':TEACH_Q.areaSquare, '面积 vs 周长':TEACH_Q.areaVsPeri,
+  '两位数乘除':TEACH_Q.twobymul, '两位数乘两位数':TEACH_Q.twobymul, '两位数除一位数':TEACH_Q.twobydiv,
+  '小数的初步认识':TEACH_Q.decimalAdd, '比较大小':TEACH_Q.decimalCmp,
+  '年月日':TEACH_Q.dateQ, '大小月':TEACH_Q.bigMonth, '平闰年':TEACH_Q.leap,
+  '复式统计表':TEACH_Q.stat, '合并单式表':TEACH_Q.stat, '读表比较':TEACH_Q.stat,
+  '应用题类型':TEACH_Q.word, '和差问题':TEACH_Q.word, '倍数问题':TEACH_Q.mulMeaning, '归一问题':TEACH_Q.mulMeaning, '分步作答':TEACH_Q.word,
+};
+function topicQuiz(t, g){
+  if(TOPIC_GEN[t]) return TOPIC_GEN[t]();
+  return wpFallback(g);
+}
+/* 图形/动画演示（内联 SVG） */
+function topicVisual(t){
+  if(t==='认识钟表'||t==='整时'||t==='24时制') return svgClock(rand(1,12),0);
+  if(t==='半时') return svgClock(rand(1,11),30);
+  if(t==='厘米 cm'||t==='长度单位'||t==='米 m'||t==='分米 dm'||t==='毫米 mm') return svgRuler(rand(5,12));
+  if(t==='进位加·凑十法'||t==='退位减·破十法'||t==='加减混算') return svgBlocks(rand(11,18));
+  if(t.indexOf('长方形')>=0||t.indexOf('正方形')>=0||t==='图形与周长'||t==='周长'||t==='面积'||t==='面积 vs 周长') return svgRect(rand(25,50),rand(15,35));
+  if(t.indexOf('图形')>=0||t==='长方体/正方体'||t==='圆柱/球'||t==='观察物体'||t==='不同方向'||t==='立体 vs 平面') return svgShapes();
+  if(t.indexOf('人民币')>=0||t==='元角分'||t==='付钱组合') return svgCoins();
+  return '';
+}
+function svgClock(h, m){
+  const cx=60,cy=60,r=46; const a1=(h%12 + m/60)*30*Math.PI/180;
+  const hx=cx+Math.cos(a1-Math.PI/2)*r*0.5, hy=cy+Math.sin(a1-Math.PI/2)*r*0.5;
+  const a2=m*6*Math.PI/180; const mx=cx+Math.cos(a2-Math.PI/2)*r*0.82, my=cy+Math.sin(a2-Math.PI/2)*r*0.82;
+  let ticks=''; for(let i=0;i<12;i++){ const a=i*30*Math.PI/180; const x1=cx+Math.cos(a-Math.PI/2)*(r-7), y1=cy+Math.sin(a-Math.PI/2)*(r-7); const x2=cx+Math.cos(a-Math.PI/2)*r, y2=cy+Math.sin(a-Math.PI/2)*r; ticks+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#5B6CFF" stroke-width="2"/>'; }
+  return '<svg width="120" height="120" viewBox="0 0 120 120"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#fff" stroke="#5B6CFF" stroke-width="3"/>'+ticks+'<line x1="'+cx+'" y1="'+cy+'" x2="'+hx.toFixed(1)+'" y2="'+hy.toFixed(1)+'" stroke="#222" stroke-width="4" stroke-linecap="round"/><line x1="'+cx+'" y1="'+cy+'" x2="'+mx.toFixed(1)+'" y2="'+my.toFixed(1)+'" stroke="#222" stroke-width="2" stroke-linecap="round"/><circle cx="'+cx+'" cy="'+cy+'" r="3" fill="#222"/></svg>';
+}
+function svgRuler(n){ let marks=''; for(let i=0;i<=n;i++){ const x=12+i*16; const big=i%5===0; marks+='<line x1="'+x+'" y1="18" x2="'+x+'" y2="'+(big?6:13)+'" stroke="#5B6CFF" stroke-width="1.5"/>'; if(big) marks+='<text x="'+x+'" y="34" font-size="9" text-anchor="middle" fill="#5B6CFF">'+i+'</text>'; }
+  return '<svg width="'+(24+n*16)+'" height="40" viewBox="0 0 '+(24+n*16)+' 40"><rect x="6" y="16" width="'+(12+n*16)+'" height="9" fill="#EAF0FF" stroke="#5B6CFF"/><line x1="12" y1="16" x2="'+(12+n*16)+'" y2="16" stroke="#5B6CFF"/>'+marks+'</svg>'; }
+function svgBlocks(total){ let dots=''; for(let i=0;i<total;i++){ const col=i%5, row=Math.floor(i/5); const x=14+col*18, y=12+row*18; dots+='<circle cx="'+x+'" cy="'+y+'" r="7" fill="'+(i<10?'#5B6CFF':'#FF8A3D')+'"/>'; }
+  return '<svg width="120" height="60" viewBox="0 0 120 60">'+dots+'</svg>'; }
+function svgRect(L,W){ const w=Math.min(L,50)*1.2, h=Math.min(W,40)*1.2; return '<svg width="'+(w+40)+'" height="'+(h+40)+'" viewBox="0 0 '+(w+40)+' '+(h+40)+'"><rect x="20" y="20" width="'+w+'" height="'+h+'" fill="#EAF0FF" stroke="#5B6CFF" stroke-width="3"/>'+
+  '<text x="'+(20+w/2)+'" y="'+(20+h+16)+'" font-size="11" text-anchor="middle" fill="#5B6CFF">长 '+L+'</text><text x="'+(20+w+8)+'" y="'+(20+h/2)+'" font-size="11" fill="#5B6CFF">宽 '+W+'</text></svg>'; }
+function svgShapes(){ return '<svg width="160" height="80" viewBox="0 0 160 80"><rect x="14" y="24" width="34" height="34" rx="3" fill="#EAF0FF" stroke="#5B6CFF" stroke-width="2"/>'+
+  '<ellipse cx="92" cy="42" rx="16" ry="34" fill="#EAF0FF" stroke="#5B6CFF" stroke-width="2"/><circle cx="136" cy="42" r="17" fill="#EAF0FF" stroke="#5B6CFF" stroke-width="2"/></svg>'; }
+function svgCoins(){ return '<svg width="140" height="70" viewBox="0 0 140 70"><circle cx="30" cy="35" r="20" fill="#FFE08A" stroke="#E0A800" stroke-width="2"/><text x="30" y="40" font-size="13" text-anchor="middle" fill="#E0A800">1元</text>'+
+  '<circle cx="80" cy="35" r="16" fill="#FFE08A" stroke="#E0A800" stroke-width="2"/><text x="80" y="39" font-size="11" text-anchor="middle" fill="#E0A800">5角</text>'+
+  '<circle cx="120" cy="35" r="13" fill="#FFE08A" stroke="#E0A800" stroke-width="2"/><text x="120" y="39" font-size="9" text-anchor="middle" fill="#E0A800">1角</text></svg>'; }
 
 /* —— 单位换算闯关 —— */
 function openConvert(){
@@ -7768,29 +7972,50 @@ function openShape(){
 /* —— 应用题闯关（按年级随机生成 + 分步提示）—— */
 function openWordProb(){
   const g = state.profile.grade;
-  // 应用题生成器（模板 + 随机数值），按年级选用
+  // 应用题生成器（北师大版一~三年级核心题型，模板 + 随机数值）
   const GEN = {
-    // 求和（一上可用）
-    sum:()=>{ const a=rand(5,20),b=rand(5,20); return {s:`小明有${a}颗糖，妈妈又给了他${b}颗，现在一共有几颗？`, a:a+b, step:['求总数→把两部分相加',`${a}+${b}`,`=${a+b}`]}; },
-    // 求剩余（一上可用）
-    left:()=>{ const a=rand(15,30),b=rand(5,14); const t=a-b; return {s:`原来有${a}个苹果，吃了${b}个，还剩几个？`, a:t, step:['求剩余→总数减去吃掉的',`${a}-${b}`,`=${t}`]}; },
-    // 平均分（二下可用）
-    avg:()=>{ const n=rand(2,5),each=rand(2,6); const s=n*each; return {s:`${s}颗糖平均分给${n}个小朋友，每人几颗？`, a:each, step:['求每份→总数÷份数',`${s}÷${n}`,`=${each}`]}; },
-    // 倍数（二下可用）
+    // —— 一年级上 ——
+    sum:()=>{ const a=rand(5,40),b=rand(5,40); return {s:`小明有${a}颗糖，妈妈又给了他${b}颗，现在一共有几颗？`, a:a+b, step:['求总数→把两部分相加',`${a}+${b}`,`=${a+b}`]}; },
+    left:()=>{ const a=rand(15,50),b=rand(5,20); const t=a-b; return {s:`原来有${a}个苹果，吃了${b}个，还剩几个？`, a:t, step:['求剩余→总数减去吃掉的',`${a}-${b}`,`=${t}`]}; },
+    compare:()=>{ const a=rand(10,30),b=rand(5,a-1); return {s:`小红有${a}朵花，小明有${b}朵，小红比小明多几朵？`, a:a-b, step:['求相差→大数减小数',`${a}-${b}`,`=${a-b}`]}; },
+    order:()=>{ const n=rand(8,15),front=rand(1,n-2); const behind=n-front-1; return {s:`${n}个同学排成一队，小明前面有${front}人，小明后面还有几人？`, a:behind, step:['总人数 - 前面的人 - 自己',`${n}-${front}-1`,`=${behind}`]}; },
+    // —— 一年级下 ——
+    money:()=>{ const price=[3,5,8,10,12][rand(0,4)],ch=rand(1,9),pay=price+ch; return {s:`买一个文具盒${price}元，付了${pay}元，应找回几元？`, a:ch, step:['付的钱 - 商品价格 = 找回',`${pay}-${price}`,`=${ch}`]}; },
+    change:()=>{ const m=rand(10,25),p=rand(3,9); return {s:`我有${m}元，买一本练习本花${p}元，还剩几元？`, a:m-p, step:['总钱数 - 花掉的',`${m}-${p}`,`=${m-p}`]}; },
+    hundred:()=>{ const a0=rand(20,40),b=rand(10,30),c=rand(10,30),s=a0+b+c; return {s:`计算：${a0}+${b}+${c} = ?`, a:s, step:['从左到右分步连加',`${a0}+${b}=${a0+b}`,`${a0+b}+${c}=${s}`]}; },
+    pattern:()=>{ const k=rand(2,5),st=rand(1,9),miss=st+4*k; return {s:`找规律填数：${st}、${st+k}、${st+2*k}、${st+3*k}、（  ）`, a:miss, step:['看相邻两数的差',`每次+${k}`,`${st+3*k}+${k}=${miss}`]}; },
+    // —— 二年级上 ——
+    carry:()=>{ const a0=rand(25,89),b=rand(4,9),r=a0+b; return {s:`竖式计算：${a0} + ${b} = ?`, a:r, step:['个位相加，满十进一',`${a0}+${b}`,`=${r}`]}; },
+    table:()=>{ const each=rand(2,6),n=rand(2,5),s=each*n; return {s:`每盒有${each}块糖，这样的${n}盒一共有几块？`, a:s, step:['几个相同加数→乘法',`${each}×${n}`,`=${s}`]}; },
+    lenEst:()=>{ const L=rand(30,90),u=rand(5,20); return {s:`一根绳子长${L}厘米，用掉${u}厘米，还剩几厘米？`, a:L-u, step:['总长 - 用掉的',`${L}-${u}`,`=${L-u}`]}; },
+    // —— 二年级下 ——
+    avg:()=>{ const n=rand(2,5),each=rand(2,6),s=n*each; return {s:`${s}颗糖平均分给${n}个小朋友，每人几颗？`, a:each, step:['求每份→总数÷份数',`${s}÷${n}`,`=${each}`]}; },
     mult:()=>{ const base=rand(3,9),k=rand(2,4); return {s:`小红有${base}支笔，小明的笔是她的${k}倍，小明有几支？`, a:base*k, step:['求倍数→用乘法',`${base}×${k}`,`=${base*k}`]}; },
-    // 长方形周长（三上可用）
-    peri:()=>{ const L=rand(20,60),W=rand(10,40); return {s:`操场长${L}米、宽${W}米，周长多少米？`, a:(L+W)*2, step:['长方形周长=(长+宽)×2',`(${L}+${W})×2`,`=${(L+W)*2}`]}; },
-    // 速度×时间（三上可用）
+    remainder:()=>{ const per=rand(3,6),q=rand(2,5),rem=rand(1,per-1),total=per*q+rem; return {s:`${total}个苹果，每${per}个放一盘，能放满几盘？`, a:q, step:['总数÷每份',`${total}÷${per}=${q}……${rem}`,`能放 ${q} 盘，余 ${rem} 个`]}; },
+    mixed:()=>{ const a=rand(10,40),b=rand(2,5),c=rand(2,4),r=a+b*c; return {s:`计算：${a} + ${b} × ${c} = ?`, a:r, step:['先算乘法，再算加法',`${b}×${c}=${b*c}`,`${a}+${b*c}=${r}`]}; },
+    wan:()=>{ const th=rand(1,9),h=rand(0,9),t=rand(0,9),o=rand(0,9),v=th*1000+h*100+t*10+o; return {s:`一个数由${th}个千、${h}个百、${t}个十、${o}个一组成，这个数是多少？`, a:v, step:['按数位组合',`${th}千+${h}百+${t}十+${o}`,`=${v}`]}; },
+    // —— 三年级上 ——
+    peri:()=>{ const L=rand(20,80),W=rand(10,50); return {s:`操场长${L}米、宽${W}米，周长多少米？`, a:(L+W)*2, step:['长方形周长=(长+宽)×2',`(${L}+${W})×2`,`=${(L+W)*2}`]}; },
     dist:()=>{ const v=rand(40,120),t=rand(2,5); return {s:`火车每小时${v}千米，行驶${t}小时，共行多少千米？`, a:v*t, step:['路程=速度×时间',`${v}×${t}`,`=${v*t}`]}; },
-    // 归一（三上可用）
     unit:()=>{ const u=rand(3,9),n=rand(3,6); return {s:`一盒铅笔${u}元，买${n}盒要多少钱？`, a:u*n, step:['先求单一量（已知）','再求总数→单价×数量',`${u}×${n}=${u*n}`]}; },
+    timeGo:()=>{ const h1=rand(8,16),m1=rand(0,5)*10,h2=h1+rand(1,3),m2=rand(0,5)*10,mins=(h2-h1)*60+(m2-m1); return {s:`从 ${h1}:${m1} 到 ${h2}:${m2}，经过了几分钟？`, a:mins, step:['结束时刻 - 开始时刻（统一成分钟）',`${h2}时${m2}分 - ${h1}时${m1}分`,`=${mins}分钟`]}; },
+    mass:()=>{ const t=rand(1,5); return {s:`${t}吨 = （ ）千克`, a:t*1000, step:['1吨 = 1000千克',`${t}×1000`,`=${t*1000}`]}; },
+    // —— 三年级下 ——
+    area:()=>{ const L=rand(10,30),W=rand(5,20); return {s:`一个长方形长${L}厘米、宽${W}厘米，面积是多少平方厘米？`, a:L*W, step:['长方形面积=长×宽',`${L}×${W}`,`=${L*W}`]}; },
+    twobymul:()=>{ const a=rand(12,39),b=rand(12,29),r=a*b; return {s:`计算：${a} × ${b} = ?`, a:r, step:['拆分：先算个位积，再算十位积相加',`${a}×${b}`,`=${r}`]}; },
+    twobydiv:()=>{ const b=rand(3,9),q=rand(11,Math.floor(99/b)),a=b*q; return {s:`计算：${a} ÷ ${b} = ?`, a:q, step:['从高位除起，商对齐数位',`${a}÷${b}`,`=${q}`]}; },
+    decimal:()=>{ const x=(rand(1,9))/10,y=(rand(1,9))/10,s=(x+y).toFixed(1); return {s:`计算：${x.toFixed(1)} + ${y.toFixed(1)} = ?`, a:parseFloat(s), step:['小数点对齐，相同数位相加',`${x.toFixed(1)}+${y.toFixed(1)}`,`=${s}`]}; },
+    date:()=>{ return {s:`第二季度包括 4、5、6 月，一共有多少天？`, a:91, step:['4月30天+5月31天+6月30天',`30+31+30`,`=91`]}; },
+    stat:()=>{ const f=rand(5,15),b=rand(5,15),v=rand(5,15); return {s:`统计表：喜欢足球${f}人、篮球${b}人、排球${v}人，一共多少人？`, a:f+b+v, step:['把三类人数相加',`${f}+${b}+${v}`,`=${f+b+v}`]}; },
   };
-  // 各年级可用题型
+  // 各年级可用题型（覆盖北师大一~三年级核心内容）
   const GRADE_GEN = {
-    '一上':['sum','left'], '一下':['sum','left'],
-    '二上':['sum','left','avg'], '二下':['sum','left','avg','mult'],
-    '三上':['sum','left','avg','mult','peri','dist','unit'],
-    '三下':['sum','left','avg','mult','peri','dist','unit'],
+    '一上':['sum','left','compare','order'],
+    '一下':['sum','left','money','change','hundred','pattern'],
+    '二上':['sum','left','carry','table','lenEst'],
+    '二下':['sum','left','avg','mult','remainder','mixed','wan'],
+    '三上':['sum','left','avg','mult','peri','dist','unit','timeGo','mass'],
+    '三下':['sum','left','avg','mult','peri','dist','area','twobymul','twobydiv','decimal','date','stat'],
   };
   const keys = (GRADE_GEN[g]||GRADE_GEN['三上']);
   const N = Math.min(6, keys.length);
@@ -7827,36 +8052,84 @@ function openWordProb(){
   round();
 }
 
+/* —— 口算挑战（计时/计数双模式）—— */
 function openSuan(){
   const g=state.profile.grade; const d=mathDiff(g);
-  let score=0,total=0,cur=null,timer=0,timeLeft=60,started=false,tm=null;
-  const body='<div class="card tint mb"><div class="hero"><div class="hero-flame">⏱️</div><div class="hero-meta"><div class="hero-num" id="sTime">60s</div><div class="hero-cap" id="sProg">已答对 0 题</div></div></div></div>'+
-    '<div class="quiz-q"><div class="quiz-py" id="sQ" style="font-size:46px">准备…</div><div class="quiz-hint">心算后点选正确答案</div></div>'+
-    '<div class="quiz-opts" id="sOpts"></div>'+
-    '<button class="btn btn-accent btn-block mt" id="sStart">开始挑战</button>';
-  openOverlay('口算挑战', body);
-  function gen(){ const op=d.ops[Math.floor(Math.random()*d.ops.length)]; let a,b,ans;
-    if(op==='+'){ a=Math.floor(Math.random()*d.max); b=Math.floor(Math.random()*(d.max-a)); ans=a+b; }
-    else if(op==='-'){ a=Math.floor(Math.random()*d.max); b=Math.floor(Math.random()*a); ans=a-b; }
-    else if(op==='×'){ a=Math.floor(Math.random()*9)+1; b=Math.floor(Math.random()*9)+1; ans=a*b; }
-    else { b=Math.floor(Math.random()*9)+1; ans=Math.floor(Math.random()*9)+1; a=b*ans; }
-    return {text:a+' '+op+' '+b+' = ?', ans};
+  openOverlay('口算挑战',
+    '<div class="quiz-q" style="text-align:center;padding:10px 0 16px">'+
+      '<div class="quiz-py" style="font-size:24px;font-weight:800;margin-bottom:22px">选择挑战模式</div>'+
+      '<div class="suan-modes">'+
+        '<div class="suan-mode" id="mTime"><div class="sm-ico">⏱️</div><div class="sm-t">计时挑战</div><div class="sm-s">180 秒内<br>尽可能多做题</div></div>'+
+        '<div class="suan-mode" id="mCount"><div class="sm-ico">🔢</div><div class="sm-t">计数闯关</div><div class="sm-s">固定 50 题<br>做完为止</div></div>'+
+      '</div></div>');
+  $('#mTime').onclick=()=>startSuan('time');
+  $('#mCount').onclick=()=>startSuan('count');
+
+  function startSuan(mode){
+    const isTime = mode==='time';
+    const TARGET = 50;                 // 计数模式固定题量
+    let score=0,total=0,answered=0,cur=null,timeLeft=180,tm=null;
+    const body='<div class="card tint mb"><div class="hero"><div class="hero-flame">'+(isTime?'⏱️':'🔢')+'</div><div class="hero-meta"><div class="hero-num" id="sTime">'+(isTime?'180s':('1/'+TARGET))+'</div><div class="hero-cap" id="sProg">已答对 0 题</div></div></div></div>'+
+      '<div class="quiz-q"><div class="quiz-py" id="sQ" style="font-size:46px">准备…</div><div class="quiz-hint">'+(isTime?'限时内多做多对':'50 题做完为止')+'</div></div>'+
+      '<div class="quiz-opts" id="sOpts"></div>';
+    openOverlay('口算挑战', body);
+
+    function gen(){
+      const opsPool=['+','-']; if(d.hasMul)opsPool.push('×'); if(d.hasDiv)opsPool.push('÷');
+      const op=opsPool[Math.floor(Math.random()*opsPool.length)];
+      let a,b,ans;
+      if(op==='+'){ a=Math.floor(Math.random()*d.addMax); b=Math.floor(Math.random()*(d.addMax-a)); ans=a+b; }
+      else if(op==='-'){ a=Math.floor(Math.random()*d.addMax)+1; b=Math.floor(Math.random()*a); ans=a-b; }
+      else if(op==='×'){
+        const f=Math.floor(Math.random()*9)+1;            // 因数 1~9
+        const maxA=Math.floor(d.mulMax/f);
+        const lo = d.mulMax<=81 ? 2 : 10;
+        const hi = d.mulMax<=81 ? 9 : Math.min(999, maxA);
+        a = Math.floor(Math.random()*(hi-lo+1))+lo; ans=a*f; b=f;
+      } else { // ÷ 整数除法，积与商均 ≤ 1000
+        const f=Math.floor(Math.random()*9)+1;
+        const maxQ=Math.min(Math.floor(d.mulMax/f), Math.floor(1000/f));
+        const q=Math.floor(Math.random()*maxQ)+1; a=f*q; ans=q; b=f;
+      }
+      return {text:a+' '+op+' '+b+' = ?', ans};
+    }
+    function buildOpts(ans){
+      const opts=new Set([ans]); const mag=Math.max(2, Math.round(Math.abs(ans)*0.12));
+      let guard=0;
+      while(opts.size<4 && guard++<60){
+        const off=Math.floor(Math.random()*mag*2+1)-mag;
+        const w=ans+off; if(w>=0 && w!==ans && !opts.has(w)) opts.add(w);
+      }
+      return shuffle([...opts]);
+    }
+    function round(){
+      if(isTime && timeLeft<=0){ finish(); return; }
+      if(!isTime && answered>=TARGET){ finish(); return; }
+      cur=gen(); $('#sQ').textContent=cur.text;
+      const box=$('#sOpts'); box.innerHTML='';
+      buildOpts(cur.ans).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
+        if(b.classList.contains('correct')||b.classList.contains('wrong'))return;
+        if(o===cur.ans){ b.classList.add('correct'); score++; addXP(4); }
+        else { b.classList.add('wrong'); $all('#sOpts .qopt').forEach(x=>{if(x.textContent==(''+cur.ans))x.classList.add('correct');}); collectWrong({subject:'math',type:'suan',q:cur.text,a:''+cur.ans,wrong:true}); }
+        $all('#sOpts .qopt').forEach(x=>x.classList.add('dim'));
+        answered++; total++;
+        $('#sProg').textContent='已答对 '+score+' 题';
+        if(isTime) $('#sTime').textContent=timeLeft+'s';
+        else $('#sTime').textContent=Math.min(answered,TARGET)+'/'+TARGET;
+        setTimeout(round, 320);
+      }; box.appendChild(b); });
+    }
+    function tick(){ timeLeft--; if(isTime)$('#sTime').textContent=timeLeft+'s'; if(timeLeft<=0)finish(); }
+    function finish(){
+      if(tm)clearInterval(tm);
+      state.progress.mathTotal+=total; state.progress.mathCorrect+=score; state.progress.practiceCount++; saveState();
+      const acc=total?Math.round(score/total*100):0;
+      openOverlay('口算挑战','<div class="empty"><div class="em-ico">🏁</div><div class="em-t">'+(isTime?'时间到！':'完成！')+' 答对 '+score+' 题</div>'+
+        '<div class="em-s">'+(isTime?('本次共做 '+total+' 题 · '):'')+'正确率 '+acc+'%</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
+    }
+    round();
+    if(isTime) tm=setInterval(tick,1000);
   }
-  function round(){ if(timeLeft<=0){ finish(); return; } cur=gen(); $('#sQ').textContent=cur.text;
-    const opts=new Set([cur.ans]); while(opts.size<4){ let w=cur.ans+Math.floor(Math.random()*20)-10; if(w>=0&&w!==cur.ans)opts.add(w); }
-    const box=$('#sOpts'); box.innerHTML=''; shuffle([...opts]).forEach(o=>{ const b=el('div','qopt'); b.textContent=o; b.onclick=()=>{
-      if(o===cur.ans){ score++; $('#sProg').textContent='已答对 '+score+' 题'; addXP(4); }
-      else { collectWrong({subject:'math',type:'suan',q:cur.text,a:''+cur.ans,wrong:true}); toast('正确答案 '+cur.ans,'err'); }
-      round();
-    }; box.appendChild(b); });
-  }
-  function tick(){ timeLeft--; $('#sTime').textContent=timeLeft+'s'; if(timeLeft<=0)finish(); }
-  function finish(){
-    clearInterval(tm); state.progress.mathTotal+=total; state.progress.mathCorrect+=score; state.progress.practiceCount++;
-    saveState();
-    openOverlay('口算挑战','<div class="empty"><div class="em-ico">🏁</div><div class="em-t">时间到！答对 '+score+' 题</div><div class="em-s">累计正确率 '+(state.progress.mathTotal?Math.round(state.progress.mathCorrect/state.progress.mathTotal*100):0)+'%</div></div><div class="mt"><button class="btn btn-primary" onclick="closeOverlay()">完成</button></div>');
-  }
-  $('#sStart').onclick=()=>{ if(started)return; started=true; $('#sStart').style.display='none'; tm=setInterval(tick,1000); round(); };
 }
 
 /* ============ 成长（错题本 + 进度看板）============ */
