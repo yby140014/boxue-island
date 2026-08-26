@@ -13,17 +13,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --bg:#EEF1F8; --bg2:#E7ECF7;
+  --bg:#EEF1F8; --bg2:#E7ECF7; --bg-grad:radial-gradient(120% 80% at 50% 0%,#F4F6FE 0%,#EAEFF9 55%,#E4E9F6 100%);
   --surface:#FFFFFF; --surface2:#F6F8FD; --surface3:#EEF2FB;
-  --ink:#16203A; --ink2:#46506B; --muted:#8A93AC; --faint:#B7BFd4;
+  --ink:#16203A; --ink2:#46506B; --muted:#8A93AC; --faint:#B7BFD4;
   --brand:#5B6CFF; --brand2:#8B5CF6; --brand-soft:#EAECFF; --brand-ink:#3A47C2;
   --accent:#FF8A3D; --accent-soft:#FFEFE2;
   --success:#1FB874; --success-soft:#E3F8EE;
   --warn:#F5A524; --danger:#F4577A; --danger-soft:#FFE7EE;
   --line:#E6EAF4; --line2:#EEF1F8;
-  --shadow-sm:0 2px 8px rgba(28,40,90,.06);
-  --shadow:0 10px 30px rgba(28,40,90,.10);
-  --shadow-lg:0 18px 50px rgba(28,40,90,.16);
+  --shadow-sm:0 2px 10px rgba(28,40,90,.07);
+  --shadow:0 12px 34px rgba(28,40,90,.12);
+  --shadow-lg:0 20px 56px rgba(28,40,90,.18);
   --r-xs:10px; --r-sm:14px; --r:20px; --r-lg:26px; --pill:999px;
   --tab-h:74px; --top-h:108px;
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
@@ -45,7 +45,7 @@
 html,body{margin:0;padding:0;height:100%}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  background:var(--bg); color:var(--ink);
+  background:var(--bg-grad); color:var(--ink);
   -webkit-font-smoothing:antialiased; overflow:hidden;
   font-size:15px; line-height:1.5;
 }
@@ -57,7 +57,7 @@ img,svg{display:block}
 /* ===== App Shell ===== */
 #app{
   position:relative; width:100%; max-width:480px; height:100vh; height:100dvh; margin:0 auto;
-  background:var(--bg);
+  background:linear-gradient(180deg,#FCFDFF 0%,var(--bg) 30%,var(--bg2) 100%);
   display:flex; flex-direction:column; overflow:hidden;
   box-shadow:0 0 60px rgba(20,30,70,.18);
 }
@@ -233,6 +233,7 @@ img,svg{display:block}
 .tab svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .tab.active{color:var(--brand)}
 .tab.active svg{stroke-width:2.3}
+.tab.active::before{content:"";position:absolute;top:4px;left:50%;transform:translateX(-50%);width:26px;height:4px;border-radius:var(--pill);background:linear-gradient(90deg,var(--brand),var(--brand2))}
 .tab .tab-dot{position:absolute;top:4px;right:50%;margin-right:-22px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--surface)}
 .tab .tab-label{transform:translateY(0)}
 
@@ -240,10 +241,13 @@ img,svg{display:block}
 .card{
   background:var(--surface); border-radius:var(--r); padding:18px;
   box-shadow:var(--shadow-sm); border:1px solid var(--line2);
+  transition:box-shadow .2s,transform .15s;
 }
+.card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
 .card.mb{margin-bottom:14px}
 .card.tint{background:linear-gradient(135deg,var(--brand-soft),color-mix(in srgb,var(--brand2) 14%,var(--surface)));border:none}
 .section-title{font-size:17px;font-weight:800;margin:4px 2px 12px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:"";width:4px;height:16px;border-radius:3px;background:linear-gradient(180deg,var(--brand),var(--brand2));flex:0 0 auto}
 .section-title .st-sub{font-size:12px;font-weight:600;color:var(--muted);margin-left:auto}
 
 .btn{
@@ -315,7 +319,8 @@ img,svg{display:block}
 /* Module grid (chinese/math) */
 .mod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
 .mod{background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--shadow-sm);border:1px solid var(--line2);
-  display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;transition:transform .12s}
+  display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s}
+.mod:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
 .mod:active{transform:scale(.97)}
 .mod .mod-ico{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:25px}
 .mod .mod-title{font-size:16px;font-weight:800}
@@ -354,8 +359,8 @@ img,svg{display:block}
 #overlay{position:absolute;inset:0;z-index:20;background:var(--bg);display:none;flex-direction:column;
   transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 #overlay.open{display:flex;transform:none}
-.ov-head{flex:0 0 auto;padding:calc(var(--safe-t) + 14px) 16px 14px;background:var(--surface);border-bottom:1px solid var(--line);
-  display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm)}
+.ov-head{flex:0 0 auto;padding:calc(var(--safe-t) + 14px) 16px 14px;background:linear-gradient(180deg,var(--surface),color-mix(in srgb,var(--surface) 92%,var(--brand-soft)));border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);position:relative;z-index:2}
 .ov-head .ov-back{width:38px;height:38px;border-radius:12px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--ink2)}
 .ov-head .ov-title{flex:1;font-size:18px;font-weight:800}
 .ov-head .ov-act{font-size:13.5px;font-weight:700;color:var(--brand);padding:6px 4px}
@@ -448,6 +453,14 @@ img,svg{display:block}
 .rc-sp{color:var(--muted);font-size:18px}
 .row-between{display:flex;gap:10px;align-items:center}
 .row-between .btn{flex:1}
+/* 学习路径进度条（讲解→例题→互动→作业） */
+.learn-path{display:flex;align-items:center;background:var(--surface);border:2px solid var(--line2);border-radius:14px;padding:10px 8px;margin-bottom:14px}
+.lp-node{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;cursor:pointer;min-width:48px}
+.lp-dot{width:26px;height:26px;border-radius:50%;background:var(--surface3);color:var(--muted);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;transition:.2s}
+.lp-t{font-size:11.5px;color:var(--muted);font-weight:600}
+.lp-node.on .lp-dot{background:var(--brand);color:#fff;box-shadow:0 3px 10px rgba(91,108,255,.35)}
+.lp-node.on .lp-t{color:var(--brand-ink)}
+.lp-line{flex:1;height:3px;background:var(--line2);border-radius:2px;margin:0 4px 16px}
 
 /* 知识点演示 */
 .teach-list{display:flex;flex-direction:column;gap:10px}
@@ -7924,13 +7937,21 @@ function openMathTeach(){
 function openTopic(t, g){
   const kp=(MATH_KP[g]||[]).find(x=>x.t===t); if(!kp) return;
   const dm=topicDemo(t, g);
+  const steps=[['讲解','secLec'],['例题','secEx'],['互动','secDemo'],['作业','secHw']];
+  const lp='<div class="learn-path" id="lp">'+
+    steps.map((s,i)=>'<div class="lp-node'+(i===0?' on':'')+'" data-sec="'+s[1]+'"><span class="lp-dot">'+(i+1)+'</span><span class="lp-t">'+s[0]+'</span></div>'+(i<steps.length-1?'<span class="lp-line"></span>':'')).join('')+'</div>';
   const body='<div class="note mb8">'+g+' · <b>'+t+'</b></div>'+
-    '<div class="section-title mt">🎬 视频语音讲解 <span class="st-sub">网课式 · 可播放/暂停</span></div><div id="lecBox"></div>'+
+    lp+
+    '<div class="section-title mt" id="secLec">🎬 视频语音讲解 <span class="st-sub">网课式 · 可播放/暂停</span></div><div id="lecBox"></div>'+
     '<div class="teach-detail">'+ kp.items.map(it=>'<div class="td-row"><b>'+it[0]+'</b><span>'+it[1]+'</span></div>').join('') +'</div>'+
-    '<div class="section-title mt">📝 例题演示 <span class="st-sub">分步讲解 · 思路→列式→计算→答</span></div><div id="tdEx"></div>'+
-    '<div class="section-title mt">互动演示</div><div id="tdDemo">'+dm.html+'</div>'+
-    '<div class="section-title mt">课后作业 <span class="st-sub">基础 / 进阶 / 易错 · 举一反三</span></div><div id="tdHw"></div>';
+    '<div class="section-title mt" id="secEx">📝 例题演示 <span class="st-sub">分步讲解 · 思路→列式→计算→答</span></div><div id="tdEx"></div>'+
+    '<div class="section-title mt" id="secDemo">互动演示</div><div id="tdDemo">'+dm.html+'</div>'+
+    '<div class="section-title mt" id="secHw">课后作业 <span class="st-sub">基础 / 进阶 / 易错 · 举一反三</span></div><div id="tdHw"></div>';
   openOverlay(t, body);
+  $all('#lp .lp-node').forEach(n=> n.onclick=()=>{ const el=document.getElementById(n.dataset.sec); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); });
+  // 滚动联动高亮当前步骤
+  const ov=document.getElementById('ovBody');
+  if(ov){ ov.onscroll=()=>{ const secs=['secLec','secEx','secDemo','secHw']; const cur=secs.reduce((a,s)=>{ const e=document.getElementById(s); if(e && e.getBoundingClientRect().top<260) a=s; return a; },'secLec'); $all('#lp .lp-node').forEach(n=> n.classList.toggle('on', n.dataset.sec===cur)); }; }
   lecturePlayer(t, g, document.getElementById('lecBox'));
   if(dm.bind) dm.bind(document.getElementById('tdDemo'));
   renderExamples(t, g, document.getElementById('tdEx'));
