@@ -84,10 +84,10 @@ img,svg{display:block}
 .screen{
   position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:18px 18px calc(var(--tab-h) + var(--safe-b) + 18px);
-  opacity:0; transform:translateY(10px); pointer-events:none;
-  transition:opacity .28s ease, transform .28s ease;
+  display:none;
 }
-.screen.active{opacity:1;transform:none;pointer-events:auto}
+.screen.active{display:block; pointer-events:auto; animation:screenIn .26s ease}
+@keyframes screenIn{from{transform:translateY(10px)}to{transform:none}}
 
 /* ===== Bottom Tab Bar ===== */
 #tabbar{
@@ -305,7 +305,7 @@ img,svg{display:block}
 
 /* animations */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.fade-up{animation:fadeUp .4s ease both}
+.fade-up{animation:fadeUp .4s ease}
 .pop{animation:pop .3s ease}
 @keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
 
@@ -345,35 +345,34 @@ img,svg{display:block}
 .audio-fab{position:absolute;bottom:calc(var(--tab-h) + var(--safe-b) + 16px);right:18px;z-index:9;
   width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 10px 26px color-mix(in srgb,var(--brand) 50%,transparent)}
-/* 登录/注册 闸门 */
-#authGate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#5B6CFF,#8B5CF6);font-family:inherit}
-body.authed #authGate{display:none}
-body:not(.authed) #app{display:none}
-.ag-card{width:100%;max-width:360px;background:#fff;border-radius:24px;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.ag-title{font-size:22px;font-weight:800;color:#16203A;margin-bottom:4px}
-.ag-sub{font-size:13px;color:#8A93AC;margin-bottom:18px}
-.ag-field{margin-bottom:12px}
-.ag-field input{width:100%;box-sizing:border-box;padding:13px 14px;border:1.5px solid #E6EAF4;border-radius:14px;font-size:15px;outline:none}
-.ag-field input:focus{border-color:#5B6CFF}
-.ag-btn{width:100%;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#5B6CFF,#8B5CF6);color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:6px}
-.ag-btn:active{transform:translateY(1px)}
-.ag-toggle{text-align:center;margin-top:14px;font-size:13px;color:#5B6CFF;cursor:pointer}
-.ag-err{color:#F4577A;font-size:13px;min-height:18px;margin-top:4px}
 </style>
 </head>
 <body>
-<div id="authGate">
-  <div class="ag-card">
-    <div class="ag-title" id="agTitle">欢迎来到博学岛</div>
-    <div class="ag-sub" id="agSub">登录后即可开始学习</div>
-    <div class="ag-field"><input id="agUser" placeholder="用户名（如 小明）" autocomplete="username"></div>
-    <div class="ag-field"><input id="agPw" type="password" placeholder="密码（至少4位）" autocomplete="current-password"></div>
-    <div class="ag-field" id="agPw2Wrap" style="display:none"><input id="agPw2" type="password" placeholder="再次输入密码"></div>
-    <div class="ag-err" id="agErr"></div>
-    <button class="ag-btn" id="agSubmit">登录</button>
-    <div class="ag-toggle" id="agToggle">没有账号？去注册</div>
-  </div>
-</div>
+<script>
+/* ===== 全局错误捕获：把 JS 异常显示到屏幕底部，便于在 QQ 浏览器等环境定位问题 ===== */
+(function(){
+  function showErr(msg){
+    var d=document.getElementById('__errbox');
+    if(!d){
+      d=document.createElement('div');
+      d.id='__errbox';
+      d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#F4577A;color:#fff;font-size:12px;line-height:1.5;padding:8px 10px;max-height:45%;overflow:auto;white-space:pre-wrap;font-family:monospace;box-shadow:0 -2px 10px rgba(0,0,0,.3)';
+      document.body.appendChild(d);
+    }
+    d.textContent += msg + '\n';
+  }
+  window.__showErr = showErr;
+  window.addEventListener('error', function(e){
+    var m = e.message || (e.error && e.error.message) || String(e.error||e);
+    var loc = e.filename ? (' @ '+(e.filename.split('/').pop())+':'+e.lineno+':'+e.colno) : '';
+    showErr('[JS错误] '+m+loc);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r = e.reason;
+    showErr('[Promise异常] ' + (r && (r.message||r) || r));
+  });
+})();
+</script>
 <div id="app">
   <header id="topbar">
     <div class="tb-row">
@@ -6175,9 +6174,7 @@ function renderProfile(){
       '<button class="btn btn-ghost" id="btnCodeIn" style="flex:1;justify-content:center">⌨️ 粘贴恢复</button></div>'+
       '<input type="file" id="fileInput" accept="application/json" class="hidden"></div>'+
     '<div class="section-title">关于</div>'+
-    '<div class="card"><div class="lr-title">博学岛 · 学习工作台</div><div class="note mt">为小学语文(人教)+数学(北师大)设计的随身学习台。笔顺动画与字库已离线内置，朗读需联网。</div></div>'+
-    '<div class="section-title">账号</div>'+
-    '<div class="card"><div class="note mb12" id="agUserLine"></div><button class="btn btn-primary" id="btnLogout" style="width:100%;justify-content:center">退出登录</button></div>';
+    '<div class="card"><div class="lr-title">博学岛 · 学习工作台</div><div class="note mt">为小学语文(人教)+数学(北师大)设计的随身学习台。笔顺动画与字库已离线内置，朗读需联网。</div></div>';
   // grade pick
   const gp=document.getElementById('gradePick');
   GRADES.forEach(g=>{ const b=el('button', g===p.grade?'on':''); b.className=g===p.grade?'grade-pick-on':'grade-pick-off'; b.textContent=g; b.style.cssText='padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;'+(g===p.grade?'background:var(--brand);color:#fff':'background:var(--surface3);color:var(--ink2)'); b.onclick=()=>{ p.grade=g; saveState(); renderProfile(); }; gp.appendChild(b); });
@@ -6197,8 +6194,6 @@ function renderProfile(){
   document.getElementById('fileInput').onchange=importData;
   document.getElementById('btnCodeOut').onclick=exportCode;
   document.getElementById('btnCodeIn').onclick=importCode;
-  var _lb=document.getElementById('btnLogout'); if(_lb) _lb.onclick=bxLogout;
-  var _ul=document.getElementById('agUserLine'); if(_ul){ var _se=bxGetSession(); _ul.textContent = (_se&&_se.u)?('当前登录：'+_se.u):'未登录'; }
 }
 
 /* —— 备份码：把全部进度编成一段可复制的文本，重传页面后粘贴即可还原 —— */
@@ -6310,7 +6305,13 @@ function boot(){
   applyTheme();
   bumpStreak();
   syncHeader();
-  renderHome();
+  try{ renderHome(); }
+  catch(err){ if(window.__showErr) window.__showErr('[renderHome 异常] '+((err&&err.message)||err)+' @ '+(err&&err.stack?err.stack.split('\n')[1]:'')); }
+  // 自检：首页是否真的写入了内容
+  try{
+    var _sh=document.getElementById('screen-home');
+    if(_sh && !_sh.children.length && window.__showErr){ window.__showErr('[自检] 首页容器内无内容（renderHome 可能未写入或被拦截）'); }
+  }catch(e){}
   // 顶部点击回首页
   document.getElementById('tbAvatar').onclick=()=>showScreen('profile');
   document.getElementById('tbTitle').onclick=()=>showScreen('home');
@@ -6323,48 +6324,6 @@ function boot(){
   });
 }
 boot();
-</script>
-<script>
-/* ===== 登录/注册（本地版自含，无后端；密码仅做本地哈希混淆，非生产级安全）===== */
-function bxHash(s){ var h=5381; s=String(s); for(var i=0;i<s.length;i++){ h=((h<<5)+h + s.charCodeAt(i))>>>0; } return ('0000000'+h.toString(16)).slice(-8); }
-function bxGetUsers(){ try{ return JSON.parse(localStorage.getItem('bxd_users')||'[]'); }catch(e){ return []; } }
-function bxSetUsers(u){ try{ localStorage.setItem('bxd_users', JSON.stringify(u)); }catch(e){} }
-function bxGetSession(){ try{ return JSON.parse(localStorage.getItem('bxd_session')||'null'); }catch(e){ return null; } }
-var _bxMode='login';
-function bxShowErr(m){ var e=document.getElementById('agErr'); if(e) e.textContent=m||''; }
-function bxSetMode(m){ _bxMode=m; document.getElementById('agTitle').textContent = m==='login'?'欢迎回到博学岛':'创建账号'; document.getElementById('agSub').textContent = m==='login'?'登录后即可开始学习':'设置一个用户名和密码'; document.getElementById('agPw2Wrap').style.display = m==='register'?'block':'none'; document.getElementById('agSubmit').textContent = m==='login'?'登录':'注册'; document.getElementById('agToggle').textContent = m==='login'?'没有账号？去注册':'已有账号？去登录'; bxShowErr(''); }
-function bxEnter(){ document.body.classList.add('authed'); var u=document.getElementById('agUser'),p=document.getElementById('agPw'),p2=document.getElementById('agPw2'); if(u)u.value=''; if(p)p.value=''; if(p2)p2.value=''; }
-function bxLogout(){ localStorage.removeItem('bxd_session'); document.body.classList.remove('authed'); if(_bxMode!=='login') bxSetMode('login'); bxShowErr(''); var u=document.getElementById('agUser'),p=document.getElementById('agPw'); if(u)u.value=''; if(p)p.value=''; }
-function bxSubmit(){
-  var u=(document.getElementById('agUser').value||'').trim();
-  var p=(document.getElementById('agPw').value||'');
-  if(!u){ bxShowErr('请输入用户名'); return; }
-  if(p.length<4){ bxShowErr('密码至少4位'); return; }
-  var users=bxGetUsers();
-  if(_bxMode==='register'){
-    if(users.some(function(x){return x.u===u;})){ bxShowErr('该用户名已被注册'); return; }
-    users.push({u:u,ph:bxHash(p)}); bxSetUsers(users);
-    try{ localStorage.setItem('bxd_session', JSON.stringify({u:u,ts:Date.now()})); }catch(e){}
-    bxEnter();
-  } else {
-    var rec=null;
-    for(var i=0;i<users.length;i++){ if(users[i].u===u){ rec=users[i]; break; } }
-    if(!rec){ bxShowErr('用户名不存在，请先注册'); return; }
-    if(rec.ph!==bxHash(p)){ bxShowErr('密码错误'); return; }
-    try{ localStorage.setItem('bxd_session', JSON.stringify({u:u,ts:Date.now()})); }catch(e){}
-    bxEnter();
-  }
-}
-function bxInitAuth(){
-  document.getElementById('agSubmit').onclick=bxSubmit;
-  document.getElementById('agToggle').onclick=function(){ bxSetMode(_bxMode==='login'?'register':'login'); };
-  document.getElementById('agPw').addEventListener('keydown',function(e){ if(e.key==='Enter') bxSubmit(); });
-  document.getElementById('agPw2').addEventListener('keydown',function(e){ if(e.key==='Enter') bxSubmit(); });
-  var s=bxGetSession();
-  if(s && s.u){ document.body.classList.add('authed'); }
-  else { document.body.classList.remove('authed'); bxSetMode('login'); }
-}
-bxInitAuth();
 </script>
 </body>
 </html>
