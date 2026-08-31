@@ -2972,8 +2972,9 @@ function speak(text, opt){
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = zh.lang; u.voice = zh;
-      u.rate  = (typeof opt.spd==='number') ? Math.max(0.5, Math.min(1.4, 0.5 + opt.spd*0.2)) : 0.95;
-      u.pitch = (typeof opt.pit==='number') ? Math.max(0.7, Math.min(1.4, 0.9 + opt.pit*0.06)) : 1.0;
+      // 语速保持放缓；语调以 opt.pit(5=中性)重映射：5→约1.0，整体更柔和自然，不发尖
+      u.rate  = (typeof opt.spd==='number') ? Math.max(0.45, Math.min(1.4, 0.5 + opt.spd*0.2)) : 0.9;
+      u.pitch = (typeof opt.pit==='number') ? Math.max(0.75, Math.min(1.22, 0.76 + opt.pit*0.055)) : 1.0;
       u.onend = function(){ if(onend)onend(); };
       u.onerror = function(){ baiduSpeak(text, opt); }; // 设备语音异常 → 回退百度
       window.speechSynthesis.speak(u);
@@ -2988,7 +2989,7 @@ function baiduSpeak(text, opt, retry){
   opt = opt||{};
   const spd = opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
   const onend = opt.onend||null;
-  const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&type=3';
+  const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&per=0&type=3';
   function fail(){
     // 首次失败且网络可能尚未就绪（刚进页面/设备还在握手）→ 稍候重测并重试一次
     if(retry<1 && (Net.state==='checking' || (typeof navigator==='undefined' || navigator.onLine!==false))){
@@ -3394,16 +3395,14 @@ function lsSpeakPinyin(syl){
   speak(syl,{spd:2});
 }
 let _readToken=0,_lsAudio=null;
-function lsStopSpeech(){ if(_lsAudio){try{_lsAudio.pause();}catch(e){}_lsAudio=null;} }
+function lsStopSpeech(){ if(_lsAudio){try{_lsAudio.pause();}catch(e){}_lsAudio=null;} try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){} }
 /* 朗读配置：语速放缓 + 语调更自然（百度 spd 越小越慢；设备语音按同档换算） */
-var LS_READ = { spd:1, pit:5, gap:360 };
+var LS_READ = { spd:1, pit:5, gap:360,
+  gapComma:300,   /* 逗号/顿号：短停，语气延续 */
+  gapSemi:400,    /* 分号：中停 */
+  gapStop:640,    /* 句号/问号/叹号：句末长停，换气 */
+  gapPara:900 };  /* 段落之间 */
 function lsClearReading(){ $all('#lsReader .reading').forEach(function(x){x.classList.remove('reading');}); }
-/* 整段阅读：一次性朗读整段 */
-function lsSpeakWhole(text, elm){
-  lsStopSpeech(); lsClearReading();
-  if(elm) elm.classList.add('reading');
-  speak(text, {spd:LS_READ.spd, pit:LS_READ.pit, onend:function(){ if(elm) elm.classList.remove('reading'); }});
-}
 /* 将段落按 ，。！？；、 切分为短句（遇到逗号即视为一句），保留句末标点 */
 function lsClauseList(text){
   const parts=(text||'').split(/([，。！？；、])/);
@@ -3414,24 +3413,52 @@ function lsClauseList(text){
   }
   return arr;
 }
-/* 点段落：以逗号为断句单位，逐句朗读并高亮当前句 */
-function lsSpeakClauses(si, paras){
-  const para = paras ? paras[si] : '';
-  lsStopSpeech(); lsClearReading();
+/* 通用：按序朗读短句，逐句高亮底色，句间停顿随标点变化；done=整组读完后的回调 */
+function lsSpeakSeq(clauses, clauseEls, done){
   const my=++_readToken;
-  const clauses=lsClauseList(para);
-  const container=document.querySelector('#lsReader .ls-sentence[data-si="'+si+'"]');
-  const clauseEls=container?container.querySelectorAll('.ls-clause'):[];
   let i=0;
   (function nxt(){
     if(my!==_readToken)return;
-    if(i>=clauses.length){ lsClearReading(); return; }
+    if(i>=clauses.length){ lsClearReading(); if(done)done(); return; }
     const ci=i;
-    if(clauseEls[ci]){ clauseEls.forEach(function(x){x.classList.remove('reading');}); clauseEls[ci].classList.add('reading'); }
-    // 逐句微调语调，制造轻柔起伏
-    const pit = LS_READ.pit + (i%2===0?1:-1);
-    speak(clauses[ci], {spd:LS_READ.spd, pit:pit, onend:function(){ if(my!==_readToken)return; i++; setTimeout(nxt, LS_READ.gap); }});
+    if(clauseEls&&clauseEls[ci]){ lsClearReading(); clauseEls[ci].classList.add('reading'); }
+    const pit=lsContourPitch(clauses[ci], ci);
+    // 停顿随句末标点变化：逗号短停、句号长停 —— 均匀停顿听起来最机械，节奏起伏才自然
+    const gap=lsClauseGap(clauses[ci]);
+    speak(clauses[ci], {spd:LS_READ.spd, pit:pit, onend:function(){ if(my!==_readToken)return; i++; setTimeout(nxt, gap); }});
   })();
+}
+/* 整段阅读：以逗号为断句单位，逐句朗读并高亮当前句 */
+function lsSpeakClauses(si, paras){
+  lsStopSpeech(); lsClearReading();
+  const container=document.querySelector('#lsReader .ls-sentence[data-si="'+si+'"]');
+  lsSpeakSeq(lsClauseList(paras?paras[si]:''), container?container.querySelectorAll('.ls-clause'):[]);
+}
+/* 句间停顿：按句末标点决定长短，制造朗读节奏（逗号短停、句末长停换气） */
+function lsClauseGap(text){
+  const last=(text||'').slice(-1);
+  if(last==='，'||last==='、') return LS_READ.gapComma;
+  if(last==='；') return LS_READ.gapSemi;
+  if(last==='。'||last==='！'||last==='？') return LS_READ.gapStop;
+  return LS_READ.gap;
+}
+/* 按标点计算语调曲线：问句上扬、感叹稍扬、陈述下沉、逗号延续；叠加正弦波动避免平直生硬 */
+function lsContourPitch(text, idx){
+  let p = LS_READ.pit;
+  const last=(text||'').slice(-1);
+  if(last==='？') p+=1.6; else if(last==='！') p+=0.9;
+  else if(last==='。') p-=1.1; else if(last==='，'||last==='、') p+=0.35; else if(last==='；') p+=0.5;
+  p += Math.sin((idx||0)*0.8)*0.7;
+  return Math.max(2, Math.min(8, p));
+}
+/* 单句阅读：只读点击的这一句（点句中任意字都只触发本句），高亮并即时打断其它朗读 */
+function lsSpeakClauseOne(elm){
+  if(!elm) return;
+  ++_readToken;
+  lsStopSpeech(); lsClearReading();
+  elm.classList.add('reading');
+  const text = (elm.dataset && elm.dataset.t) ? elm.dataset.t : (elm.textContent||'');
+  speak(text, {spd:LS_READ.spd, pit:lsContourPitch(text,0), onend:function(){ elm.classList.remove('reading'); }});
 }
 function lsEsc(s){return (s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 function lsRenderPlain(s){let html='';for(const ch of s){html+='<span class="ls-hl">'+lsEsc(ch)+'</span>';}return html;}
@@ -3454,19 +3481,20 @@ function lsRenderClauses(text, showPy){
   for(let i=0;i<parts.length;i+=2){
     const seg=parts[i]+(parts[i+1]||'');
     if(!seg || !/[^\s，。！？；、]/.test(seg)) continue;
-    html+='<span class="ls-clause">'+ (showPy?lsRenderFull(seg):lsRenderPlain(seg)) +'</span>';
+    html+='<span class="ls-clause" data-t="'+lsEsc(seg).replace(/"/g,'&quot;')+'">'+ (showPy?lsRenderFull(seg):lsRenderPlain(seg)) +'</span>';
   }
   return html;
 }
 function lsReadLesson(paras){
   lsStopSpeech(); lsClearReading();
-  const my=++_readToken;let i=0;
-  (function nxt(){
-    if(my!==_readToken)return;
-    if(i>=paras.length){ lsClearReading(); return; }
-    const si=i;const elm=document.querySelector('#lsReader .ls-sentence[data-si="'+si+'"]');
-    if(elm){ lsClearReading(); elm.classList.add('reading'); }
-    speak(paras[si],{spd:LS_READ.spd, pit:LS_READ.pit, onend:function(){if(my!==_readToken)return;i++;setTimeout(nxt, LS_READ.gap+250);}});
+  let si=0;
+  (function nextPara(){
+    if(si>=paras.length){ lsClearReading(); return; }
+    const pi=si;
+    const container=document.querySelector('#lsReader .ls-sentence[data-si="'+pi+'"]');
+    lsSpeakSeq(lsClauseList(paras[pi]||''), container?container.querySelectorAll('.ls-clause'):[], function(){
+      si++; setTimeout(nextPara, LS_READ.gapPara); // 段落之间停久一点
+    });
   })();
 }
 const LS_GMAP={'一上':'一年级上','一下':'一年级下','二上':'二年级上','二下':'二年级下','三上':'三年级上','三下':'三年级下'};
@@ -3523,7 +3551,7 @@ function buildFullReader(c, grade){
       html+='</div>';
     }
     html+='<div class="ls-lesson-title">📖 '+lsEsc(L.title)+'</div>';
-    html+='<div class="ls-actions"><button class="btn btn-sm green" id="lsReadAll">🔊 朗读整课</button><span class="note" style="margin:0">点段落逐句读 · 点「整段」读全段</span></div>';
+    html+='<div class="ls-actions"><button class="btn btn-sm green" id="lsReadAll">🔊 朗读整课</button><span class="note" style="margin:0">点句子读单句 · 点「整段」逐句读（高亮当前句）</span></div>';
     paras.forEach(function(s,si){
       const inner=lsRenderClauses(s, tb.showPy);
       html+='<div class="ls-para"><button class="ls-readpara" data-si="'+si+'" title="朗读整段">🔊 整段</button>';
@@ -3535,8 +3563,10 @@ function buildFullReader(c, grade){
     const ra=document.getElementById('lsReadAll');if(ra)ra.onclick=function(){lsReadLesson(paras);};
     $all('#lsReader .ls-sz').forEach(function(cc){cc.onclick=function(){speak(cc.dataset.c);};});
     $all('#lsReader .ls-shizichar').forEach(function(cc){cc.onclick=function(){speak(cc.dataset.c);flashTileShizichar(cc);};});
-    $all('#lsReader .ls-sentence').forEach(function(s){const si=+s.dataset.si;s.onclick=function(){lsSpeakClauses(si,paras);};});
-    $all('#lsReader .ls-readpara').forEach(function(b){const si=+b.dataset.si;b.onclick=function(e){e.stopPropagation();lsSpeakWhole(paras[si], b.closest('.ls-sentence'));};});
+    // 单句阅读：点句中任意字 → 只读这一句（不读其它）
+    $all('#lsReader .ls-clause').forEach(function(c){c.onclick=function(e){e.stopPropagation();lsSpeakClauseOne(c);};});
+    // 整段阅读：逐句朗读 + 当前句底色高亮
+    $all('#lsReader .ls-readpara').forEach(function(b){const si=+b.dataset.si;b.onclick=function(e){e.stopPropagation();lsSpeakClauses(si,paras);};});
   }
   gs.onchange=function(){tb.grade=gs.value;tb.title=null;tb.showPy=false;fillLessonSel();renderLesson();};
   document.getElementById('lsLessonSel').onchange=function(e){tb.title=e.target.value;tb.showPy=false;renderLesson();};
@@ -3545,7 +3575,7 @@ function buildFullReader(c, grade){
 (function(){
   if(document.getElementById('lsStyle'))return;
   const st=document.createElement('style');st.id='lsStyle';
-  st.textContent='#ovBody .ls-selrow{display:flex;gap:8px;margin-bottom:10px}#ovBody .ls-sel{max-width:160px;flex:none;padding:8px;border-radius:10px;border:1px solid #e3e6f0;background:#fff;font-size:14px}#ovBody .ls-sel:last-child{flex:1;min-width:0}#ovBody .ls-lesson{margin-top:6px}#ovBody .ls-pyseg{display:inline-flex;gap:0;margin:8px 0;border-radius:10px;overflow:hidden;border:1px solid #ffe0c2}#ovBody .ls-pyseg button{padding:6px 14px;border:none;background:#fff;color:#FF8A3D;font-size:13px;cursor:pointer}#ovBody .ls-pyseg button.active{background:#FF8A3D;color:#fff}#ovBody .ls-actions{display:flex;align-items:center;gap:10px;margin:6px 0 12px}#ovBody .ls-szrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}#ovBody .ls-sz{display:inline-flex;flex-direction:column;align-items:center;min-width:42px;padding:6px 8px;background:#fff7f1;border:1px solid #ffd9bf;border-radius:12px;cursor:pointer}#ovBody .ls-sz b{font-size:20px;color:#FF8A3D;line-height:1.1}#ovBody .ls-sz i{font-style:normal;font-size:11px;color:#b06a3a}#ovBody .ls-sz:active{transform:scale(.96)}#ovBody .ls-sentence{font-size:19px;line-height:2.0;padding:8px 10px;border-radius:10px;margin-bottom:6px;cursor:pointer;color:#222}#ovBody .ls-sentence:hover{background:#fff5ee}#ovBody .ls-sentence.reading{background:#ffe9d6}#ovBody .ls-hl{position:relative;display:inline-block}#ovBody .ls-pycol{display:inline-block;text-align:center;vertical-align:top;margin:0 1px}#ovBody .ls-pyt{display:block;font-size:11px;color:#8B5CF6;height:14px;line-height:14px;font-style:normal}#ovBody .ls-chb{display:block;font-size:19px}#ovBody .ls-pu .ls-chb{font-size:19px}#ovBody .ls-para{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}#ovBody .ls-readpara{flex:0 0 auto;align-self:center;margin-top:4px;padding:4px 10px;border:none;border-radius:10px;background:#FF8A3D;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}#ovBody .ls-readpara:active{transform:scale(.95)}#ovBody .ls-clause{display:inline}#ovBody .ls-clause.reading{background:#ffe1c4;border-radius:5px}#ovBody .ls-sentence.reading{background:#ffe9d6}';
+  st.textContent='#ovBody .ls-selrow{display:flex;gap:8px;margin-bottom:10px}#ovBody .ls-sel{max-width:160px;flex:none;padding:8px;border-radius:10px;border:1px solid #e3e6f0;background:#fff;font-size:14px}#ovBody .ls-sel:last-child{flex:1;min-width:0}#ovBody .ls-lesson{margin-top:6px}#ovBody .ls-pyseg{display:inline-flex;gap:0;margin:8px 0;border-radius:10px;overflow:hidden;border:1px solid #ffe0c2}#ovBody .ls-pyseg button{padding:6px 14px;border:none;background:#fff;color:#FF8A3D;font-size:13px;cursor:pointer}#ovBody .ls-pyseg button.active{background:#FF8A3D;color:#fff}#ovBody .ls-actions{display:flex;align-items:center;gap:10px;margin:6px 0 12px}#ovBody .ls-szrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}#ovBody .ls-sz{display:inline-flex;flex-direction:column;align-items:center;min-width:42px;padding:6px 8px;background:#fff7f1;border:1px solid #ffd9bf;border-radius:12px;cursor:pointer}#ovBody .ls-sz b{font-size:20px;color:#FF8A3D;line-height:1.1}#ovBody .ls-sz i{font-style:normal;font-size:11px;color:#b06a3a}#ovBody .ls-sz:active{transform:scale(.96)}#ovBody .ls-sentence{font-size:19px;line-height:2.0;padding:8px 10px;border-radius:10px;margin-bottom:6px;cursor:pointer;color:#222}#ovBody .ls-sentence:hover{background:#fff5ee}#ovBody .ls-sentence.reading{background:#ffe9d6}#ovBody .ls-hl{position:relative;display:inline-block}#ovBody .ls-pycol{display:inline-block;text-align:center;vertical-align:top;margin:0 1px}#ovBody .ls-pyt{display:block;font-size:11px;color:#8B5CF6;height:14px;line-height:14px;font-style:normal}#ovBody .ls-chb{display:block;font-size:19px}#ovBody .ls-pu .ls-chb{font-size:19px}#ovBody .ls-para{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}#ovBody .ls-readpara{flex:0 0 auto;align-self:center;margin-top:4px;padding:4px 10px;border:none;border-radius:10px;background:#FF8A3D;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}#ovBody .ls-readpara:active{transform:scale(.95)}#ovBody .ls-clause{display:inline;cursor:pointer;padding:1px 2px;border-radius:5px}#ovBody .ls-clause:hover{background:#fff1e6}#ovBody .ls-clause.reading{background:#ffe1c4;border-radius:5px}#ovBody .ls-sentence.reading{background:#ffe9d6}';
   document.head.appendChild(st);
 })();
 
