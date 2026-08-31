@@ -2827,6 +2827,14 @@ const state = Object.assign({
   progress:{ charMastered:{}, wordMastered:{}, kktMastered:{}, kktWrong:{}, mathCorrect:0, mathTotal:0, practiceCount:0 },
   settings:{ theme:'light' }
 }, LS.get('state', {}));
+/* 兜底补齐：旧 localStorage 数据可能没有 kktMastered/kktWrong 等新字段，访问前必须保证存在 */
+(function(){
+  const P = state.progress;
+  if(!P.charMastered) P.charMastered = {};
+  if(!P.wordMastered) P.wordMastered = {};
+  if(!P.kktMastered) P.kktMastered = {};
+  if(!P.kktWrong) P.kktWrong = {};
+})();
 
 function saveState(){ LS.set('state', state); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -6680,10 +6688,10 @@ var kktCur = { g:null, ui:null, li:null, tab:'cards', self:null };
 function kktLong(shortG){ return LS_GMAP[shortG] || shortG; }
 function kktGrade(shortG){ return (KKT_DATA.grades||[]).find(function(x){ return x.g===kktLong(shortG); }) || null; }
 function kktPKey(g,z){ return z+'@'+g; }
-function kktMastered(g,z){ return !!state.progress.kktMastered[kktPKey(g,z)]; }
-function kktToggleM(g,z){ var k=kktPKey(g,z); if(state.progress.kktMastered[k]) delete state.progress.kktMastered[k]; else state.progress.kktMastered[k]=1; saveState(); }
-function kktWrong(g,z){ return !!state.progress.kktWrong[kktPKey(g,z)]; }
-function kktToggleW(g,z){ var k=kktPKey(g,z); if(state.progress.kktWrong[k]) delete state.progress.kktWrong[k]; else state.progress.kktWrong[k]=1; saveState(); }
+function kktMastered(g,z){ var s=state.progress; return !!(s.kktMastered && s.kktMastered[kktPKey(g,z)]); }
+function kktToggleM(g,z){ var s=state.progress; if(!s.kktMastered) s.kktMastered={}; var k=kktPKey(g,z); if(s.kktMastered[k]) delete s.kktMastered[k]; else s.kktMastered[k]=1; saveState(); }
+function kktWrong(g,z){ var s=state.progress; return !!(s.kktWrong && s.kktWrong[kktPKey(g,z)]); }
+function kktToggleW(g,z){ var s=state.progress; if(!s.kktWrong) s.kktWrong={}; var k=kktPKey(g,z); if(s.kktWrong[k]) delete s.kktWrong[k]; else s.kktWrong[k]=1; saveState(); }
 
 /* 交叉引用：该字是否出现在课后三表（TEXTBOOK / 课文点读数据） */
 function kktInTextbook(shortG, z){
