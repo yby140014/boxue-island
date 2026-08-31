@@ -111,6 +111,15 @@ img,svg{display:block}
 .np-btn:disabled{opacity:.55;cursor:default}
 .np-btn.busy{background:#c08a00}
 .np-tip{margin-top:8px;font-size:11.5px;color:#888;line-height:1.5;min-height:15px}
+/* 初始化加载页：覆盖首屏解析 3.67MB 笔顺数据的 1–2 分钟，避免用户误以为卡死而提前点朗读 */
+#bootSplash{position:fixed;inset:0;z-index:99990;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:linear-gradient(135deg,var(--brand,#4f7cff),var(--brand2,#7c5cff));color:#fff;text-align:center;padding:24px}
+#bootSplash.hidden{display:none}
+.bs-logo{font-size:30px;font-weight:800;letter-spacing:1px}
+.bs-spinner{width:40px;height:40px;border-radius:50%;border:4px solid rgba(255,255,255,.35);border-top-color:#fff;animation:bsSpin .8s linear infinite}
+@keyframes bsSpin{to{transform:rotate(360deg)}}
+.bs-tip{font-size:15px;font-weight:600}
+.bs-sub{font-size:12px;opacity:.82;margin-top:2px}
 
 #screens{position:relative;flex:1 1 auto;overflow:hidden}
 .screen{
@@ -380,6 +389,12 @@ img,svg{display:block}
 </style>
 </head>
 <body>
+<div id="bootSplash">
+  <div class="bs-logo">博学岛</div>
+  <div class="bs-spinner"></div>
+  <div class="bs-tip">正在加载课文与字库数据…</div>
+  <div class="bs-sub">首次打开稍慢，请稍候</div>
+</div>
 <script>
 /* ===== 全局错误捕获：把 JS 异常显示到屏幕底部，便于在 QQ 浏览器等环境定位问题 ===== */
 (function(){
@@ -392,6 +407,7 @@ img,svg{display:block}
       document.body.appendChild(d);
     }
     d.textContent += msg + '\n';
+    var sp=document.getElementById('bootSplash'); if(sp) sp.classList.add('hidden');
   }
   window.__showErr = showErr;
   window.addEventListener('error', function(e){
@@ -6530,6 +6546,8 @@ function boot(){
     const q = e.target.closest('.qa[data-act]');
     if(q && QA_ACT[q.dataset.act]) QA_ACT[q.dataset.act]();
   });
+  // 初始化完成，移除加载页
+  try{ var sp=document.getElementById('bootSplash'); if(sp) sp.classList.add('hidden'); }catch(e){}
 }
 boot();
 </script>
