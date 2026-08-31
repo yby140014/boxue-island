@@ -79,6 +79,38 @@ img,svg{display:block}
   display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);
   padding:5px 11px;border-radius:var(--pill);font-size:12.5px;font-weight:700;margin-top:10px
 }
+#topbar .net-status{
+  display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);
+  padding:5px 11px;border-radius:var(--pill);font-size:12.5px;font-weight:700;margin-top:10px;
+  margin-left:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;
+  transition:background .2s
+}
+#topbar .net-status:active{background:rgba(255,255,255,.35)}
+#topbar .net-status .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 auto}
+#topbar .net-status.online .dot{background:#7CFFB0;box-shadow:0 0 6px rgba(124,255,176,.8)}
+#topbar .net-status.offline .dot{background:#FF6B6B;box-shadow:0 0 6px rgba(255,107,107,.8)}
+#topbar .net-status.checking .dot{background:#FFD66B;animation:netPulse 1s ease-in-out infinite}
+@keyframes netPulse{0%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}100%{opacity:.35;transform:scale(.8)}}
+#netPanel{
+  position:absolute; top:calc(100% - 4px); right:12px; z-index:30;
+  width:264px; max-width:calc(100vw - 24px);
+  background:#fff; color:#222; border-radius:14px; padding:12px 13px;
+  box-shadow:0 12px 34px rgba(0,0,0,.20); border:1px solid rgba(0,0,0,.06); font-size:13px;
+}
+#netPanel.hidden{display:none}
+.np-title{font-weight:800;font-size:14px;margin-bottom:6px;color:#1a1a1a}
+.np-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #f0f0f0}
+.np-row:first-of-type{border-top:none}
+.np-name{font-weight:700;color:#333}
+.np-state{font-size:12px;margin-top:3px}
+.np-state.ok{color:#1aa260}
+.np-state.bad{color:#e23b5a}
+.np-state.busy{color:#c08a00}
+.np-btn{flex:0 0 auto;border:none;background:#4f7cff;color:#fff;font-weight:700;
+  padding:7px 12px;border-radius:10px;font-size:12.5px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.np-btn:disabled{opacity:.55;cursor:default}
+.np-btn.busy{background:#c08a00}
+.np-tip{margin-top:8px;font-size:11.5px;color:#888;line-height:1.5;min-height:15px}
 
 #screens{position:relative;flex:1 1 auto;overflow:hidden}
 .screen{
@@ -384,6 +416,25 @@ img,svg{display:block}
       <div class="tb-avatar" id="tbAvatar">🦊</div>
     </div>
     <div class="tb-badge" id="tbStreak">🔥 0 天 · 0 XP</div>
+    <div class="net-status checking" id="netStatus" title="点击查看连接状态 / 手动重连"><span class="dot"></span><span id="netStatusText">检测中…</span></div>
+    <div id="netPanel" class="net-panel hidden">
+      <div class="np-title">连接状态</div>
+      <div class="np-row">
+        <div class="np-info">
+          <div class="np-name">📶 设备网络</div>
+          <div class="np-state busy" id="npNetState">检测中…</div>
+        </div>
+        <button class="np-btn" id="npNetBtn">重连网络</button>
+      </div>
+      <div class="np-row">
+        <div class="np-info">
+          <div class="np-name">☁️ 云端朗读服务</div>
+          <div class="np-state" id="npCloudState">未检测</div>
+        </div>
+        <button class="np-btn" id="npCloudBtn">重连云端</button>
+      </div>
+      <div class="np-tip" id="npTip"></div>
+    </div>
   </header>
 
   <div id="screens">
@@ -2759,27 +2810,183 @@ function gradeMasteredTotal(shortG){
   return n;
 }
 
-/* TTS 朗读（云端接口，平板需联网） */
+/* ===== 实时网络状态检测 + 手动重连（网络 / 云端朗读服务 双通道） ===== */
+var Net = (function(){
+  var netState = (typeof navigator!=='undefined' && navigator.onLine===false) ? 'offline' : 'checking';
+  var cloudState = 'unknown';
+  var timer=null, panelOpen=false;
+
+  function $(id){ return document.getElementById(id); }
+
+  function renderIcon(){
+    var box=$('netStatus'); if(!box) return;
+    box.className='net-status '+netState;
+    var t=$('netStatusText');
+    if(t) t.textContent = netState==='online'?'在线':(netState==='offline'?'离线':'检测中…');
+  }
+  function renderPanel(){
+    var ns=$('npNetState');
+    if(ns){ ns.textContent = netState==='online'?'已连接':(netState==='offline'?'未连接':'检测中…');
+            ns.className='np-state '+(netState==='online'?'ok':(netState==='offline'?'bad':'busy')); }
+    var cs=$('npCloudState');
+    if(cs){ cs.textContent = cloudState==='ok'?'可用':(cloudState==='dead'?'不可用':(cloudState==='checking'?'检测中…':'未检测'));
+            cs.className='np-state '+(cloudState==='ok'?'ok':(cloudState==='dead'?'bad':(cloudState==='checking'?'busy':''))); }
+  }
+  function setNet(s){ if(netState!==s){ netState=s; renderIcon(); renderPanel(); } }
+  function setCloud(s){ if(cloudState!==s){ cloudState=s; renderPanel(); } }
+
+  // 通用可达性探测（no-cors：网络层可达即 resolve，不读响应体规避跨域）
+  function probeURL(url, ms){
+    return new Promise(function(resolve){
+      if(typeof fetch==='undefined'){ resolve(false); return; }
+      var done=false;
+      var to=setTimeout(function(){ if(done)return; done=true;
+        // 超时：浏览器明确离线才判失败，否则视为成功（接口可能慢/被拦，不一概判死）
+        resolve(typeof navigator!=='undefined' && navigator.onLine===false ? false : true);
+      }, ms||6000);
+      var p=fetch(url,{method:'GET',mode:'no-cors',cache:'no-store'});
+      p.then(function(){ if(done)return; done=true; clearTimeout(to); resolve(true); })
+       .catch(function(){ if(done)return; done=true; clearTimeout(to);
+          resolve(typeof navigator!=='undefined' && navigator.onLine===false ? false : true);
+       });
+    });
+  }
+  // 重连网络：探测应用自身源站（经公网 CDN），确认设备已联网
+  function probeNetwork(){
+    setNet('checking');
+    var origin = (typeof location!=='undefined' && location.origin) ? location.origin : 'https://yby140014.github.io';
+    return probeURL(origin+'/?_='+Date.now(), 6000).then(function(ok){ setNet(ok?'online':'offline'); return ok; });
+  }
+  // 重连云端：探测百度 TTS 主机（本应用唯一外部依赖）
+  function probeCloud(){
+    setCloud('checking');
+    var url='https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent('网')+'&spd=4&vol=9&pit=5&type=3&_='+Date.now();
+    return probeURL(url, 6000).then(function(ok){ setCloud(ok?'ok':'dead'); return ok; });
+  }
+  // 组合探测（供 baiduSpeak 重试时调用）
+  function probe(){ return probeNetwork().then(function(ok){ return probeCloud().then(function(){ return ok; }); }); }
+
+  function schedule(){
+    if(timer)clearTimeout(timer);
+    timer=setTimeout(function(){
+      probeNetwork().then(function(ok){ if(ok) probeCloud(); }).then(schedule);
+    }, netState==='offline'?10000:30000);
+  }
+
+  function openPanel(){
+    panelOpen=true; var p=$('netPanel'); if(p) p.classList.remove('hidden');
+    renderPanel();
+    if(typeof navigator!=='undefined' && navigator.onLine===false){ setNet('offline'); }
+    else { probeNetwork(); probeCloud(); }
+  }
+  function closePanel(){ panelOpen=false; var p=$('netPanel'); if(p) p.classList.add('hidden'); }
+  function togglePanel(){ if(panelOpen) closePanel(); else openPanel(); }
+
+  function reconnectNetwork(){
+    var b=$('npNetBtn'); if(b){ b.disabled=true; b.classList.add('busy'); b.textContent='重连中…'; }
+    var tip=$('npTip'); if(tip) tip.textContent='正在检测设备网络…';
+    probeNetwork().then(function(ok){
+      if(b){ b.disabled=false; b.classList.remove('busy'); b.textContent='重连网络'; }
+      if(tip) tip.textContent = ok ? '✅ 设备网络已连接' : '❌ 仍未联网，请检查 WiFi / 流量后重试';
+    });
+  }
+  function reconnectCloud(){
+    var b=$('npCloudBtn'); if(b){ b.disabled=true; b.classList.add('busy'); b.textContent='重连中…'; }
+    var tip=$('npTip'); if(tip) tip.textContent='正在连接云端朗读服务…';
+    probeCloud().then(function(ok){
+      if(b){ b.disabled=false; b.classList.remove('busy'); b.textContent='重连云端'; }
+      if(tip) tip.textContent = ok ? '✅ 云端朗读服务可用' : '❌ 云端服务暂不可达（可能被网络拦截，可稍后重试）';
+    });
+  }
+
+  function start(){
+    renderIcon(); renderPanel();
+    if(typeof window!=='undefined'){
+      window.addEventListener('online',function(){ probeNetwork(); probeCloud(); });
+      window.addEventListener('offline',function(){ setNet('offline'); });
+      document.addEventListener('visibilitychange',function(){ if(!document.hidden){ probeNetwork(); probeCloud(); } });
+    }
+    var box=$('netStatus');
+    if(box) box.onclick=function(e){ e.stopPropagation(); togglePanel(); };
+    document.addEventListener('click',function(e){
+      if(!panelOpen) return;
+      var p=$('netPanel');
+      if(p && !p.contains(e.target) && e.target!==box && !(box&&box.contains(e.target))) closePanel();
+    });
+    var nb=$('npNetBtn'); if(nb) nb.onclick=reconnectNetwork;
+    var cb=$('npCloudBtn'); if(cb) cb.onclick=reconnectCloud;
+    probeNetwork(); probeCloud();
+    schedule();
+  }
+
+  return {
+    start:start, probeNetwork:probeNetwork, probeCloud:probeCloud, probe:probe,
+    reconnectNetwork:reconnectNetwork, reconnectCloud:reconnectCloud,
+    isOnline:function(){return netState==='online';},
+    get state(){return netState;}, get cloudState(){return cloudState;}
+  };
+})();
+
+/* TTS 朗读：优先用设备内置中文语音(Web Speech API，免联网/无跨域)，失败回退百度音频 */
 var _ttsWarnTs = 0;
 function ttsWarn(){
   const now = Date.now();
-  if(now - _ttsWarnTs < 4000) return; // 离线连发时避免刷屏
+  if(now - _ttsWarnTs < 4000) return; // 连发时避免刷屏
   _ttsWarnTs = now;
-  toast('朗读需要联网，请检查网络后重试 🙏');
+  // 按真实连通性区分提示，避免误报"需要联网"
+  const offline = (typeof Net!=='undefined' && Net.isOnline) ? !Net.isOnline() : (typeof navigator!=='undefined' && navigator.onLine===false);
+  if(offline) toast('朗读需要联网，请检查网络后重试 🙏');
+  else toast('朗读服务暂时不可用，请稍后重试 🙏');
+}
+function _hasZhVoice(){
+  try{
+    if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return null;
+    const vs = window.speechSynthesis.getVoices()||[];
+    for(let i=0;i<vs.length;i++){ if(/zh|Chinese|中文/i.test((vs[i].lang||'')+' '+(vs[i].name||''))) return vs[i]; }
+  }catch(e){}
+  return null;
 }
 function speak(text, opt){
+  opt = opt||{};
+  const onend = opt.onend||null;
+  // 1) 优先设备语音（无需联网、无跨域问题，最稳）
+  const zh = _hasZhVoice();
+  if(zh){
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = zh.lang; u.voice = zh; u.rate = 0.95; u.pitch = 1;
+      u.onend = function(){ if(onend)onend(); };
+      u.onerror = function(){ baiduSpeak(text, opt); }; // 设备语音异常 → 回退百度
+      window.speechSynthesis.speak(u);
+      return;
+    }catch(e){}
+  }
+  // 2) 回退百度音频
+  baiduSpeak(text, opt);
+}
+function baiduSpeak(text, opt, retry){
+  retry = retry||0;
   opt = opt||{};
   const spd = opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
   const onend = opt.onend||null;
   const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&type=3';
+  function fail(){
+    // 首次失败且网络可能尚未就绪（刚进页面/设备还在握手）→ 稍候重测并重试一次
+    if(retry<1 && (Net.state==='checking' || (typeof navigator==='undefined' || navigator.onLine!==false))){
+      setTimeout(function(){ Net.probe().then(function(){ baiduSpeak(text, opt, 1); }); }, 1800);
+      return;
+    }
+    ttsWarn(); if(onend)onend();
+  }
   try{
     const a = new Audio(url);
     if(_lsAudio){try{_lsAudio.pause();}catch(e){}}
     _lsAudio=a;
     a.onended=function(){ if(_lsAudio===a)_lsAudio=null; if(onend)onend(); };
-    a.onerror=function(){ if(_lsAudio===a)_lsAudio=null; ttsWarn(); if(onend)onend(); };
-    a.play().catch(function(){ if(_lsAudio===a)_lsAudio=null; ttsWarn(); if(onend)onend(); });
-  }catch(e){ ttsWarn(); if(onend)onend(); }
+    a.onerror=fail;
+    a.play().catch(fail);
+  }catch(e){ fail(); }
 }
 function $(s, r){ return (r||document).querySelector(s); }
 function $all(s, r){ return Array.from((r||document).querySelectorAll(s)); }
@@ -6174,7 +6381,7 @@ function renderProfile(){
       '<button class="btn btn-ghost" id="btnCodeIn" style="flex:1;justify-content:center">⌨️ 粘贴恢复</button></div>'+
       '<input type="file" id="fileInput" accept="application/json" class="hidden"></div>'+
     '<div class="section-title">关于</div>'+
-    '<div class="card"><div class="lr-title">博学岛 · 学习工作台</div><div class="note mt">为小学语文(人教)+数学(北师大)设计的随身学习台。笔顺动画与字库已离线内置，朗读需联网。</div></div>';
+    '<div class="card"><div class="lr-title">博学岛 · 学习工作台</div><div class="note mt">为小学语文(人教)+数学(北师大)设计的随身学习台。笔顺动画与字库已离线内置；朗读优先用设备语音(可离线)，也可联网使用云端发音。顶栏可查看/重连网络与云端服务。</div></div>';
   // grade pick
   const gp=document.getElementById('gradePick');
   GRADES.forEach(g=>{ const b=el('button', g===p.grade?'on':''); b.className=g===p.grade?'grade-pick-on':'grade-pick-off'; b.textContent=g; b.style.cssText='padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;'+(g===p.grade?'background:var(--brand);color:#fff':'background:var(--surface3);color:var(--ink2)'); b.onclick=()=>{ p.grade=g; saveState(); renderProfile(); }; gp.appendChild(b); });
@@ -6305,6 +6512,7 @@ function boot(){
   applyTheme();
   bumpStreak();
   syncHeader();
+  try{ if(typeof Net!=='undefined' && Net.start) Net.start(); }catch(e){ if(window.__showErr) window.__showErr('[Net.start 异常] '+((e&&e.message)||e)); }
   try{ renderHome(); }
   catch(err){ if(window.__showErr) window.__showErr('[renderHome 异常] '+((err&&err.message)||err)+' @ '+(err&&err.stack?err.stack.split('\n')[1]:'')); }
   // 自检：首页是否真的写入了内容
