@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0">
+<title>三年级上册科学 · 知识点与考点自测</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#2563eb; --accent-soft:#dbeafe;
+    --pink:#fbcfe8; --blue:#bfdbfe; --green:#bbf7d0; --yellow:#fde68a; --purple:#ddd6fe;
+    --red:#ef4444; --orange:#fb923c; --sky:#7dd3fc; --indigo:#a5b4fc;
+    --em:#c2410c; --em-bg:#fff7ed;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-text-size-adjust:100%; font-size:16px; line-height:1.7;}
+  header.app{
+    position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);
+    padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  header.app h1{margin:0;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  header.app .logo{width:28px;height:28px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+    border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#fff;}
+  header.app .spacer{flex:1}
+  header.app button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:8px 12px;font-size:14px;cursor:pointer;min-height:40px;}
+  header.app button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  header.app button.on{background:#10b981;color:#fff;border-color:#10b981;}
+  nav.toc{
+    background:#fff;border-bottom:1px solid var(--line);padding:10px 16px;
+    display:flex;gap:8px;flex-wrap:wrap;font-size:14px;
+  }
+  nav.toc a{color:var(--accent);text-decoration:none;padding:6px 10px;border-radius:6px;}
+  nav.toc a:hover{background:var(--accent-soft);}
+  main{max-width:1080px;margin:0 auto;padding:16px;}
+  section.unit{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:18px;
+    overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);
+  }
+  section.unit > h2{
+    margin:0;padding:14px 18px;font-size:18px;font-weight:700;cursor:pointer;user-select:none;
+    display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#eff6ff,#ffffff);
+    border-bottom:1px solid var(--line);
+  }
+  section.unit > h2 .badge{background:var(--accent);color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;font-weight:500;}
+  section.unit > h2 .arrow{margin-left:auto;transition:transform .2s;color:var(--muted);}
+  section.unit.collapsed > h2 .arrow{transform:rotate(-90deg);}
+  section.unit.collapsed > .body{display:none;}
+  .body{padding:16px;}
+  .body h3{margin:18px 0 10px;font-size:16px;color:var(--accent);font-weight:600;
+    display:flex;align-items:center;gap:8px;}
+  .body h3::before{content:"";width:4px;height:16px;background:var(--accent);border-radius:2px;}
+  /* === 思维导图交互编辑器 === */
+  .mm-block{margin-bottom:14px;}
+  .mm-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;}
+  .mm-toolbar .ttl{font-size:12px;color:var(--muted);margin-right:2px;}
+  .mm-toolbar button{font-size:13px;padding:6px 10px;border:1px solid var(--line);
+    background:#fff;border-radius:6px;cursor:pointer;min-height:34px;}
+  .mm-toolbar button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .mm-toolbar button.warn{color:var(--red);border-color:#fecaca;}
+  .mm-editor{position:relative;background:#fcfdff;border:1px solid var(--line);border-radius:10px;
+    overflow:auto;min-height:360px;touch-action:none;}
+  .mm-svg{position:absolute;left:0;top:0;z-index:1;pointer-events:none;}
+  .mm-node{position:absolute;z-index:2;border-radius:16px;padding:6px 12px;font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,.12);cursor:grab;user-select:none;
+    display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.25;font-size:13px;
+    text-align:center;max-width:360px;min-width:44px;white-space:normal;word-break:break-word;
+    transition:background .2s ease, box-shadow .15s ease;}
+  .mm-node.sel{outline:3px solid var(--accent);outline-offset:1px;}
+  .mm-node.editing{cursor:text;user-select:text;}
+  .mm-node .txt{outline:none;flex:1 1 auto;min-width:0;white-space:normal;word-break:break-word;}
+  .mm-node.editing .txt{white-space:normal;min-width:60px;}
+  .mm-node .spk{appearance:none;border:none;background:rgba(255,255,255,.65);border-radius:50%;
+    width:20px;height:20px;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
+  .mm-node:hover .spk{display:inline-flex;}
+  .mm-node .spk:active{transform:scale(.9);}
+  .mm-hint{font-size:12px;color:var(--muted);margin:4px 2px 0;}
+  /* 自测选项弹层 */
+  .opt-pop{position:fixed;z-index:500;background:#fff;border:1px solid var(--line);border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);padding:8px;min-width:180px;max-width:88vw;
+    max-height:calc(100vh - 24px);overflow:auto;}
+  .opt-pop .opt-hd{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:6px;padding:0 2px;}
+  .opt-pop .opt-close{border:none;background:none;font-size:18px;line-height:1;cursor:pointer;color:var(--muted);}
+  .opt-grid{display:flex;flex-direction:column;gap:6px;}
+  .opt-item{appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px;
+    font-size:14px;text-align:left;cursor:pointer;min-height:40px;}
+  .opt-item:hover{background:var(--accent-soft);}
+  .opt-item.wrong{color:var(--red);border-color:#fecaca;background:#fef2f2;text-decoration:line-through;position:relative;}
+  .opt-item.wrong::after{content:"✕";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--red);text-decoration:none;}
+  .opt-item.correct{border-color:#10b981;background:#ecfdf5;}
+  .test{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 20px;}
+  .test ol{margin:0;padding-left:22px;}
+  .test li{margin:10px 0;line-height:2;font-size:15px;}
+  .test li::marker{color:var(--accent);font-weight:600;}
+  .blank{
+    display:inline-block;min-width:54px;border-bottom:1.5px dashed #94a3b8;
+    padding:0 6px;color:var(--accent);font-weight:500;cursor:pointer;
+    background:#f8fafc;border-radius:4px;transition:background .15s;text-align:center;
+  }
+  .blank:hover{background:var(--accent-soft);}
+  .blank.long{min-width:110px;}
+  .blank.xl{min-width:170px;}
+  .blank.filled{color:#10b981;font-weight:600;background:#ecfdf5;border-bottom:1.5px solid #10b981;cursor:default;}
+  .blank.filled:hover{background:#ecfdf5;}
+  .test-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;justify-content:flex-end;}
+  .test-actions button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:8px 14px;font-size:14px;cursor:pointer;min-height:40px;}
+  .test-actions button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .test-actions button.danger{color:var(--red);border-color:#fecaca;}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);
+    background:#1f2937;color:#fff;padding:10px 18px;border-radius:8px;
+    font-size:14px;z-index:999;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .toast.show{opacity:.95;}
+  .sync{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:#10b981;}
+
+  /* === 章节详情样式 === */
+  .chapters{display:flex;flex-direction:column;gap:14px;margin-bottom:14px;}
+  .chapter{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:14px 18px;position:relative;
+  }
+  .chapter h4{
+    margin:0 0 10px;font-size:17px;font-weight:700;color:#1e3a8a;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .chapter h4 .num{
+    background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1e3a8a;
+    width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:16px;flex-shrink:0;
+  }
+  .chapter h4 .tts-btn{
+    margin-left:auto;appearance:none;border:1px solid var(--accent);background:#fff;color:var(--accent);
+    border-radius:18px;padding:4px 12px;font-size:12px;cursor:pointer;min-height:32px;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .chapter h4 .tts-btn:hover{background:var(--accent-soft);}
+  .chapter h4 .tts-btn.playing{background:var(--accent);color:#fff;}
+  .chapter .block-title{
+    display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;
+    margin:12px 0 8px;padding:4px 10px;border-radius:6px;
+  }
+  .chapter .block-title.kp{background:#fef3c7;color:#92400e;}
+  .chapter .block-title.exp{background:#d1fae5;color:#065f46;}
+  .chapter .block-title.dis{background:#fce7f3;color:#9d174d;}
+  .chapter ul.kp-list{margin:0;padding-left:22px;}
+  .chapter ul.kp-list li{margin:6px 0;line-height:1.85;}
+  .chapter .em{color:var(--em);font-weight:600;background:var(--em-bg);padding:0 3px;border-radius:3px;}
+  .chapter table{width:100%;border-collapse:collapse;margin:8px 0;font-size:14px;}
+  .chapter th,.chapter td{border:1px solid var(--line);padding:6px 10px;text-align:center;}
+  .chapter th{background:var(--accent-soft);font-weight:600;}
+  .chapter .exp-card{
+    background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;
+    margin:8px 0;
+  }
+  .chapter .exp-card .row{margin:6px 0;font-size:14px;}
+  .chapter .exp-card .lbl{font-weight:600;color:#065f46;}
+  .chapter .dis-list{margin:0;padding:0;list-style:none;}
+  .chapter .dis-list li{
+    margin:10px 0;padding:10px 14px;background:#fdf2f8;border-radius:8px;border-left:3px solid #ec4899;
+  }
+  .chapter .dis-list .q{font-weight:600;color:#9d174d;margin-bottom:4px;}
+  .chapter .dis-list .a{color:var(--ink);font-size:14px;}
+  .chapter .dis-list .a::before{content:"答：";font-weight:600;color:#10b981;}
+  .chapter .note{
+    background:#fef2f2;border-left:3px solid var(--red);padding:6px 12px;
+    margin:6px 0;font-size:14px;border-radius:4px;
+  }
+  .chapter .note::before{content:"注意：";color:var(--red);font-weight:600;}
+  .chapter .tip{
+    background:#eff6ff;border-left:3px solid var(--accent);padding:6px 12px;
+    margin:6px 0;font-size:14px;border-radius:4px;
+  }
+  .chapter .tip::before{content:"提示：";color:var(--accent);font-weight:600;}
+
+  /* === 点读状态样式 === */
+  body.tts-on .chapter p,
+  body.tts-on .chapter li,
+  body.tts-on .chapter td,
+  body.tts-on .chapter h4 .title,
+  body.tts-on .chapter .dis-list .a,
+  body.tts-on .chapter .exp-card .row,
+  body.tts-on .chapter .note,
+  body.tts-on .chapter .tip{
+    cursor:pointer;transition:background .15s;border-radius:3px;
+  }
+  body.tts-on .chapter p:hover,
+  body.tts-on .chapter li:hover,
+  body.tts-on .chapter td:hover,
+  body.tts-on .chapter .dis-list .a:hover,
+  body.tts-on .chapter .exp-card .row:hover,
+  body.tts-on .chapter .note:hover,
+  body.tts-on .chapter .tip:hover{background:var(--accent-soft);}
+  .tts-reading{background:#fef08a !important;}
+
+  @media (max-width: 640px){
+    header.app{padding:10px 12px;}
+    header.app h1{font-size:16px;}
+    main{padding:10px;}
+    .body{padding:12px;}
+    .test{padding:12px 14px;}
+    .test li{font-size:14px;}
+    nav.toc{font-size:13px;padding:8px 12px;}
+    .chapter{padding:10px 12px;}
+    .chapter h4{font-size:15px;}
+    .chapter table{font-size:13px;}
+  }
+  @media print{
+    header.app,nav.toc,.mm-toolbar,.test-actions,.tts-btn,.chapter h4 .tts-btn{display:none !important;}
+    body,html{background:#fff;}
+    body.tts-on{cursor:default !important;}
+    body.tts-on .chapter p, body.tts-on .chapter li, body.tts-on .chapter td{cursor:default !important;}
+    main{max-width:100%;padding:0;}
+    section.unit{break-inside:avoid;box-shadow:none;border:1px solid #999;margin-bottom:10px;}
+    section.unit.collapsed > .body{display:block !important;}
+    section.unit > h2 .arrow{display:none;}
+    .mm-editor{overflow:visible;border:none;padding:0;height:auto !important;}
+    .mm-node .spk{display:none !important;}
+    .opt-pop{display:none !important;}
+    .blank{border-bottom:1.5px solid #000;color:#000;}
+    .chapter{break-inside:avoid;box-shadow:none;}
+  }
+  .fs-controls{display:flex;gap:4px;align-items:center;font-size:13px;color:var(--muted);}
+  .fs-controls button{padding:4px 8px;min-height:32px;font-size:14px;}
+  body.fs-lg{font-size:18px;}
+  body.fs-lg .test li{font-size:17px;}
+  body.fs-lg .chapter h4{font-size:19px;}
+  body.fs-xl{font-size:20px;}
+  body.fs-xl .test li{font-size:19px;}
+  body.fs-xl .chapter h4{font-size:21px;}
+  .mm-title{text-align:center;margin:0 0 8px;font-size:14px;color:var(--muted);}
+</style>
+</head>
+<body class="">
+<header class="app">
+  <h1>
+    <span class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6m6-6v6M9 15v6m6-6v6M3 9h6m6 0h6M3 15h6m6 0h6"/></svg>
+    </span>
+    三年级上册科学 · 知识点与考点自测
+  </h1>
+  <div class="spacer"></div>
+  <span class="sync" title="答案自动保存在本浏览器"><span class="dot"></span>已自动保存</span>
+  <button id="tts-toggle" title="开启后点击任意文字即可朗读">🔊 点读：关</button>
+  <button id="tts-stop" title="随时中断语音朗读">⏹ 停止朗读</button>
+  <div class="fs-controls">
+    字号
+    <button data-fs="m">中</button>
+    <button data-fs="lg">大</button>
+    <button data-fs="xl">超大</button>
+  </div>
+  <button class="primary" onclick="window.print()">打印 / 导出 PDF</button>
+</header>
+
+<nav class="toc" id="toc"></nav>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   一、单元结构（含考点自测 + 思维导图）
+   ============================================================ */
+const UNITS = [
+  {id:'u1', name:'第一单元 天气', icon:'☀', sections:[
+    {kind:'mm', svgId:'mm-u1'},
+    {kind:'chapters', unitId:'u1', title:'第一单元 · 知识点与实验'},
+    {kind:'test', title:'第一单元考点自测', id:'t1', items:[
+      '我们可以从______、______、______、______等方面观察、记录天气。',
+      '地球被一层厚厚的______包围，大气中含有氮气、氧气、水汽等，我们称它为______。',
+      '通过数十年如一日的观测，我国著名气象学家______总结了现代气候的特征，为防灾减灾和国家建设提供了基本依据。',
+      '测量温度的仪器叫温度计；测量气温的温度计叫______，也叫寒暑表。',
+      '常用的温度单位是______，用符号______表示。',
+      '气温是指______地方的______温度。测量一天中的气温变化应在______测量。气象部门一般把气温计放在______中测量气温。',
+      '一天中，气温的变化规律是______。一天中的最低气温一般出现在______，最高气温一般出现在______。',
+      '降水量是指一定时间内，降落在一定面积地面上的______。',
+      '使用雨量器时需将雨量器______放置，待液面稳定后再读数；读数时，视线要与液面______，读数时要加上单位"______"。降水量的多少与使用的雨量器的粗细、大小______。',
+      '蒲福风力等级表将风力划分为______个等级。我们可以把风力简化为______、______、______三个等级。',
+      '风向是指______，通常用东、______、西、______、东南、______、东北、______ 8个方位来描述。',
+      '根据云量的多少，可以将天气分为______、______、______等。天空中阳光明媚，只有少量的云，记录为______；天空中云比较多，有时可以看到太阳，记录为______；云多而密，看不到太阳，记录为______。',
+      '云的形状与天气有关。下大雨前，经常出现______的云。',
+      '天气预报中包含的信息：气温（______和______）、______、______、天气状况（阴、晴、雨、雪等）、空气质量等。',
+      '同一种天气对不同的人群影响______。'
+    ]}
+  ]},
+  {id:'u2', name:'第二单元 水', icon:'💧', sections:[
+    {kind:'mm', svgId:'mm-u2'},
+    {kind:'chapters', unitId:'u2', title:'第二单元 · 知识点与实验'},
+    {kind:'test', title:'第二单元考点自测', id:'t2', items:[
+      '用湿抹布擦黑板，过一会儿后黑板上的水迹会消失，这种现象叫______。',
+      '蒸发在任何温度下都会进行。无论晴天还是雨天，空气中都存在______。',
+      '空气中的水蒸气遇冷时会变成______，这种现象叫______。例如：装有冰水混合物的杯子______壁出现的小水珠；冬天从室______进入温暖的室______，眼镜上有一层水珠。',
+      '水从常温到沸腾过程中温度______，温度达______℃时水开始沸腾，沸腾后继续加热，水温______，停止加热后，水温______。',
+      '水从室温到沸腾过程中有气泡产生，沸腾前水中的气泡上升的过程中由______变______，沸腾后气泡上升的过程中由______变______。水沸腾时，产生的"白气"实际上是______。',
+      '当环境温度低于______℃，水温下降到______℃时，水会开始结冰。水结冰过程中，温度会长时间保持在______℃。',
+      '水结冰实验中，在碎冰中加入食盐是为了______，从而加快试管中水结冰的速度。',
+      '热胀冷缩：物体受热体积______，遇冷体积______的现象。科学家发现，当温度降到______℃以下时，水会显现出"______"的性质，即温度降低，体积______。',
+      '当冰的温度上升到______℃时，冰开始熔化成水，由固体变成液体。冰在熔化过程中，温度会长时间保持在______℃不变，直到全部熔化成水之后，温度才会慢慢升高。',
+      '冰、水、水蒸气实质上都是______，三种状态之间可以______。______是使水的状态发生变化的重要因素。',
+      '通过对比实验可以发现：相同水温、相同水量下，食盐在水中的溶解能力比小苏打______。',
+      '用温水做食盐和小苏打溶解实验，相比常温下的水，物质的溶解能力______。',
+      '影响物质在水中溶解快慢的因素有______、______、______等。',
+      '分离食盐和沙子的混合物，要经历______、______、______三个步骤。第一步的目的是______；第二步的目的是______；第三步的目的是______。'
+    ]}
+  ]},
+  {id:'u3', name:'第三单元 物体的运动', icon:'🏎', sections:[
+    {kind:'mm', svgId:'mm-u3'},
+    {kind:'chapters', unitId:'u3', title:'第三单元 · 知识点与实验'},
+    {kind:'test', title:'第三单元考点自测', id:'t3', items:[
+      '判断一个物体是否运动的方法：看这个物体相对于另一个物体来说，______是否发生变化。如果发生变化，那么物体是______的；如果没有发生变化，那么物体是______的。',
+      '描述一个物体的位置时，要描述这个物体相对于参照物体的______和______。',
+      '物体有______、______、______等多种运动路线。同一物体可以有多种运动路线，如行驶的汽车车身在______，车轮在______。',
+      '运动路线是直线的运动，叫______。如电梯的升降、苹果从树上落下等。运动路线是曲线的运动，叫______。如过山车轨道、盘旋的老鹰等。',
+      '对于直线和曲线都有的复杂运动路线，我们可以采取______的方式。',
+      '运动的距离相同时，可以用比较______的方法来比较运动的快慢：用时短，运动______；用时长，运动______。',
+      '运动的时间相同时，可以用比较______的方法来比较运动的快慢：距离长，运动______；距离短，运动______。',
+      '利用物体运动______和______，可以比较它们运动的快慢，即______的大小。',
+      '运动的物体具有______。',
+      '做小球撞击木块实验时，每次小球从斜坡上释放的位置都要______。实验结果表明，斜面坡度越大，小球滚下的能量越______，撞击木块后木块滑行的距离越______。',
+      '设计"过山车"轨道的方法：①用______摆出"过山车"的轨道路线；②在纸上画出"过山车"的轨道路线，在交叉重叠的地方，用______线表示上方轨道，用______线表示下方轨道。',
+      '在制作"过山车"的过程中，轨道的长度可以用______和______来测量。',
+      '制作一个"过山车"通常要经过______、______、______、______、______、______等工程设计的步骤。',
+      '"过山车"的起点越高，小球运动得越______，到达终点时的能量越______。',
+      '比较小球在不同"过山车"上运动的快慢，需要测量小球运动的______和______，然后计算出小球运动的速度。'
+    ]}
+  ]}
+];
+
+/* ============================================================
+   二、参考答案（已修正）
+   ============================================================ */
+const ANSWERS = {
+  t1: [
+    '天气状况','气温','风向','风力',
+    '大气','大气',
+    '竺可桢',
+    '气温计',
+    '摄氏度','℃',
+    '室外','空气','同一时间','百叶箱',
+    '先升后降（低→高→低）','清晨日出前','下午2时左右',
+    '水层深度',
+    '水平','相平','毫米','有关',
+    '18','强','中','弱',
+    '风吹来的方向','南','北','西北','西南',
+    '晴天','多云','阴天','晴天','多云','阴天',
+    '积雨云',
+    '最高气温','最低气温','风向','风力',
+    '不同'
+  ],
+  t2: [
+    '蒸发',
+    '水蒸气',
+    '小水珠','液化','外','外','内',
+    '升高','100','保持不变','降低',
+    '大','小','小','大','水蒸气（液化形成的小水珠）',
+    '0','0','0',
+    '降低冰的熔点（使冰的温度降低）',
+    '膨胀','收缩','4','热缩冷胀','膨胀',
+    '0','0',
+    '同一种物质','相互转化','温度',
+    '强',
+    '增强（变大）',
+    '颗粒大小','水的温度','是否搅拌',
+    '溶解','过滤','蒸发','使食盐溶解','把沙过滤出来','使食盐结晶析出'
+  ],
+  t3: [
+    '位置','运动','静止',
+    '方向','距离',
+    '平动','转动','振动','平动','转动',
+    '直线运动','曲线运动',
+    '分段描述',
+    '时间','快','慢',
+    '距离','快','慢',
+    '距离','时间','速度',
+    '能量',
+    '相同（同一高度）','大','远',
+    '小圆点','实','虚',
+    '软尺','细绳',
+    '明确任务','制订方案','实施方案','测试','交流评估','改进完善',
+    '快','大',
+    '距离','时间'
+  ]
+};
+
+/* ============================================================
+   三、章节详细内容（按单元分）
+   ============================================================ */
+const CHAPTERS = {
+  u1: [
+    {n:1, t:'我们关心天气', kp:[
+      '<span class="em">我们常见的天气现象有阴、晴、雨、雪等。</span>',
+      '<b>常用的描述天气的词、句</b>：',
+      {tb:[['类型','词、句'],['表示冷热','寒冷、炎热等'],['表示刮风','微风、大风、狂风等'],['表示阴晴','晴朗、多云、万里无云、乌云密布等'],['表示雨雪','大雨、小雨、大雪、小雪等']]},
+      '我们可以从<span class="em">温度、云、风、降水</span>等方面观察、记录天气。',
+      '地球被一层厚厚的<span class="em">大气</span>包围，大气中含有氮气、氧气、水汽等，我们称它为<span class="em">大气圈</span>。',
+      '靠近地面的大气经常发生<span class="em">水平运动和垂直运动</span>，在这里会发生风、云、雨、雪等天气现象。',
+      '通过数十年如一日的观测和记录，我国著名气象学家<span class="em">竺可桢</span>总结了现代动植物随季节、气候变化而变化的规律。'
+    ], dis:[
+      {q:'我们可以从哪几个方面观察、记录天气？',a:'可以从气温、降水、风、云等方面观察、记录天气。'},
+      {q:'大气圈里有哪些天气现象？说一说我们对大气圈的认识。',a:'大气圈里会发生风、云、雨、雪等天气现象。地球被一层厚厚的大气包围着，我们称它为大气圈。靠近地面的大气经常发生水平运动和垂直运动，于是在这里会发生各种天气现象。'}
+    ]},
+    {n:2, t:'认识气温计', kp:[
+      '测量温度的仪器叫温度计；测量<span class="em">气温</span>的温度计叫<span class="em">气温计</span>，也叫寒暑表；测量<span class="em">体温</span>的温度计叫<span class="em">体温计</span>；测量<span class="em">水温</span>的温度计叫<span class="em">水温计</span>。',
+      '<b>气温计、体温计和水温计的比较：</b>',
+      {tb:[['温度计','相同点','不同点'],['气温计','基本构造相似，都用于测量温度','最小刻度通常为 1℃，量程通常为 -30℃～50℃'],['体温计','基本构造相似，都用于测量温度','最小刻度通常为 0.1℃，量程通常为 35℃～42℃'],['水温计','基本构造相似，都用于测量温度','最小刻度通常为 1℃，量程通常为 -10℃～110℃']]},
+      '常用的温度单位是<span class="em">摄氏度</span>，用<span class="em">℃</span>表示。',
+      '气温计由<span class="em">刻度、液柱、玻璃泡、单位符号</span>等组成。',
+      '<b>气温计上的刻度：</b>(1)1大格表示 10℃，1大格分为10小格，1小格表示 1℃。(2)0℃以上，越往上数字越大，表示温度越高；0℃以下，越往下数字越大，表示温度越低。',
+      '<b>气温计的读数方法：</b>零刻度，读数起；向上数，摄氏几；向下数，零下几。(1)判断温度在 0℃ 的上方还是下方。(2)数出液柱顶端与 0℃ 相距的格数。'
+    ], dis:[
+      {q:'我们在利用气温计模型练习读数时，遇到了什么问题？需要注意什么？',a:'气温计模型的液柱顶端有时会在 0℃ 以下。气温低于 0℃ 时，读数时要读作零下×摄氏度，写作-×℃。'},
+      {q:'利用气温计测量气温对于我们交流天气情况有什么帮助？',a:'使我们在描述冷暖情况时更加客观准确，便于发现天气变化的规律。'}
+    ]},
+    {n:3, t:'测量气温', kp:[
+      '气温是指<span class="em">室外阴凉、通风</span>地方的空气温度。测量一天中气温变化应在<span class="em">室外同一地点</span>测量。',
+      '<b>气温计使用注意事项：</b>',
+      '(1) 手持气温计，不要<span class="em">触碰玻璃泡</span>。',
+      '(2) 放在<span class="em">阳光照射不到且空气流通</span>的地方。',
+      '(3) 放在离地面 <span class="em">1.5米</span> 处，保持<span class="em">干燥</span>。',
+      '(4) 液柱<span class="em">稳定</span>后再读数。',
+      '(5) 读数时视线和液柱顶端保持<span class="em">齐平</span>。',
+      '气象部门一般把气温计放在<span class="em">百叶箱</span>中测量气温，气温计离地面 1.5 米。百叶箱中空气是<span class="em">流通</span>的，而且<span class="em">阳光照射不到</span>。',
+      '选择一天中的 5 个时间点（一般为清晨、上午、中午、下午、傍晚）测量气温，将测量结果在气温计模型图上涂色，把液柱顶端相连形成<span class="em">折线图</span>，能够直观、形象地展现一天的天气变化规律。',
+      '从折线图可以看出，白天的气温变化是<span class="em">先上升后下降</span>。',
+      '一天中的最低气温一般出现在<span class="em">清晨日出前</span>，最高气温一般出现在<span class="em">下午2时到3时</span>。'
+    ], exp:{t:'测量一天中5个时间点的气温变化',m:['百叶箱','气温计','记录表等'],s:[
+      '(1) 选择一天中的5个时间点，用同一支气温计测量教室外同一地点背阴处的气温。',
+      '(2) 将测量结果记录下来。',
+      '(3) 根据记录的数据绘制气温变化示意图。'
+    ],dis:'每天白天气温的变化特点是<span class="em">先升高，后降低</span>；一天中的5个时间点，下午2时～3时的气温最高。'},dis:[
+      {q:'我的记录和同学的记录相同吗？为什么要严格按照气温计的使用方法测量气温？',a:'我的记录和同学的记录有一定的差异。气温多变，如果不严格按照气温计的使用方法测量，可能会造成巨大的误差，导致测量无效。'},
+      {q:'室外一天中的气温是怎样变化的？',a:'整体上从低变高再变低，14时左右气温最高。'},
+      {q:'将多个涂色后的气温计模型图按照时间顺序连续排列，这样描述气温有什么优点？',a:'可以帮助我们更清楚地看到一段时间内气温的变化趋势。'}
+    ]},
+    {n:4, t:'测量降水量', kp:[
+      '降水量是指<span class="em">一定时间内</span>，降落在<span class="em">一定面积</span>地面上的<span class="em">水层深度</span>。',
+      '我们可以用<span class="em">雨量器</span>来测量降水量的多少，降水量的单位是<span class="em">毫米</span>。',
+      '使用雨量器时需将雨量器<span class="em">水平放置</span>，待液面稳定后再读数，读数时，视线要与液面<span class="em">平行</span>，读数时要加上单位"毫米"。',
+      '降雨量的多少与使用的雨量器的<span class="em">粗细、大小无关</span>，雨量器测量的是降水在雨量器中的<span class="em">高度</span>。',
+      '降水量通常根据一个地方24小时降水量的多少来划分等级（小雨、中雨、大雨、暴雨、大暴雨、特大暴雨）。',
+      '暴雨预警分为四个等级：<span class="em">蓝色预警、黄色预警、橙色预警、红色预警</span>，红色预警等级最高。'
+    ], exp:{t:'制作简易雨量器并测量降水量',m:['直筒透明杯','刻度条','剪刀','透明胶带','喷壶','水槽等'],s:[
+      '(1) 制作测量降水量的简易工具——雨量器：选一个直筒透明杯，在杯子外壁贴上刻度条（"0"刻度从杯子内底部贴起，单位：毫米），刻度条外贴上透明胶带用于防水，把雨量器放在雨中就可以测量降水量了。',
+      '(2) 把水槽轻轻放平，将粗细、大小不同的雨量器放置在水槽中，使雨量器维持水平状态，用喷壶模拟降雨，用雨量器收集"雨水"，模拟降雨结束后，取出雨量器，将其水平放置，读出并记录降水量。'
+    ],notice:[
+      '(1) 选取的透明杯的高度最好在 15 厘米以上，以减少落入杯中的"雨水"溅出，造成测量结果偏小。',
+      '(2) 刻度条的长度应略小于直筒杯的高度。',
+      '(3) 刻度条的"0"刻度线要与直筒杯内部的底面对齐，使读数准确。',
+      '(4) 降雨量指的是雨水的深度，雨量器的口径大小对测量结果没有影响。',
+      '(5) 收集"雨水"时，注意不要让雨量器内的"雨水"溢出。',
+      '(6) 取出雨量器后，将其水平放置，待液面稳定后再读数。',
+      '(7) 读数时，视线要与液面相平。',
+      '(8) 读数时要加上单位"毫米"。'
+    ],dis:'降水量可以用<span class="em">雨量器</span>来测量。雨量器的<span class="em">粗细、大小</span>不影响降水量的测量。'},dis:[
+      {q:'用自制雨量器测量降水量时，要注意什么？',a:'雨量器应放在平坦开阔地带；测量24小时降水量时，要保证雨量器收集到24小时的降水；读数时要将雨量器放平，视线与液面齐平。'},
+      {q:'下雪也属于降水，怎样测量下雪天的降水量？',a:'同样使用雨量器收集雪，待雨量器中的雪全部熔化成水后再读数，此时的数据就是下雪天的降水量。'}
+    ]},
+    {n:5, t:'观测风', kp:[
+      '风是我们周围<span class="em">流动的空气</span>。风看不见、摸不着，我们可以利用<span class="em">地面的物体、风旗、风向袋、风向标</span>等测量风向。',
+      '观测风的时候，我们主要观测它的<span class="em">大小和方向</span>。',
+      '风速越大，风力越大，我们可以把风力简化为<span class="em">无风、微风、大风</span>三个等级。',
+      '风向是指风<span class="em">吹来的方向</span>，通常用东、南、西、北、东南、西南、东北、西北 8 个方位来描述。如北风是从北方吹来的风，东南风是从东南方吹来的风。',
+      '风力大小可以用蒲福风力等级表来描述。蒲福风力等级表将风力划分为 <span class="em">0～12级</span>，共 <span class="em">13</span> 个等级。'
+    ], exp:{t:'制作风旗测量风力和风向',m:['1 块轻薄的布（长约 35 厘米、宽约 20 厘米）','1 张硬纸板','1 个订书机'],s:[
+      '(1) 将布作为风旗的旗面，硬纸板作为风旗的旗杆。',
+      '(2) 将硬纸板对折，使布边对齐折痕放入硬纸板内，将硬纸板合上，并用订书机订结实。',
+      '(3) 到室外空旷的地方（如远离教室的操场中央）将方位图铺在地面上，确定好方位。举起风旗，观察 2 分钟。',
+      '(4) 记录风力（对照风力等级表）和方向。'
+    ],dis:'风旗不动代表无风；风旗微动代表微风；风旗展开飘动代表大风。'},dis:[
+      {q:'借助不同物体、使用不同方法观测风，结果相同吗？',a:'不相同。例如借助风旗观测风时，旗面飘动方向与风向相反；借助风向标观测风时，风向标的箭头指向与风向相同。'},
+      {q:'在观测风的过程中，风力和风向有变化吗？遇到有变化的情况，我们怎么判定风力和风向？',a:'有变化。风力和风向有变化时，以观测的时间段里主要的风力和风向为准。'}
+    ]},
+    {n:6, t:'观察云', kp:[
+      '云是<span class="em">小水滴</span>或<span class="em">小冰晶</span>飘浮在空中积聚形成的。',
+      '根据云量的多少，可以将天气分为<span class="em">晴、多云、阴</span>等。天空中阳光明媚，只有少量的云，记录为<span class="em">晴</span>；天空中云比较多，有时可以看到太阳，记录为<span class="em">多云</span>；云多而密，看不到太阳，记录为<span class="em">阴</span>。',
+      '<b>不同的云预示着不同的天气：</b>',
+      '(1) 很厚的、大团的云叫<span class="em">积云</span>，预示着未来很可能会下雨；',
+      '(2) 像羽毛、钩子的云叫<span class="em">卷云</span>，经常在晴天出现；',
+      '(3) 像鱼鳞的云出现时，天气变化不定。',
+      '<b>太阳、云和雨的关系：</b>在<span class="em">太阳热量</span>的作用下地面的水变成<span class="em">水蒸气</span>，水蒸气上升遇冷形成小水滴或小冰晶，聚集成云，云中的小水滴或小冰晶不断碰撞、合并，体积逐渐变大，超过空气的托举能力，形成<span class="em">降水</span>。'
+    ], dis:[
+      {q:'出太阳的时候，一定是晴天吗？看不见太阳的时候，一定是阴天吗？',a:'都不一定。多云介于晴天和阴天之间，天气为多云时，天空中云量较多，且仍然可见太阳，但太阳有时会被云层遮住。'},
+      {q:'我们对今天的云量的判断一致吗？',a:'不一致。由于观察时间、观察地点以及判断标准各不相同，导致对云量的判断不一致。'},
+      {q:'比较我们对雨、风、云的观测，哪个比较准确？哪个不太准确？说一说我们的理由。',a:'对雨和风的观测比较准确。观测雨可以用自制雨量器测量降水量，精确到毫米；观测风可以使用风旗判断风向，对照蒲福风力等级表判断风力，准确度较高。对云的观测不太准确。观察云时缺少像雨量器、风旗这样的工具，因此每个人的观察结果会有较大差异，不太准确。'}
+    ]},
+    {n:7, t:'天气预报', kp:[
+      '天气观测记录一般要记录<span class="em">日期、地点、观测时间、云量、降水量、风力、风向和气温</span>等。',
+      '天气预报中包含的信息：<span class="em">气温（最高气温和最低气温）、风力和风向、天气状况（阴、晴、雨、雪等）、空气质量</span>等。'
+    ], dis:[
+      {q:'天气预报中所包含的信息，与我们的天气观测记录相比，有什么相同和不同？结合一天中气温变化的规律，我们可以怎样解释？',a:'天气预报中关于气温的信息是一个范围，我们的天气观测记录中是一个或多个气温数据；天气预报中关于云量、风力、风向等信息，都有专业的描述。一天中14时左右气温最高，凌晨太阳出来之前气温最低，天气预报的最高气温和最低气温分别对应这两个时间点的气温。整体上，天气预报的气温信息与我们总结的一天中气温变化规律基本一致。'},
+      {q:'我们有哪些查询未来天气的方法？',a:'收看电视台的天气预报、借助手机上的天气软件查询等。'}
+    ]}
+  ],
+  u2: [
+    {n:1, t:'水到哪里去了', kp:[
+      '在玻璃片和植物叶片上涂少量水，一段时间后水会<span class="em">消失</span>，这种水消失的现象叫<span class="em">蒸发</span>。',
+      '<b>生活中常见的水的蒸发现象：</b>湿布擦桌子，桌面上的水迹变干；雨后路面变干；湿衣服变干。',
+      '蒸发在<span class="em">任何温度</span>下都会进行。无论晴天还是雨天，空气中都<span class="em">存在</span>水蒸气。',
+      '水的特点：<span class="em">液体，无色，无味</span>，透明，<span class="em">无固定形状</span>，会流动，会蒸发。',
+      '医用酒精也能像水一样<span class="em">蒸发</span>，变成看不见的<span class="em">气体</span>。'
+    ], exp:{t:'验证水的蒸发现象',m:['干燥透明的大杯子','温水','小杯子'],s:[
+      '(1) 取一小杯温水，并在水面处做好标记。',
+      '(2) 用干燥透明的大杯子罩住，观察现象并记录。'
+    ],dis:'小杯子里的温水变少，干燥透明的大杯子内壁出现一层薄薄的水雾。发现：水会变成<span class="em">水蒸气</span>。'},dis:[
+      {q:'玻璃片和植物叶片上的水蒸发后到哪里去了？',a:'水蒸发后变成水蒸气进入到空气中。'},
+      {q:'实验中原本干燥的大杯子内部出现水了吗？这些水是怎样来的？',a:'出现了。由于有大杯子罩着，温水蒸发后变成的水蒸气没有散发到空气中，随着温度降低在大杯子内部凝结成了小水珠。'}
+    ]},
+    {n:2, t:'水珠从哪里来', kp:[
+      '冬天的早晨，温暖的房间里玻璃窗上的小水珠来自空气中的<span class="em">水蒸气</span>。',
+      '装有冰水混合物的杯子<span class="em">外壁</span>出现的小水珠是空气中的<span class="em">水蒸气遇冷形成的</span>。',
+      '杯子外壁上出现水珠与<span class="em">温度</span>有关，温度高的水蒸气遇到温度低的物体，在<span class="em">物体表面</span>会形成小水珠。',
+      '<b>生活中出现水珠的现象：</b>',
+      '(1) 洗澡时浴室的玻璃上出现水珠。',
+      '(2) 冬天从室外进入温暖的室内，眼镜上有一层水珠。',
+      '(3) 从冰箱冷冻室拿出的冰棍包装袋上出现水珠。'
+    ], exp:{t:'验证水珠从哪里来',m:['透明玻璃杯','冰水混合物','玻璃片','色素','干抹布'],s:[
+      '(1) 取两个透明玻璃杯，两个杯子中都放入冰水混合物，一个杯子杯口盖紧玻璃片，另一个杯子杯口敞开，观察现象并记录。',
+      '(2) 两个装有冰水混合物的透明玻璃杯，杯口敞开，向其中一个杯加入色素，另一杯不加，观察现象并记录。',
+      '(3) 取两个透明玻璃杯，将其中一个杯子冷冻后拿出并迅速擦干，另一个杯子不冷冻但放入冰水混合物，观察现象并记录。'
+    ],dis:'杯子外壁出现的水珠与<span class="em">温度</span>有关。当空气中的水蒸气遇到<span class="em">冰冷</span>的玻璃杯外壁，就会在杯子外壁上<span class="em">凝结</span>成小水珠。'},dis:[
+      {q:'杯子外壁的水珠来自哪里？生活中什么现象可以证明这一点？',a:'杯子外壁的水珠是空气中的水蒸气遇冷凝结形成的。生活中，从冰箱里拿出冷饮、雪糕等物品，原本包装是干燥的，但过一会儿就会出现小水珠。'},
+      {q:'杯子外壁上水珠的出现和什么有关？',a:'和空气中的水蒸气、杯子外壁的低温有关。'}
+    ]},
+    {n:3, t:'水沸腾了', kp:[
+      '水从室温到沸腾过程中温度<span class="em">逐渐升高</span>，温度为 <span class="em">100℃</span> 时水开始沸腾，沸腾后继续加热，水温<span class="em">保持不变</span>，停止加热后，水温逐渐降低。',
+      '水从室温到沸腾过程中<span class="em">逐渐产生气泡</span>，水面上方有<span class="em">"白气"</span>产生。随着温度的升高气泡<span class="em">逐渐变大</span>。沸腾前水中的气泡从水底到水面<span class="em">由大变小</span>，沸腾后气泡<span class="em">由小变大</span>。',
+      '酒精灯的火焰分为<span class="em">外焰、内焰和焰心</span>，外焰温度最高，内焰次之，焰心温度最低，通常用酒精灯的<span class="em">外焰</span>进行加热。',
+      '<b>使用酒精灯时的注意事项：</b>禁止用燃着的酒精灯点燃其他酒精灯（最好用火柴点燃）；用完酒精灯必须用灯帽盖灭（盖两次）；不能用嘴吹灭火焰；酒精洒出并燃烧，应立即用湿布或沙子扑灭。',
+      '温度计结构及使用注意事项：结构包括<span class="em">单位符号、刻度、液柱、玻璃泡</span>；读数时平视准确，俯视读数值偏大，仰视读数值偏小；测量时玻璃泡要完全浸入液体中且不能碰到容器壁。',
+      '<span class="em">瓦特改良了蒸汽机</span>，成为早期工业生产的主要动力机器。'
+    ], exp:{t:'给烧杯内的水加热',m:['烧杯','三脚架','石棉网','温度计','酒精灯','清水','铁架台'],s:[
+      '(1) 在烧杯内加入三分之一杯清水，三脚架上垫上石棉网，点燃酒精灯加热。',
+      '(2) 观察水从常温到沸腾过程中的现象并记录。',
+      '(3) 测量并记录加热过程中水的温度变化，记录水沸腾时的温度。'
+    ],notice:[
+      '1. 加热后的烧杯、三脚架在实验刚结束时仍然是很烫的，不能用手触摸。',
+      '2. 温度计的玻璃泡要放在水的中上层进行测量，读数时，眼睛要与温度计液柱的液面相平。',
+      '3. 实验时戴上护目镜，以免液体飞溅到眼中。'
+    ],dis:'水加热过程中温度不断上升，水沸腾的温度是 100℃，沸腾后继续加热温度保持不变。'},dis:[
+      {q:'水从室温到沸腾过程中的温度变化有什么规律吗？温度为多少的时候会出现沸腾现象？',a:'水从室温到沸腾的过程中，温度一开始上升得快，越往后上升得越慢。温度为 100℃ 时，水出现沸腾现象。'},
+      {q:'沸腾时产生的大量"白气"是什么？',a:'水沸腾时会产生大量的水蒸气，"白气"是水蒸气遇冷形成的小水珠。'}
+    ]},
+    {n:4, t:'水结冰了', kp:[
+      '当环境温度<span class="em">低于0℃</span>，水温<span class="em">下降到0℃</span>，水会开始结冰。水结冰过程中，温度会长时间<span class="em">保持在0℃</span>。',
+      '水结冰实验中，在碎冰中加入食盐是为了<span class="em">使周围的温度更低</span>，从而<span class="em">加快</span>试管中水结冰的速度。',
+      '<b>水和冰的相同点与不同点：</b>都是水，无色、无味、透明，看得见、摸得着。区别：水是液体、会流动、无固定形状；冰是固体、不会流动、有固定形状。',
+      '<b>热胀冷缩：</b>物体<span class="em">受热膨胀变大，遇冷收缩变小</span>的现象。',
+      '<b>生活中的热胀冷缩现象：</b>夏天，电线松弛垮垮；夏天，路面拱起；冬天，路面缝隙变大等。',
+      '科学家发现，当温度降到<span class="em">4摄氏度以下</span>时，水会显现出"<span class="em">热缩冷胀</span>"的性质，即温度降低，体积增加。'
+    ], exp:{t:'水结冰',m:['试管','清水','碎冰','食盐','温度计','烧杯'],s:[
+      '(1) 在试管中加入约四分之一的清水。',
+      '(2) 将装有清水的试管放入盛有碎冰（加了食盐）的烧杯中。',
+      '(3) 用温度计测量试管内水温的变化。',
+      '(4) 观察并记录水在结冰过程中的温度变化及试管中出现的现象。'
+    ],tip:'在碎冰中加入食盐，可以制造更低的温度。',dis:'当水的温度下降到 0℃ 时，水开始结冰，水从<span class="em">液体</span>状态变成了<span class="em">固体</span>状态。水结冰后，冰柱高度高于原来水面的高度，体积变大。'},dis:[
+      {q:'水在什么温度条件下会结冰？',a:'当环境的温度低于 0℃，水温下降到 0℃ 时，水会结冰。'},
+      {q:'水结冰的过程中有哪些变化？',a:'水会从液态变为固态，体积会变大；在全部的水都变为固态的冰之前，冰水混合的状态下，水的温度保持在 0℃。'}
+    ]},
+    {n:5, t:'冰熔化了', kp:[
+      '当冰的温度上升到 <span class="em">0℃</span> 时，冰开始熔化成水，由<span class="em">固体</span>变成<span class="em">液体</span>。',
+      '冰在熔化过程中，温度会长时间保持在 <span class="em">0℃</span> 不变，直到全部熔化成水之后，温度才会慢慢升高。',
+      '其他条件相同时，冰熔化的快慢与周围的<span class="em">温度</span>有关，温度越高，熔化得越快；温度越低，熔化得越慢。',
+      '冰、水、水蒸气是<span class="em">同一物质的不同状态</span>，水的三种状态之间是可以互相转化的。<span class="em">温度</span>是使水的状态发生变化的重要因素。',
+      '<b>冰熔化和蜡熔化的比较：</b>冰熔化和蜡熔化过程中温度保持不变，都需要受热，都由固体变为液体；区别在于冰熔化温度保持在0℃不变，而蜡熔化时温度一直升高。'
+    ], exp:{t:'观察冰熔化的过程',m:['冰块 3 块','锤子','吸管等'],s:[
+      '(1) 用锤子把冰块敲碎，观察并记录冰块的变化。',
+      '(2) 用吸管对着冰块吹气，观察并记录冰块的变化。',
+      '(3) 用手捂冰块，观察并记录冰块的变化。'
+    ],dis:'冰只有在<span class="em">受热</span>的条件下才能熔化成水（敲碎和吹气效果不明显）。'},dis:[
+      {q:'根据我们的实验，你认为哪种方法使冰熔化最快？冰熔化成水的原因是什么？',a:'用手捂冰块使冰熔化最快。冰熔化成水是因为受热，温度上升到 0℃ 或 0℃ 以上。'},
+      {q:'水、冰和水蒸气有哪些相同点和不同点？你认为它们是同一种物质吗？',a:'相同点：水、冰和水蒸气都无色、无味、透明。不同点：水是液体，能够流动，有一定的体积，没有固定的形状；冰是固体，不能流动，有固定的形状和体积；水蒸气是气体，能够流动，没有固定的形状和体积。水、冰和水蒸气本质上都是水，是同一种物质。'}
+    ]},
+    {n:6, t:'水能溶解多少物质', kp:[
+      '物质在水中溶解的量是<span class="em">有限</span>的，不同物质在水中的溶解能力<span class="em">不同</span>。',
+      '通过对比实验可以发现：相同水温、相同水量下，食盐在水中的溶解能力比小苏打<span class="em">强</span>。',
+      '在溶解实验中，食盐和小苏打要<span class="em">一份一份</span>地加，等前一份完全溶解后再加下一份，不可一次性倒入。未完全溶解的那一份<span class="em">不能</span>记录在内。',
+      '用温水做食盐和小苏打溶解实验，相比常温下的水，食盐溶解能力<span class="em">几乎没有变化</span>，小苏打溶解能力<span class="em">增加</span>。'
+    ], exp:{t:'比较不同物质在水中的溶解能力',m:['食盐和小苏打各 20 克','两个 200 毫升的烧杯','水','小勺','搅拌棒'],s:[
+      '(1) 分别取 20 克食盐和小苏打，把它们平均分成 10 等份。',
+      '(2) 在两个烧杯中各装入 50 毫升水，分别加入一份食盐和一份小苏打，加入后用搅拌棒充分搅拌，直到完全溶解。',
+      '(3) 一份一份地加入食盐和小苏打，直至前一份完全溶解后再加下一份。',
+      '(4) 重复以上步骤，直到烧杯底部出现不溶解的颗粒。',
+      '(5) 记录 50 毫升水最多能溶解的食盐和小苏打份数。比较水溶解食盐和小苏打的能力。'
+    ],dis:'相同条件下，食盐在水中的溶解能力比小苏打<span class="em">强</span>。'},dis:[
+      {q:'50 毫升水中溶解了多少份食盐或小苏打？它们的溶解能力相同吗？',a:'50 毫升水中溶解了 9 份食盐（约 18 克），2 份小苏打（约 4 克），它们的溶解能力不相同。'},
+      {q:'在实验过程中，为什么要一份一份地加入食盐或小苏打？为什么要等前一份食盐或小苏打溶解完再加入下一份？',a:'一份一份地加入食盐或小苏打，可以避免一次性加入食盐或小苏打过多，影响溶解能力的判断。等前一份食盐或小苏打溶解完再加入下一份，可以更准确地记录溶解份数。'}
+    ]},
+    {n:7, t:'加快溶解', kp:[
+      '加快食盐溶解的方法有<span class="em">搅拌、加热</span>等。',
+      '做影响物质溶解快慢的对比实验时，每次只能改变<span class="em">一个条件</span>，其他条件要保持不变。',
+      '影响食盐溶解快慢的因素有<span class="em">水的温度、是否搅拌、食盐颗粒大小</span>等。'
+    ], exp:{t:'探索搅拌/水温与溶解快慢的关系',m:['相同质量的食盐 2 份','烧杯 2 个','玻璃棒 1 根','常温水 / 热水 冷水'],s:[
+      '<b>实验活动1：探索搅拌与溶解快慢的关系</b>',
+      '(1) 在两个烧杯中分别加入 100 毫升的常温水。',
+      '(2) 将 2 份质量相同的食盐同时倒入水中。',
+      '(3) 一杯搅拌，一杯静置，观察并记录食盐完全溶解所需的时间。',
+      '<b>实验活动2：探索水温与溶解快慢的关系</b>',
+      '(1) 准备两份相同质量的食盐以及两个透明杯子，一个装 100 毫升热水，一个装 100 毫升冷水。',
+      '(2) 将两份食盐分别同时倒入同样多的热水和冷水中。',
+      '(3) 静置不动，观察并比较食盐溶解的快慢。'
+    ],notice:[
+      '实验过程中，要保持相同的条件——水的温度、水和食盐的量；不同的条件是——是否搅拌。',
+      '两份食盐要同时倒入冷水和热水中；都不搅拌，静置等待。'
+    ],dis:'搅拌<span class="em">会</span>影响食盐溶解的快慢，搅拌比不搅拌溶解得<span class="em">快</span>；食盐在水中的溶解快慢与水的温度<span class="em">有关</span>，水温<span class="em">越高</span>，溶解速度<span class="em">越快</span>；水温<span class="em">越低</span>，溶解速度<span class="em">越慢</span>。'},dis:[
+      {q:'影响食盐溶解快慢的因素有哪些？我们是怎么知道的？',a:'影响实验溶解快慢的因素有水温、是否搅拌、食盐颗粒大小等。我们是通过对比比实验知道的。'},
+      {q:'为什么实验中要用"相同质量的食盐"和"一样多的水"？',a:'对比实验中，除了要探究的条件外，其他条件要保持相同，才能得出正确的结论。'}
+    ]},
+    {n:8, t:'用水分离', kp:[
+      '分离食盐和沙子的混合物，要经历<span class="em">溶解、过滤、蒸发</span>三个步骤。溶解的目的是<span class="em">将食盐溶解在水中</span>，利用了<span class="em">食盐能溶于水</span>而沙子不能溶于水的特性。过滤的目的是将<span class="em">食盐水</span>和<span class="em">沙子</span>分离。蒸发的目的是将<span class="em">食盐</span>和<span class="em">水</span>分离。',
+      '蒸发时，玻璃棒的作用是<span class="em">搅拌</span>，防止<span class="em">局部温度过高</span>导致液体飞溅；蒸发皿中的<span class="em">液体快要变干</span>时停止加热，利用余温蒸干水分。',
+      '加热结束后，实验仪器的温度仍然很高，不能用手触摸，<span class="em">以免烫伤</span>。'
+    ], exp:{t:'用水分离食盐和沙 / 分离食盐和水',m:['"粗盐"（食盐和沙子的混合物）','烧杯','玻璃棒','滤纸','漏斗','铁架台','蒸发皿','三脚架','酒精灯','护目镜'],s:[
+      '<b>实验活动1：用水分离食盐和沙</b>',
+      '(1) 将"粗盐"倒入水中，搅拌至食盐完全溶解。',
+      '(2) 用漏斗和滤纸对"粗盐"溶液进行过滤，把沙子分离出来。',
+      '<b>实验活动2：分离食盐和水</b>',
+      '(1) 将食盐水倒入蒸发皿，放在三脚架上用酒精灯加热。',
+      '(2) 边加热，边搅拌。当水快要变干时，熄灭火焰，用余温将白色颗粒慢慢烘干。',
+      '(3) 收集白色颗粒，与"粗盐"进行对比。'
+    ],notice:[
+      '1. 一定要在老师的指导下正确使用酒精灯。',
+      '2. 在食盐水还未完全蒸发之前熄灭酒精灯。',
+      '3. 加热后的蒸发皿、三脚架等在相当长的一段时间内仍然很烫，不要用手直接移动。',
+      '4. 实验过程要戴好护目镜，防止液体飞溅到眼睛里。'
+    ],dis:'(1) 用<span class="em">蒸发</span>的方法可以分离出溶解在水中的食盐。(2) 食盐溶解于水的变化过程是一个<span class="em">可逆</span>的过程，食盐能够溶解在水中，也能从水中分离出来。'},dis:[
+      {q:'在分离过程中，沙子和食盐发生了什么变化？',a:'沙子没有发生明显的变化；食盐先是溶解在了水中，后又通过蒸发分离出来，蒸发分离之后颗粒变细了，颜色更加白了。'},
+      {q:'水在分离过程中起到了什么作用？',a:'水利用食盐能溶解的性质将其与沙子分离，并利用水蒸发再将盐分离出来。'},
+      {q:'如果不用酒精灯加热，分离实验最终会完成吗？',a:'不会。如果不用酒精灯加热，食盐水中的食盐就无法分离出来。'}
+    ]}
+  ],
+  u3: [
+    {n:1, t:'运动和位置', kp:[
+      '我们把物体<span class="em">位置的变化</span>叫作<span class="em">运动</span>。',
+      '判断一个物体是否运动的方法：这一物体相对于另一个物体来说，<span class="em">位置是否发生变化</span>。如果<span class="em">发生变化</span>，那么物体是<span class="em">运动</span>的；如果<span class="em">没有发生变化</span>，那么物体是<span class="em">静止</span>的。',
+      '描述一个物体的位置时，必须选好<span class="em">参照物</span>。通常选<span class="em">地面</span>或<span class="em">相对地面静止的物体</span>作为参照物。如：行驶的列车，是以地面、轨道、路旁的树作为参照物。',
+      '我们一般把大地看作<span class="em">静止</span>的，将其他物体与<span class="em">大地</span>相比，就能判断该物体是运动的还是静止的。大地是最大的参照物。',
+      '我们利用<span class="em">方向和距离</span>来描述两个物体之间的位置关系。(1) 首先选择一个参照物。(2) 确定物体相对于参照物的方向。(3) 确定物体与参照物的距离。',
+      '我们通常用<span class="em">前、后、左、右、上、下</span>等方位名词来描述方向。',
+      '距离可以用<span class="em">米、厘米</span>等来表示，也可以用<span class="em">步数</span>来估计。'
+    ], exp:{t:'"蒙眼抓人"游戏',m:['不透明布带'],s:[
+      '(1) 甲同学用不透明布带蒙住眼睛。',
+      '(2) 乙和丙分别站在操场的某个位置。',
+      '(3) 丁同学向甲同学描述乙或丙的位置。',
+      '(4) 甲根据丁的描述去抓乙或丙。'
+    ],notice:[
+      '1. 蒙眼的布带不能透光。',
+      '2. 玩游戏时要找一个空旷的地方，避免摔倒。'
+    ],dis:'要同时知道<span class="em">方向和距离</span>才能抓到人，只知道方向或只知道距离都无法抓到人。'},dis:[
+      {q:'怎样判断物体是运动的还是静止的？',a:'看物体相对于另一物体的位置是否发生变化。如果发生变化，则物体是运动的；如果没有发生变化，则物体是静止的。'},
+      {q:'在"蒙眼抓人"游戏中，只知道方向不知道距离或只知道距离不知道方向，能抓到人吗？',a:'不能抓到人。确定一个物体与自己的位置关系，方向和距离都是必需的。'},
+      {q:'怎样描述物体的位置？',a:'首先选择一个参照物，确定物体相对于参照物的方向、与参照物的距离，利用方向和距离来描述物体的位置。'}
+    ]},
+    {n:2, t:'各种各样的运动', kp:[
+      '物体的运动路线有<span class="em">平动、转动、摆动、滚动、振动</span>等。',
+      '同一种物体可以有<span class="em">多种</span>运动路线，如落地风扇有<span class="em">转动和摆动</span>两种运动路线，汽车有<span class="em">平动、转动、滚动</span>三种运动路线。',
+      '在物体不同的位置贴上圆点，观察<span class="em">圆点的位置变化</span>，可以帮助我们更准确地观察与描述物体的运动路线。',
+      '可以用线条和箭头来表示物体的运动路线（这种记录方式中的符号不是真正的科学符号）。平动是一条直线加箭头；转动是圆周加箭头；滚动是圆周和直线加箭头；摆动是弧线加箭头；振动是上下/左右直线加双向箭头。',
+      '玩具车向前行驶时，车身上的圆点运动路线是<span class="em">平动</span>，车轮上的圆点运动路线是<span class="em">滚动</span>。'
+    ], exp:{t:'观察各种物体的运动',m:['指尖陀螺','发条青蛙','玩具车','弹簧玩偶','钟摆的摆锤','钢尺'],s:[
+      '(1) 观察物体，猜测它们的运动路线。',
+      '(2) 选择一个物体，如指尖陀螺。转动指尖陀螺，观察并记录它是怎样运动的。',
+      '(3) 在指尖陀螺的某一位置贴上红圆点并使其运动起来，借助圆点观察指尖陀螺的运动路线，用图画的形式记录。',
+      '(4) 换一个位置贴圆点并使指尖陀螺运动起来，观察并记录。比较前后两次运动路线是否相同。',
+      '(5) 用更多的物体进行实验，观察同一物体不同部位的运动路线以及不同物体的运动路线，记录并交流。'
+    ],dis:'物体的运动路线是<span class="em">多种多样</span>的。不同物体的运动路线可能是<span class="em">不同</span>的。同一物体的<span class="em">不同部位</span>运动路线也可能是<span class="em">不同</span>的。'},dis:[
+      {q:'物体的运动路线有哪些？',a:'物体的运动路线有直线、圆、折线、弧线等很多种，但基本上分为直线和曲线两种。'},
+      {q:'比较两次观察，在物体上贴圆点的方法能更好地观察物体的运动吗？',a:'能。未贴圆点时只能观察到物体整体的运动，贴圆点后能观察物体上某一部分的运动，使观察更加全面。例如分别在行驶的小车车轮和车身上贴圆点，观察到它们的运动路线不同。'}
+    ]},
+    {n:3, t:'直线运动和曲线运动', kp:[
+      '根据物体运动路线的不同，可将物体的运动分为<span class="em">直线运动和曲线运动</span>两种方式。',
+      '运动路线是<span class="em">直线</span>的运动，叫<span class="em">直线运动</span>。如电梯的升降、苹果从树上落下等。',
+      '运动路线是<span class="em">曲线</span>的运动，叫<span class="em">曲线运动</span>。如过山车轨道、盘旋的老鹰等。',
+      '一个物体在运动的过程中，不一定保持一种运动路线不变，对于复杂运动，我们可以采取<span class="em">分段描述</span>的方式。'
+    ], exp:{t:'轨道击球 / 小球桌面滚动',m:['红色球','蓝色球','直线轨道','曲线轨道','桌面','小球','桶或筐'],s:[
+      '<b>实验活动1：轨道击球</b>',
+      '(1) 在桌子上确定蓝色球与红色球之间的距离，并尝试着多次用蓝色球去击打红色球，记录击中红色球的次数。',
+      '(2) 利用直线轨道和曲线轨道，在轨道内用蓝色球多次去击打红色球，记录击中红色球的次数。',
+      '(3) 观察蓝色球在轨道中的运动路线。',
+      '(4) 比较没有利用轨道和利用轨道击中红色球的次数。',
+      '<b>实验活动2：小球在桌面上滚动和冲出桌面后滚动的路线</b>',
+      '(1) 预测小球在桌面滚动时和冲出桌面后的运动路线。',
+      '(2) 根据预测小球掉落的位置放置桶或筐。',
+      '(3) 用手将小球沿着桌面推出，观察小球的运动路线。',
+      '(4) 画出小球的运动路线。'
+    ],dis:'球在直线轨道上的运动是直线运动；球在曲线轨道上的运动是曲线运动。小球在桌面上做直线运动，冲出桌面后做曲线运动。冲出桌面后运动路线弯曲程度和推小球的力度有关。'},dis:[
+      {q:'根据运动路线的不同，物体的运动可以分为哪两种方式？',a:'直线运动和曲线运动。'},
+      {q:'沿桌面推出的小球，运动方式有什么变化？',a:'小球被推出后，在桌面上的一段做直线运动，飞出桌面、落入桶里的一段做曲线运动。'}
+    ]},
+    {n:4, t:'相同距离比快慢', kp:[
+      '运动的距离相同时，可以用比较<span class="em">运动时间</span>的方法来比较运动的快慢：用时<span class="em">短</span>，运动<span class="em">快</span>；用时<span class="em">长</span>，运动<span class="em">慢</span>。',
+      '测量不同小球运动相同距离所花的时间可以用<span class="em">秒表</span>来计时。',
+      '在两条同样长的轨道上比较小球运动快慢时，需要注意<span class="em">同时</span>释放小球，不能<span class="em">用手推</span>小球；同时为了使小球能自由滚到终点，应<span class="em">起点高，终点低</span>。',
+      '比较同一轨道上两个小球的运动快慢实验中，需要至少 4 名同学分工合作，分别担任<span class="em">操作员、计时员、发令员、记录员</span>的角色。'
+    ], exp:{t:'在同样长/同一轨道上比较不同小球的运动快慢',m:['两条长度相同的直线轨道','两个不同的小球','秒表'],s:[
+      '<b>实验活动1：在同样长的轨道上</b>',
+      '(1) 将两条轨道的一端垫得同样高，使轨道成一个斜面。',
+      '(2) 将两个小球分别放在两个斜面顶端（起点），同时松开两个小球，让小球沿轨道自由运动。',
+      '(3) 观察两个小球的运动情况，记录哪个小球先到达轨道终点。',
+      '<b>实验活动2：在同一轨道上</b>',
+      '(1) 将轨道的一端垫高，使轨道呈一个斜面，上端是起点，下端是终点。',
+      '(2) 几个同学分工合作，操作员在听到发令员发令后，将小球松开，自由运动，同时计时员按下秒表计时。',
+      '(3) 当小球运动到轨道终点时，计时员立即停止计时，并将数据汇报给记录员记录。'
+    ],notice:[
+      '1. 两个小球要从两个轨道相同位置同时出发。',
+      '2. 小球滚落时不能用手推，让小球自然滚动。'
+    ],dis:'在两条同样长的轨道上，先到达终点的小球运动<span class="em">快</span>。相同距离内，物体的运动时间越<span class="em">短</span>，运动得越快。'},dis:[
+      {q:'怎样比较两个不同小球运动的快慢？',a:'让两个小球运动相同的距离，比较它们运动时间的长短，时间短的运动快。'},
+      {q:'在生活中，运动相同距离时怎样比较物体运动的快慢？',a:'运动距离相同时，比较物体的运动时间，时间短的运动快。'}
+    ]},
+    {n:5, t:'相同时间比快慢', kp:[
+      '运动的时间相同时，可以用比较<span class="em">运动距离</span>的方法来比较运动的快慢：距离<span class="em">长</span>，运动<span class="em">快</span>；距离<span class="em">短</span>，运动<span class="em">慢</span>。',
+      '<b>按照交通工具1小时内行驶的距离排序：</b>喷气式客机 &gt; 高速列车 &gt; 汽艇 &gt; 汽车 &gt; 轮船 &gt; 自行车。',
+      '在比较相同时间内物体运动的快慢时，可以用软尺测量<span class="em">运动距离</span>。',
+      '利用物体运动<span class="em">时间和距离</span>，可以比较它们运动的快慢，即<span class="em">速度</span>的大小。'
+    ], exp:{t:'比较相同时间内物体运动的快慢',m:['软尺'],s:[
+      '(1) 让两位同学站在相同的起点，听口令同时出发，沿直线向相反方向行走。',
+      '(2) 当听到"停"的口令后，同时停止运动，分别用软尺测量两位同学运动的距离，记录下来。'
+    ],tip:'用脚跟接脚尖的方法来行走；开始运动前，两名同学的脚后跟应紧贴。',dis:'相同的时间内，运动距离越<span class="em">长</span>的同学运动得越<span class="em">快</span>。'},dis:[
+      {q:'在实验中，怎样比较两名同学运动的快慢？',a:'使两名同学运动相同的时间，通过比较相同时间内运动的距离比较快慢。'},
+      {q:'相同时间内，怎样比较物体运动的快慢？',a:'物体运动的时间相同时，运动距离长的物体运动快，运动距离短的物体运动慢。'}
+    ]},
+    {n:6, t:'运动和能量', kp:[
+      '<span class="em">运动的物体具有能量</span>。用手挡住斜坡上滚下的小球，手会感觉到痛。',
+      '做小球撞击木块实验时，每次小球从斜坡上释放的位置都要<span class="em">相同</span>。',
+      '斜面坡度<span class="em">越大</span>，小球滚下的能量<span class="em">越大</span>，撞击木块后木块滑行的距离<span class="em">越远</span>。',
+      '<b>生活中能证明运动的物体具有能量的现象：</b>汽车受撞击变形、水滴石穿、台风将树刮断等。'
+    ], exp:{t:'小球撞击木块实验',m:['小球','木块','软尺','小旗','三个坡度不同的斜面','长木板'],s:[
+      '(1) 在木块的起始位置摆放小旗或做记号标记，从斜面上释放小球撞击水平面上的木块。',
+      '(2) 用小旗或做记号标记木块被撞击后的位置。',
+      '(3) 测量、记录木块被撞击后滑行的距离。',
+      '(4) 换用不同坡度的斜面重复上述实验。'
+    ],tip:'每次都要从斜面的同一位置释放小哦！',dis:'斜面坡度<span class="em">越大</span>，小球撞击木块后，木块滑行的距离<span class="em">越远</span>，说明小球具有的能量<span class="em">越大</span>。'},dis:[
+      {q:'我们有哪些证据说明运动的小球有能量？',a:'运动的小球击中我们的手时，手会有轻微痛感；运动的小球击中小木块时，小木块会滑行一段距离。'},
+      {q:'小球从不同坡度的斜面滚下，撞击木块的能量一样吗？',a:'不一样。小球从坡度大的斜面滚下时能量更大，小木块被撞击后滑行得更远。'},
+      {q:'其他运动的物体有能量吗？我们的证据是什么？',a:'有。运动的物体会使自身或其他物体发生改变，证明自身具有能量。例如运动员跳远会在沙坑上留下脚印、强风能够把笔直的树吹弯、子弹会击穿苹果等。'}
+    ]},
+    {n:7, t:'设计和制作"过山车"', kp:[
+      '设计制作过山车轨道，既要有<span class="em">直线轨道</span>，又要有<span class="em">曲线轨道</span>。',
+      '设计"过山车"轨道的方法：①用<span class="em">绳子</span>摆出"过山车"的轨道路线；②在<span class="em">纸上画</span>出"过山车"的轨道路线。',
+      '在纸上画"过山车"轨道路线时，在交叉重叠的地方，用<span class="em">实线</span>表示上方轨道，用<span class="em">虚线</span>表示下方轨道。',
+      '在制作"过山车"的过程中，轨道的长度可以用<span class="em">软尺和细绳</span>来测量。',
+      '制作一个"过山车"通常要经过<span class="em">明确任务、制订方案、实施方案、测试、交流评估、改进完善</span>等工程设计的步骤。',
+      '"过山车"上小球的运动路线既有<span class="em">直线</span>，也有<span class="em">曲线</span>。"过山车"的起点越高，小球运动得越<span class="em">快</span>。'
+    ], exp:{t:'设计制作"过山车"',m:['塑料积木套件','小球','设计图纸（带小方格）','铅笔','直尺','细绳'],s:[
+      '<b>设计要求：</b>',
+      '(1) 轨道总长在 2 米以上。',
+      '(2) 有直线轨道和曲线轨道。',
+      '(3) 小球能滚完全部轨道，不能脱轨。',
+      '(4) 与同学合作完成。',
+      '<b>搭建方法：</b>①从最低点即终点开始搭建；②搭建和设计有出入，可以适当调整设计再搭建。轨道材料间对接要紧、平滑一些，这样小球才不易脱轨。'
+    ]}},
+    {n:8, t:'测试"过山车"', kp:[
+      '在测试"过山车"的活动中，要想描述小球停止时的位置，可以以起点为中心，用<span class="em">软尺</span>测量距离。',
+      '比较小球在不同"过山车"上运动的快慢，需要测量小球运动的<span class="em">距离</span>和<span class="em">时间</span>，然后计算出小球运动的<span class="em">速度</span>。用到的实验器材有<span class="em">秒表、软尺、细绳</span>。',
+      '小球在"过山车"上运动越<span class="em">快</span>，到达终点时的能量越<span class="em">大</span>。'
+    ], exp:{t:'测试"过山车"',m:['制作好的"过山车"','小球','细绳','软尺','秒表','小木块'],s:[
+      '(1) 以起点为中心，描述小球停止时的位置。用细绳和软尺测量距离。',
+      '(2) 描述小球的运动方式和速度变化。',
+      '① 让小球从起点滚落，观察其在"过山车"上的运动路线，判断是直线运动还是曲线运动。',
+      '② 观察小球在"过山车"上的速度变化，并记录。',
+      '(3) 比较不同"过山车"上小球运动的快慢。用软尺测量运动长度，用秒表记录运动时间。',
+      '(4) 比较不同"过山车"上小球到达终点的能量大小。将小木块放在"过山车"终点，观察并记录被小球撞击后滑行的距离。'
+    ]}}
+  ]
+};
+
+/* ============================================================
+   四、思维导图树形数据（与原版一致）
+   ============================================================ */
+const MM_TREES = {
+  'mm-u1': {
+    title:'第一单元 天气 · 思维导图',
+    root:{t:'天气', w:80, h:60, fill:'#dbeafe', color:'#1e3a8a', fs:18, stroke:'#1e3a8a', strokeW:1.5},
+    branches:[
+      {t:'认识天气', w:100, h:36, fill:'#fbcfe8', color:'#831843', fs:14, children:[
+        {t:'发生在包围我们的阴、晴、雨、雪、风等', w:380, h:32, color:'#1f2937', fs:13},
+        {t:'描述天气的词、句、炎热、寒冷等', w:340, h:32, color:'#1f2937', fs:13}
+      ]},
+      {t:'天气特征', w:100, h:36, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+        {t:'气温', w:60, h:32, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+          {t:'测量工具', w:90, h:30, color:'#1f2937', fs:13, children:[
+            {t:'气温计', w:70, h:28, color:'#1f2937', fs:13},
+            {t:'单位：℃', w:80, h:28, color:'#1f2937', fs:13}
+          ]},
+          {t:'一天气温变化', w:120, h:30, color:'#1f2937', fs:13, children:[
+            {t:'早晚低，中午高', w:160, h:28, color:'#1f2937', fs:13},
+            {t:'最低气温出现在清晨日出前', w:240, h:28, color:'#1f2937', fs:13}
+          ]}
+        ]},
+        {t:'降水量', w:80, h:32, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+          {t:'降水量', w:90, h:30, color:'#1f2937', fs:13, children:[
+            {t:'一定时间内降落在一定面积地面上的水层深度', w:380, h:30, color:'#1f2937', fs:13}
+          ]},
+          {t:'降水量等级', w:120, h:30, color:'#1f2937', fs:13},
+          {t:'测量工具', w:90, h:30, color:'#1f2937', fs:13, children:[
+            {t:'雨量器', w:80, h:28, color:'#1f2937', fs:13},
+            {t:'单位：毫米', w:100, h:28, color:'#1f2937', fs:13}
+          ]}
+        ]},
+        {t:'风', w:50, h:32, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+          {t:'风力', w:60, h:30, color:'#1f2937', fs:13, children:[
+            {t:'风的大小', w:90, h:28, color:'#1f2937', fs:13},
+            {t:'蒲福风力等级表', w:140, h:28, color:'#1f2937', fs:13}
+          ]},
+          {t:'风向', w:60, h:30, color:'#1f2937', fs:13, children:[
+            {t:'风吹来的方向', w:130, h:28, color:'#1f2937', fs:13},
+            {t:'观察方法', w:90, h:28, color:'#1f2937', fs:13, children:[
+              {t:'风旗', w:60, h:26, color:'#1f2937', fs:13},
+              {t:'地面物体', w:80, h:26, color:'#1f2937', fs:13}
+            ]}
+          ]}
+        ]},
+        {t:'云', w:50, h:32, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+          {t:'云的分类', w:90, h:30, color:'#1f2937', fs:13, children:[
+            {t:'小水滴或小冰晶积聚', w:200, h:28, color:'#1f2937', fs:13}
+          ]},
+          {t:'类型', w:60, h:30, color:'#1f2937', fs:13, children:[
+            {t:'积云', w:60, h:28, color:'#1f2937', fs:13},
+            {t:'卷云', w:60, h:28, color:'#1f2937', fs:13}
+          ]},
+          {t:'云量与天气', w:110, h:30, color:'#1f2937', fs:13, children:[
+            {t:'晴天', w:60, h:28, color:'#1f2937', fs:13},
+            {t:'多云', w:60, h:28, color:'#1f2937', fs:13},
+            {t:'阴天', w:60, h:28, color:'#1f2937', fs:13}
+          ]}
+        ]}
+      ]},
+      {t:'记录天气', w:100, h:36, fill:'#bbf7d0', color:'#14532d', fs:14, children:[
+        {t:'天气观测记录', w:130, h:30, color:'#1f2937', fs:13, children:[
+          {t:'包含天气状况、气温、风向、风力、降水量、日期等', w:380, h:30, color:'#1f2937', fs:13}
+        ]},
+        {t:'天气预报', w:100, h:30, color:'#1f2937', fs:13, children:[
+          {t:'天气符号', w:90, h:28, color:'#1f2937', fs:13}
+        ]}
+      ]},
+      {t:'天气的影响', w:120, h:36, fill:'#fbcfe8', color:'#831843', fs:14, children:[
+        {t:'不同天气对人类生产生活、动植物的影响', w:380, h:32, color:'#1f2937', fs:13},
+        {t:'同一天气对不同人群的影响', w:240, h:32, color:'#1f2937', fs:13},
+        {t:'恶劣天气的影响', w:180, h:32, color:'#1f2937', fs:13}
+      ]}
+    ],
+    diagrams:[
+      {kind:'rainGauge', x:780, y:170, w:140, h:280},
+      {kind:'cloudSet', x:760, y:550, w:260, h:60}
+    ]
+  },
+  'mm-u2': {
+    title:'第二单元 水 · 思维导图',
+    root:{t:'水', w:80, h:60, fill:'#dbeafe', color:'#1e3a8a', fs:18, stroke:'#1e3a8a', strokeW:1.5},
+    branches:[
+      {t:'水的变化', w:100, h:36, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+        {t:'水与水蒸气', w:120, h:30, color:'#1f2937', fs:13, children:[
+          {t:'蒸发：水→水蒸气（任何温度下都会发生）', w:360, h:30, color:'#1f2937', fs:13},
+          {t:'凝结：水蒸气→水', w:200, h:28, color:'#1f2937', fs:13},
+          {t:'沸腾：水→水蒸气，水加热到100℃会沸腾，产生大量气泡', w:440, h:30, color:'#1f2937', fs:13}
+        ]},
+        {t:'水结冰', w:90, h:30, color:'#1f2937', fs:13, children:[
+          {t:'凝固：水→冰，水降到0℃时，会结冰', w:340, h:30, color:'#1f2937', fs:13},
+          {t:'熔化：冰→水，冰加热会熔化成水，冰水混合物温度保持在0℃', w:480, h:30, color:'#1f2937', fs:13}
+        ]}
+      ]},
+      {t:'溶解', w:80, h:36, fill:'#bbf7d0', color:'#14532d', fs:14, children:[
+        {t:'不同物质在水中溶解能力不同', w:300, h:30, color:'#1f2937', fs:13, children:[
+          {t:'食盐溶解能力强', w:160, h:28, color:'#1f2937', fs:13},
+          {t:'小苏打溶解能力弱', w:160, h:28, color:'#1f2937', fs:13}
+        ]},
+        {t:'同种物质在同样的水中溶解的快慢不同', w:380, h:30, color:'#1f2937', fs:13, children:[
+          {t:'颗粒大小', w:100, h:30, color:'#1f2937', fs:13, children:[
+            {t:'颗粒小溶解快', w:140, h:28, color:'#1f2937', fs:13},
+            {t:'颗粒大溶解慢', w:140, h:28, color:'#1f2937', fs:13}
+          ]},
+          {t:'水的温度', w:100, h:30, color:'#1f2937', fs:13, children:[
+            {t:'水温高溶解快', w:140, h:28, color:'#1f2937', fs:13},
+            {t:'水温低溶解慢', w:140, h:28, color:'#1f2937', fs:13}
+          ]},
+          {t:'是否搅拌', w:100, h:30, color:'#1f2937', fs:13, children:[
+            {t:'搅拌溶解快', w:140, h:28, color:'#1f2937', fs:13},
+            {t:'不搅拌溶解慢', w:160, h:28, color:'#1f2937', fs:13}
+          ]}
+        ]}
+      ]},
+      {t:'分离', w:80, h:36, fill:'#fde68a', color:'#92400e', fs:14, children:[
+        {t:'食盐和沙：溶解→过滤→蒸发', w:380, h:30, color:'#1f2937', fs:13}
+      ]}
+    ],
+    diagrams:[
+      {kind:'threeState', x:520, y:300, w:280, h:200}
+    ]
+  },
+  'mm-u3': {
+    title:'第三单元 物体的运动 · 思维导图',
+    root:{t:'物体的运动', w:120, h:60, fill:'#dbeafe', color:'#1e3a8a', fs:16, stroke:'#1e3a8a', strokeW:1.5},
+    branches:[
+      {t:'运动和位置', w:120, h:36, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
+        {t:'判断是否运动', w:120, h:30, color:'#1f2937', fs:13, children:[
+          {t:'运动：和参照物相比，位置发生了变化', w:300, h:28, color:'#1f2937', fs:13},
+          {t:'静止：和参照物相比，位置没有发生变化', w:320, h:28, color:'#1f2937', fs:13}
+        ]},
+        {t:'准确描述位置', w:130, h:30, color:'#1f2937', fs:13, children:[
+          {t:'相对于参照物的方向和距离', w:280, h:28, color:'#1f2937', fs:13}
+        ]}
+      ]},
+      {t:'运动', w:80, h:36, fill:'#bbf7d0', color:'#14532d', fs:14, children:[
+        {t:'观察运动的方法', w:160, h:30, color:'#1f2937', fs:13, children:[
+          {t:'贴小圆点、画图表示：物体贴点→运动起来→图示记录', w:440, h:30, color:'#1f2937', fs:13}
+        ]},
+        {t:'分类', w:80, h:30, color:'#1f2937', fs:13, children:[
+          {t:'按运动路线分', w:130, h:30, color:'#1f2937', fs:13, children:[
+            {t:'平动', w:60, h:26, color:'#1f2937', fs:13},
+            {t:'转动', w:60, h:26, color:'#1f2937', fs:13},
+            {t:'摆动', w:60, h:26, color:'#1f2937', fs:13},
+            {t:'滚动', w:60, h:26, color:'#1f2937', fs:13},
+            {t:'振动', w:60, h:26, color:'#1f2937', fs:13}
+          ]},
+          {t:'按运动方式分', w:130, h:30, color:'#1f2937', fs:13, children:[
+            {t:'直线运动', w:90, h:26, color:'#1f2937', fs:13},
+            {t:'曲线运动', w:90, h:26, color:'#1f2937', fs:13}
+          ]}
+        ]}
+      ]},
+      {t:'运动的快慢', w:120, h:36, fill:'#fbcfe8', color:'#831843', fs:14, children:[
+        {t:'相同距离比时间', w:160, h:30, color:'#1f2937', fs:13, children:[
+          {t:'用时越短，运动得越快', w:180, h:28, color:'#1f2937', fs:13},
+          {t:'用时越长，运动得越慢', w:180, h:28, color:'#1f2937', fs:13}
+        ]},
+        {t:'相同时间比距离', w:160, h:30, color:'#1f2937', fs:13, children:[
+          {t:'距离越大，运动得越快', w:180, h:28, color:'#1f2937', fs:13},
+          {t:'距离越短，运动得越慢', w:180, h:28, color:'#1f2937', fs:13}
+        ]}
+      ]},
+      {t:'运动和能量', w:120, h:36, fill:'#fde68a', color:'#92400e', fs:14, children:[
+        {t:'运动的物体具有能量', w:200, h:28, color:'#1f2937', fs:13},
+        {t:'斜面坡度越大，小球滚下撞击木块的能量越大', w:380, h:30, color:'#1f2937', fs:13}
+      ]},
+      {t:'制作过山车', w:120, h:36, fill:'#ddd6fe', color:'#5b21b6', fs:14, children:[
+        {t:'明确任务、制订方案、实施方案、交流评估、改进完善', w:480, h:30, color:'#1f2937', fs:13}
+      ]}
+    ],
+    diagrams:[
+      {kind:'motionIcons', x:560, y:420, w:300, h:240}
+    ]
+  }
+};
+
+/* ============================================================
+   五、思维导图渲染（沿用原版逻辑）
+   ============================================================ */
+function escapeXml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);}
+
+/* ---- 思维导图：可编辑模型 + 自动布局 + 连线 ---- */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+function buildMMModel(tree){
+  const nodes={}, children={};
+  function walk(node, parentId, depth, id){
+    nodes[id]={id, parent:parentId, depth, text:node.t||'', w:node.w||120, h:node.h||32,
+      fs:node.fs||13, fill:node.fill||'#ffffff', color:node.color||'#1f2937',
+      stroke:node.stroke||'#94a3b8', strokeW:node.strokeW||1, x:0, y:0};
+    const kids = (parentId===null) ? (tree.branches||[]) : (node.children||[]);
+    children[id]=kids.map((c,i)=>id+'-'+i);
+    kids.forEach((c,i)=>walk(c,id,depth+1,id+'-'+i));
+  }
+  walk(tree.root,null,0,'r');
+  return {nodes,children};
+}
+
+function mmAutoLayout(model){
+  const {nodes,children}=model;
+  const wOf=n=>n.aw||n.w, hOf=n=>n.ah||n.h;
+  const colW={}; let maxD=0;
+  Object.values(nodes).forEach(n=>{ colW[n.depth]=Math.max(colW[n.depth]||0,wOf(n)); maxD=Math.max(maxD,n.depth); });
+  const HGAP=58; const colX={}; let acc=20;
+  for(let d=0; d<=maxD; d++){ colX[d]=acc; acc+=(colW[d]||120)+HGAP; }
+  let leafY=14; const VGAP=14;
+  function place(id){
+    const n=nodes[id]; const kids=children[id]||[];
+    const h=hOf(n);
+    if(!kids.length){ n._cy=leafY+h/2; leafY+=h+VGAP; }
+    else { kids.forEach(place); n._cy=(nodes[kids[0]]._cy+nodes[kids[kids.length-1]]._cy)/2; }
+  }
+  place('r');
+  Object.values(nodes).forEach(n=>{ n.x=colX[n.depth]; n.y=n._cy-hOf(n)/2; });
+  return model;
+}
+
+function mmEdgePath(p,c){
+  const pw=p.aw||p.w, ph=p.ah||p.h, cw=c.aw||c.w, ch=c.ah||c.h;
+  const x1=p.x+pw, y1=p.y+ph/2, x2=c.x, y2=c.y+ch/2, mx=(x1+x2)/2;
+  return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+}
+
+function mmLoadState(treeId){
+  try{ return JSON.parse(localStorage.getItem('mmpos_'+treeId)||'null'); }catch(e){ return null; }
+}
+function mmSaveState(treeId, model){
+  const pos={}, text={};
+  Object.values(model.nodes).forEach(n=>{ pos[n.id]={x:Math.round(n.x),y:Math.round(n.y)}; text[n.id]=n.text; });
+  try{ localStorage.setItem('mmpos_'+treeId, JSON.stringify({pos,text})); }catch(e){}
+}
+
+function renderRainGauge(x,y,w,h){
+  let s = `<g transform="translate(${x},${y})">`;
+  s += `<rect x="0" y="0" width="${w-20}" height="${h}" rx="6" ry="6" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5"/>`;
+  s += `<rect x="2" y="0" width="${w-24}" height="${h}" fill="#7dd3fc" opacity="0.6"/>`;
+  const grades=[
+    {mm:250, label:'特大暴雨'},
+    {mm:100, label:'大暴雨'},
+    {mm:50, label:'暴雨'},
+    {mm:25, label:'大雨'},
+    {mm:10, label:'中雨'},
+    {mm:0, label:'小雨'}
+  ];
+  grades.forEach(g=>{
+    const yy = h - (g.mm/250)*h;
+    s += `<line x1="0" y1="${yy}" x2="${w-20}" y2="${yy}" stroke="#0c4a6e" stroke-width="0.8" stroke-dasharray="3,2"/>`;
+    s += `<text x="${w-18}" y="${yy+4}" font-size="10" fill="#0c4a6e">${g.mm}</text>`;
+    s += `<text x="${w-22}" y="${yy+12}" font-size="11" fill="#0c4a6e" text-anchor="end" font-weight="600">${g.label}</text>`;
+  });
+  s += `</g>`;
+  return s;
+}
+function renderCloudSet(x,y,w,h){
+  let s = `<g transform="translate(${x},${y})">`;
+  s += `<text x="0" y="-4" font-size="11" fill="#475569" font-weight="600">云类型:</text>`;
+  s += `<ellipse cx="40" cy="14" rx="22" ry="12" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>`;
+  s += `<text x="40" y="36" font-size="11" fill="#1e3a8a" text-anchor="middle">积云</text>`;
+  s += `<g transform="translate(95,2)">`;
+  s += `<line x1="0" y1="6" x2="40" y2="2" stroke="#3b82f6" stroke-width="1"/>`;
+  s += `<line x1="0" y1="10" x2="40" y2="6" stroke="#3b82f6" stroke-width="1"/>`;
+  s += `<line x1="0" y1="14" x2="40" y2="10" stroke="#3b82f6" stroke-width="1"/>`;
+  s += `<line x1="0" y1="18" x2="40" y2="14" stroke="#3b82f6" stroke-width="1"/>`;
+  s += `<text x="20" y="30" font-size="11" fill="#1e3a8a" text-anchor="middle">卷云</text>`;
+  s += `</g>`;
+  s += `<g transform="translate(150,12)">`;
+  s += `<circle cx="0" cy="0" r="3" fill="#60a5fa"/>`;
+  s += `<circle cx="6" cy="0" r="3" fill="#60a5fa"/>`;
+  s += `<circle cx="12" cy="0" r="3" fill="#60a5fa"/>`;
+  s += `<text x="6" y="20" font-size="11" fill="#1e3a8a" text-anchor="middle">小水滴</text>`;
+  s += `</g>`;
+  s += `<text x="0" y="48" font-size="11" fill="#475569" font-weight="600">云量与天气:</text>`;
+  s += `<g transform="translate(40,64)">`;
+  s += `<circle cx="6" cy="0" r="6" fill="#fbbf24"/>`;
+  s += `<text x="6" y="20" font-size="11" fill="#1e3a8a" text-anchor="middle">晴天</text>`;
+  s += `</g>`;
+  s += `<g transform="translate(95,64)">`;
+  s += `<circle cx="0" cy="0" r="4" fill="#fbbf24"/>`;
+  s += `<ellipse cx="14" cy="0" rx="10" ry="5" fill="#fff" stroke="#94a3b8" stroke-width="0.6"/>`;
+  s += `<text x="7" y="20" font-size="11" fill="#1e3a8a" text-anchor="middle">多云</text>`;
+  s += `</g>`;
+  s += `<g transform="translate(155,64)">`;
+  s += `<ellipse cx="0" cy="0" rx="10" ry="6" fill="#fff" stroke="#94a3b8" stroke-width="0.6"/>`;
+  s += `<ellipse cx="14" cy="0" rx="10" ry="6" fill="#fff" stroke="#94a3b8" stroke-width="0.6"/>`;
+  s += `<text x="7" y="20" font-size="11" fill="#1e3a8a" text-anchor="middle">阴天</text>`;
+  s += `</g>`;
+  s += `</g>`;
+  return s;
+}
+function renderThreeState(x,y,w,h){
+  let s = `<g transform="translate(${x},${y})">`;
+  const cx=w/2, cy=h*0.7;
+  const top={x:cx, y:cy-h*0.55, t:'水蒸气', sub:'(气态)'};
+  const left={x:cx-w*0.32, y:cy, t:'水', sub:'(液态)'};
+  const right={x:cx+w*0.32, y:cy, t:'冰', sub:'(固态)'};
+  s += `<line x1="${left.x}" y1="${left.y}" x2="${top.x}" y2="${top.y}" stroke="#0284c7" stroke-width="1.5"/>`;
+  s += `<line x1="${top.x}" y1="${top.y}" x2="${right.x}" y2="${right.y}" stroke="#0284c7" stroke-width="1.5"/>`;
+  s += `<line x1="${left.x}" y1="${left.y}" x2="${right.x}" y2="${right.y}" stroke="#0284c7" stroke-width="1.5"/>`;
+  function arrow(x1,y1,x2,y2,label){
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    return `<defs><marker id="arr-${label}" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0284c7"/></marker></defs>`
+      + `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#0284c7" stroke-width="1.2" marker-end="url(#arr-${label})"/>`
+      + `<text x="${mx}" y="${my-4}" font-size="10" fill="#0c4a6e" font-weight="600" text-anchor="middle">${label}</text>`;
+  }
+  s += arrow(left.x+5,left.y-3, top.x-3,top.y+8,'受热');
+  s += arrow(left.x+8,left.y-3, right.x-3,right.y-3,'放热');
+  s += arrow(top.x-3,top.y+8, right.x+5,right.y-3,'受热');
+  function labelNode(p){
+    return `<circle cx="${p.x}" cy="${p.y}" r="26" fill="#fff" stroke="#0284c7" stroke-width="1.5"/>
+      <text x="${p.x}" y="${p.y-2}" font-size="13" fill="#0c4a6e" text-anchor="middle" font-weight="700">${p.t}</text>
+      <text x="${p.x}" y="${p.y+12}" font-size="10" fill="#475569" text-anchor="middle">${p.sub}</text>`;
+  }
+  s += labelNode(top);
+  s += labelNode(left);
+  s += labelNode(right);
+  s += `</g>`;
+  return s;
+}
+function renderMotionIcons(x,y,w,h){
+  let s = `<g transform="translate(${x},${y})">`;
+  const rowH = h/5;
+  const items=[
+    {t:'平动', draw:c=>`<rect x="${c-14}" y="0" width="28" height="20" fill="#fcd34d" stroke="#a16207"/><line x1="${c-20}" y1="10" x2="${c+20}" y2="10" stroke="#dc2626" stroke-width="1.2" marker-end="url(#arr-m)"/>`},
+    {t:'转动', draw:c=>`<ellipse cx="${c}" cy="10" rx="16" ry="10" fill="#fef3c7" stroke="#a16207"/><circle cx="${c}" cy="10" r="3" fill="#dc2626"/><line x1="${c}" y1="10" x2="${c+14}" y2="2" stroke="#dc2626" stroke-width="1.2"/>`},
+    {t:'摆动', draw:c=>`<circle cx="${c-12}" cy="2" r="2" fill="#374151"/><line x1="${c-12}" y1="2" x2="${c}" y2="10" stroke="#374151"/><line x1="${c-12}" y1="2" x2="${c+8}" y2="14" stroke="#dc2626" stroke-width="1.2" marker-end="url(#arr-m)"/>`},
+    {t:'滚动', draw:c=>`<rect x="${c-16}" y="-4" width="32" height="8" fill="#fcd34d" stroke="#a16207"/><circle cx="${c-8}" cy="8" r="5" fill="#fff" stroke="#374151"/><circle cx="${c+8}" cy="8" r="5" fill="#fff" stroke="#374151"/><line x1="${c-22}" y1="20" x2="${c+22}" y2="20" stroke="#dc2626" stroke-width="1.2" marker-end="url(#arr-m)"/>`},
+    {t:'振动', draw:c=>`<line x1="${c-2}" y1="-2" x2="${c-2}" y2="22" stroke="#374151" stroke-width="1.5"/><line x1="${c-14}" y1="10" x2="${c-2}" y2="10" stroke="#dc2626" stroke-width="1.2" marker-end="url(#arr-m)"/><line x1="${c+2}" y1="10" x2="${c+14}" y2="10" stroke="#dc2626" stroke-width="1.2" marker-end="url(#arr-m)"/>`}
+  ];
+  s += `<defs><marker id="arr-m" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#dc2626"/></marker></defs>`;
+  items.forEach((it,i)=>{
+    const yy = i*rowH + 14;
+    s += `<text x="0" y="${yy}" font-size="12" fill="#1e3a8a" font-weight="600">${it.t}</text>`;
+    s += it.draw(60);
+  });
+  s += `</g>`;
+  return s;
+}
+
+/* ---- 思维导图：交互编辑器（拖拽 / 双击编辑 / 增删 / 朗读） ---- */
+function initMindMap(block, treeId){
+  const tree = MM_TREES[treeId];
+  if(!tree) return;
+  block.innerHTML = `<div class="mm-toolbar">
+      <span class="ttl">思维导图（拖拽移动 · 双击改字 · 选中后增删）</span>
+      <button data-act="add-child" class="primary">+ 子节点</button>
+      <button data-act="add-sib">+ 同级</button>
+      <button data-act="del" class="warn">删除</button>
+      <button data-act="auto">自动布局</button>
+      <button data-act="speak" class="primary">🔊 朗读导图</button>
+      <button data-act="fit">适应屏幕</button>
+    </div><div class="mm-editor"></div>`;
+  const editor = block.querySelector('.mm-editor');
+  const model = buildMMModel(tree);
+  mmAutoLayout(model); // 先用估算尺寸布局
+  const saved = mmLoadState(treeId);
+  if(saved){
+    if(saved.pos) Object.keys(saved.pos).forEach(id=>{ if(model.nodes[id]){ model.nodes[id].x=saved.pos[id].x; model.nodes[id].y=saved.pos[id].y; } });
+    if(saved.text) Object.keys(saved.text).forEach(id=>{ if(model.nodes[id]) model.nodes[id].text=saved.text[id]; });
+  }
+  // 先创建节点元素，再测量真实尺寸，避免长文本溢出/重叠、连线贴合真实盒子
+  const nodeEls={};
+  function createNodeEl(id){
+    const n=model.nodes[id];
+    const nd=document.createElement('div'); nd.className='mm-node'; nd.dataset.id=id;
+    nd.style.left=n.x+'px'; nd.style.top=n.y+'px';
+    nd.style.minWidth='44px'; nd.style.maxWidth='360px';
+    nd.style.background=n.fill; nd.style.color=n.color;
+    nd.style.border='1.5px solid '+n.stroke; nd.style.fontSize=n.fs+'px';
+    nd.innerHTML=`<span class="txt">${escapeHtml(n.text)}</span><button class="spk" title="朗读该节点">🔊</button>`;
+    editor.appendChild(nd);
+    nodeEls[id]=nd;
+    return nd;
+  }
+  Object.keys(model.nodes).forEach(id=>createNodeEl(id));
+  Object.values(model.nodes).forEach(n=>{
+    const el=nodeEls[n.id];
+    n.aw = (el && el.offsetWidth) ? el.offsetWidth : n.w;
+    n.ah = (el && el.offsetHeight) ? el.offsetHeight : n.h;
+  });
+  mmAutoLayout(model); // 用真实尺寸重排，杜绝重叠
+  Object.values(model.nodes).forEach(n=>{ const el=nodeEls[n.id]; el.style.left=n.x+'px'; el.style.top=n.y+'px'; });
+  let maxX=0,maxY=0;
+  Object.values(model.nodes).forEach(n=>{ maxX=Math.max(maxX,n.x+(n.aw||n.w)); maxY=Math.max(maxY,n.y+(n.ah||n.h)); });
+  const nodeMaxX=maxX;
+  const minDiagX=Math.min.apply(null,(tree.diagrams||[]).map(d=>d.x).concat([1e9]));
+  const shift=Math.max(0, nodeMaxX+60 - minDiagX);
+  (tree.diagrams||[]).forEach(d=>{ maxX=Math.max(maxX, d.x+shift+d.w); maxY=Math.max(maxY, d.y+d.h); });
+  const W=maxX+40, H=maxY+40;
+  const diagStr=(tree.diagrams||[]).map(d=>{
+    if(d.kind==='rainGauge') return renderRainGauge(d.x+shift,d.y,d.w,d.h);
+    if(d.kind==='cloudSet') return renderCloudSet(d.x+shift,d.y,d.w,d.h);
+    if(d.kind==='threeState') return renderThreeState(d.x+shift,d.y,d.w,d.h);
+    if(d.kind==='motionIcons') return renderMotionIcons(d.x+shift,d.y,d.w,d.h);
+    return '';
+  }).join('');
+  const svgStr=`<svg class="mm-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif">${diagStr}</svg>`;
+  editor.insertAdjacentHTML('afterbegin', svgStr);
+  editor.style.height = H+'px';
+  const svgEl = editor.querySelector('svg');
+  const edgeList=[];
+  Object.keys(model.nodes).forEach(id=>{
+    (model.children[id]||[]).forEach(cid=>{
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', mmEdgePath(model.nodes[id],model.nodes[cid]));
+      path.setAttribute('stroke','#94a3b8'); path.setAttribute('stroke-width','1.6'); path.setAttribute('fill','none');
+      svgEl.appendChild(path);
+      edgeList.push({pid:id,cid,el:path});
+    });
+  });
+
+  let selectedId=null;
+  function selectNode(id){
+    selectedId=id;
+    editor.querySelectorAll('.mm-node').forEach(n=>n.classList.toggle('sel', n.dataset.id===id));
+  }
+  function redrawEdgesFor(id){
+    edgeList.forEach(e=>{ if(e.pid===id||e.cid===id) e.el.setAttribute('d', mmEdgePath(model.nodes[e.pid],model.nodes[e.cid])); });
+  }
+  function measure(id){
+    const el=nodeEls[id]; const n=model.nodes[id];
+    if(el){ n.aw=el.offsetWidth||n.w; n.ah=el.offsetHeight||n.h; }
+  }
+  function expandCanvas(){
+    let mx=0,my=0;
+    Object.values(model.nodes).forEach(n=>{ mx=Math.max(mx,n.x+(n.aw||n.w)); my=Math.max(my,n.y+(n.ah||n.h)); });
+    (tree.diagrams||[]).forEach(d=>{ mx=Math.max(mx,d.x+shift+d.w); my=Math.max(my,d.y+d.h); });
+    const W=mx+40,H=my+40;
+    svgEl.setAttribute('width',W); svgEl.setAttribute('height',H);
+    svgEl.setAttribute('viewBox','0 0 '+W+' '+H);
+    editor.style.height=H+'px';
+  }
+  function dfsOrder(id){
+    let out=[id]; (model.children[id]||[]).forEach(c=>{ out=out.concat(dfsOrder(c)); }); return out;
+  }
+
+  let drag=null;
+  editor.addEventListener('pointerdown', e=>{
+    const node=e.target.closest('.mm-node'); if(!node) return;
+    if(e.target.closest('.spk')) return;
+    if(node.classList.contains('editing')) return;
+    const id=node.dataset.id; const n=model.nodes[id];
+    drag={id, node, sx:e.clientX, sy:e.clientY, ox:n.x, oy:n.y, moved:false};
+    try{ node.setPointerCapture(e.pointerId); }catch(_){}
+    selectNode(id);
+  });
+  editor.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const dx=e.clientX-drag.sx, dy=e.clientY-drag.sy;
+    if(Math.abs(dx)>3||Math.abs(dy)>3) drag.moved=true;
+    const n=model.nodes[drag.id];
+    n.x=Math.max(0,drag.ox+dx); n.y=Math.max(0,drag.oy+dy);
+    drag.node.style.left=n.x+'px'; drag.node.style.top=n.y+'px';
+    redrawEdgesFor(drag.id);
+  });
+  editor.addEventListener('pointerup', e=>{
+    if(!drag) return;
+    if(drag.moved) mmSaveState(treeId, model);
+    try{ drag.node.releasePointerCapture(e.pointerId); }catch(_){}
+    drag=null;
+  });
+  editor.addEventListener('click', e=>{
+    const spk=e.target.closest('.spk');
+    if(spk){ e.stopPropagation(); const node=spk.closest('.mm-node'); TTS.speak(model.nodes[node.dataset.id].text); }
+  });
+  editor.addEventListener('dblclick', e=>{
+    const node=e.target.closest('.mm-node'); if(!node||e.target.closest('.spk')) return;
+    try{ node.releasePointerCapture(e.pointerId); }catch(_){}
+    const txt=node.querySelector('.txt'); node.classList.add('editing');
+    txt.setAttribute('contenteditable','true'); txt.focus();
+    const r=document.createRange(); r.selectNodeContents(txt);
+    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    const finish=()=>{
+      txt.removeAttribute('contenteditable'); node.classList.remove('editing');
+      const nn=model.nodes[node.dataset.id];
+      nn.text=txt.innerText.trim();
+      measure(node.dataset.id);
+      redrawEdgesFor(node.dataset.id);
+      expandCanvas();
+      mmSaveState(treeId, model);
+      txt.removeEventListener('blur', finish);
+    };
+    txt.addEventListener('blur', finish);
+  });
+
+  function addNode(parentId, asChild){
+    const parent=model.nodes[parentId]; if(!parent) return;
+    if(!asChild && !parent.parent){ toast('根节点不能加同级'); return; }
+    const pid = asChild ? parentId : parent.parent;
+    const newId = pid+'-'+(model.children[pid].length);
+    model.children[pid].push(newId);
+    const pd=model.nodes[pid];
+    model.nodes[newId]={id:newId, parent:pid, depth:pd.depth+1, text:'新节点', w:110, h:30, fs:13, fill:'#ffffff', color:'#1f2937', stroke:'#94a3b8', strokeW:1, x:0, y:0};
+    const n=model.nodes[newId];
+    // 先放到父节点右侧（用已测量的真实尺寸），交给「自动布局」整理
+    n.x = (pd.x+(pd.aw||pd.w)) + 58;
+    n.y = pd.y + (pd.ah||pd.h)/2 - 16;
+    const el=createNodeEl(newId);
+    n.aw = el.offsetWidth||n.w; n.ah = el.offsetHeight||n.h;
+    n.y = pd.y + (pd.ah||pd.h)/2 - n.ah/2; // 用真实高度垂直居中于父节点
+    el.style.left=n.x+'px'; el.style.top=n.y+'px';
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', mmEdgePath(pd, n));
+    path.setAttribute('stroke','#94a3b8'); path.setAttribute('stroke-width','1.6'); path.setAttribute('fill','none');
+    svgEl.appendChild(path);
+    edgeList.push({pid,cid:newId,el:path});
+    expandCanvas();
+    mmSaveState(treeId, model); selectNode(newId);
+  }
+  function delNode(id){
+    if(id==='r'){ toast('根节点不能删除'); return; }
+    const toDel=[]; (function collect(x){ toDel.push(x); (model.children[x]||[]).forEach(collect); })(id);
+    toDel.forEach(did=>{
+      const el=editor.querySelector('.mm-node[data-id="'+did+'"]'); if(el) el.remove();
+      edgeList.filter(e=>e.pid===did||e.cid===did).forEach(e=>{ if(e.el) e.el.remove(); });
+      delete model.nodes[did];
+    });
+    Object.keys(model.children).forEach(pid=>{ model.children[pid]=model.children[pid].filter(c=>model.nodes[c]); });
+    selectedId=null;
+    mmSaveState(treeId, model);
+  }
+
+  block.querySelector('.mm-toolbar').addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const a=b.dataset.act;
+    if(a==='add-child'){ if(!selectedId){toast('请先点选一个节点');return;} addNode(selectedId, true); }
+    else if(a==='add-sib'){ if(!selectedId){toast('请先点选一个节点');return;} addNode(selectedId, false); }
+    else if(a==='del'){ if(!selectedId){toast('请先点选一个节点');return;} delNode(selectedId); }
+    else if(a==='auto'){
+      Object.keys(model.nodes).forEach(measure); // 编辑后尺寸可能变化，先重新测量
+      mmAutoLayout(model);
+      Object.keys(model.nodes).forEach(id=>{ const el=nodeEls[id]; const n=model.nodes[id]; if(el){ el.style.left=n.x+'px'; el.style.top=n.y+'px'; } });
+      edgeList.forEach(e=>{ if(e.el&&model.nodes[e.pid]&&model.nodes[e.cid]) e.el.setAttribute('d', mmEdgePath(model.nodes[e.pid],model.nodes[e.cid])); });
+      expandCanvas();
+      mmSaveState(treeId, model);
+    }
+    else if(a==='speak'){
+      const list=dfsOrder('r').map(id=>({el:nodeEls[id], text:model.nodes[id].text}));
+      TTS.speakNodes(list);
+    }
+    else if(a==='fit'){ editor.scrollLeft=0; editor.scrollTop=0; }
+  });
+}
+
+/* ============================================================
+   六、TTS 点读模块
+   ============================================================ */
+const TTS = {
+  enabled: false,
+  voice: null,
+  currentBtn: null,
+  currentEl: null,
+  init(){
+    if(!('speechSynthesis' in window)) return;
+    const trySet = ()=>{
+      const vs = speechSynthesis.getVoices();
+      TTS.voice = vs.find(v=>/^zh/i.test(v.lang)) || null;
+    };
+    trySet();
+    if(speechSynthesis.onvoiceschanged !== undefined){
+      speechSynthesis.onvoiceschanged = trySet;
+    }
+  },
+  speak(text, opts){
+    if(!('speechSynthesis' in window)){
+      toast('当前浏览器不支持语音朗读'); return;
+    }
+    opts = opts || {};
+    speechSynthesis.cancel();
+    if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = opts.lang || 'zh-CN';
+    u.rate = opts.rate || 0.95;
+    u.pitch = opts.pitch || 1;
+    if(TTS.voice) u.voice = TTS.voice;
+    u.onend = ()=>{
+      if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+      TTS.currentEl = null;
+      if(TTS.currentBtn) TTS.currentBtn.classList.remove('playing');
+      TTS.currentBtn = null;
+    };
+    u.onerror = ()=>{
+      if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+      TTS.currentEl = null;
+    };
+    speechSynthesis.speak(u);
+  },
+  stop(){
+    if('speechSynthesis' in window) speechSynthesis.cancel();
+    this._seq = null;
+    if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+    TTS.currentEl = null;
+    document.querySelectorAll('.tts-btn.playing').forEach(b=>b.classList.remove('playing'));
+    TTS.currentBtn = null;
+  },
+  speakNodes(list){
+    if(!('speechSynthesis' in window)){ toast('当前浏览器不支持语音朗读'); return; }
+    this._seq = (list||[]).slice();
+    const next=()=>{
+      if(!this._seq || !this._seq.length){ if(TTS.currentBtn) TTS.currentBtn.classList.remove('playing'); TTS.currentBtn=null; return; }
+      const item=this._seq.shift();
+      speechSynthesis.cancel();
+      if(TTS.currentEl){ TTS.currentEl.classList.remove('tts-reading'); TTS.currentEl=null; }
+      const u=new SpeechSynthesisUtterance(item.text);
+      u.lang='zh-CN'; u.rate=0.95; if(TTS.voice) u.voice=TTS.voice;
+      u.onstart=()=>{ if(item.el){ item.el.classList.add('tts-reading'); TTS.currentEl=item.el; } };
+      u.onend=()=>{ if(item.el) item.el.classList.remove('tts-reading'); if(TTS.currentEl===item.el) TTS.currentEl=null; next(); };
+      u.onerror=()=>{ if(item.el) item.el.classList.remove('tts-reading'); next(); };
+      speechSynthesis.speak(u);
+    };
+    next();
+  },
+  readSection(chapterEl, btn){
+    if(TTS.currentBtn === btn){
+      TTS.stop();
+      return;
+    }
+    TTS.stop();
+    const parts = [];
+    chapterEl.querySelectorAll('h4, .kp-list li, table, .exp-card .row, .dis-list .a, .dis-list .q, .note, .tip').forEach(el=>{
+      const t = el.innerText.trim();
+      if(t) parts.push({el, text:t});
+    });
+    if(!parts.length){ toast('本节无内容'); return; }
+    btn.classList.add('playing');
+    TTS.currentBtn = btn;
+    let i = 0;
+    const next = ()=>{
+      if(i >= parts.length){
+        TTS.currentBtn = null;
+        btn.classList.remove('playing');
+        return;
+      }
+      const p = parts[i++];
+      if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+      p.el.classList.add('tts-reading');
+      TTS.currentEl = p.el;
+      p.el.scrollIntoView({behavior:'smooth', block:'center'});
+      TTS.speak(p.text);
+      const interval = window.setInterval(()=>{
+        if(!speechSynthesis.speaking && !speechSynthesis.pending){
+          window.clearInterval(interval);
+          next();
+        }
+      }, 200);
+    };
+    next();
+  }
+};
+
+/* ============================================================
+   七、章节渲染
+   ============================================================ */
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);}
+
+function renderKpItem(item){
+  if(typeof item === 'string') return `<li>${item}</li>`;
+  if(item.tb){
+    const rows = item.tb;
+    let html = `<table><thead><tr>${rows[0].map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>`;
+    for(let i=1;i<rows.length;i++){
+      html += `<tr>${rows[i].map(c=>`<td>${escapeHtml(c)}</td>`).join('')}</tr>`;
+    }
+    html += `</tbody></table>`;
+    return `<li>${html}</li>`;
+  }
+  return '';
+}
+
+function renderChapter(ch){
+  let html = `<div class="chapter" data-n="${ch.n}">`;
+  html += `<h4><span class="num">${ch.n}</span><span class="title">${escapeHtml(ch.t)}</span>
+    <button class="tts-btn" data-act="read-ch">🔊 朗读本节</button></h4>`;
+  if(ch.kp && ch.kp.length){
+    html += `<div class="block-title kp">📌 划重点啦</div><ul class="kp-list">`;
+    ch.kp.forEach(it=>{ html += renderKpItem(it); });
+    html += `</ul>`;
+  }
+  if(ch.exp){
+    html += `<div class="block-title exp">🧪 做实验啦</div><div class="exp-card">`;
+    html += `<div class="row"><span class="lbl">实验：</span>${escapeHtml(ch.exp.t||'')}</div>`;
+    if(ch.exp.m && ch.exp.m.length){
+      html += `<div class="row"><span class="lbl">材料：</span>${ch.exp.m.map(escapeHtml).join('、 ')}</div>`;
+    }
+    if(ch.exp.s && ch.exp.s.length){
+      html += `<div class="row"><span class="lbl">步骤：</span><br>${ch.exp.s.map(escapeHtml).map(s=>`<div style="margin-left:1em;">${s}</div>`).join('')}</div>`;
+    }
+    if(ch.exp.notice && ch.exp.notice.length){
+      html += ch.exp.notice.map(n=>`<div class="note">${escapeHtml(n)}</div>`).join('');
+    }
+    if(ch.exp.tip){
+      html += `<div class="tip">${escapeHtml(ch.exp.tip)}</div>`;
+    }
+    if(ch.exp.dis){
+      html += `<div class="row"><span class="lbl">我的发现：</span>${ch.exp.dis}</div>`;
+    }
+    html += `</div>`;
+  }
+  if(ch.dis && ch.dis.length){
+    html += `<div class="block-title dis">💬 来研讨吧</div><ul class="dis-list">`;
+    ch.dis.forEach(d=>{
+      html += `<li><div class="q">${escapeHtml(d.q)}</div><div class="a">${d.a}</div></li>`;
+    });
+    html += `</ul>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function bindChapterEvents(box){
+  box.querySelectorAll('.tts-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const chapter = btn.closest('.chapter');
+      TTS.readSection(chapter, btn);
+    });
+  });
+  box.addEventListener('click', e=>{
+    if(!TTS.enabled) return;
+    const t = e.target.closest('p, li, td, .dis-list .a, .exp-card .row, .note, .tip, h4 .title');
+    if(!t) return;
+    const text = (t.innerText || t.textContent || '').trim();
+    if(!text || text.length < 2) return;
+    if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+    t.classList.add('tts-reading');
+    TTS.currentEl = t;
+    TTS.speak(text);
+  });
+}
+
+/* ============================================================
+   八、考点自测渲染（沿用原版逻辑）
+   ============================================================ */
+let _bidx=0;
+function buildOptions(testId){
+  const ans=ANSWERS[testId]||[];
+  return ans.map(a=>{
+    const others=shuffle(ans.filter(x=>x!==a));
+    const dist=others.slice(0,3);
+    const arr=shuffle([a].concat(dist));
+    return {ans:a, ops:arr};
+  });
+}
+function renderTestItem(text){
+  const parts = text.split('______');
+  let html = '<li>';
+  parts.forEach((p,i)=>{
+    html += escapeHtml(p);
+    if(i<parts.length-1){
+      const bi=_bidx++;
+      const after = parts[i+1]||'';
+      const beforeTrim = p.replace(/[\s,，。；;、]+$/,'');
+      let cls = 'blank';
+      if(after.length===0 || /^[\s,，。；;、]/.test(after)) cls += ' long';
+      if(beforeTrim.length>4) cls += ' long';
+      html += '<span class="'+cls+'" data-bi="'+bi+'">____</span>';
+    }
+  });
+  html += '</li>';
+  return html;
+}
+
+const STORE='sci_mm_test_v3';
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(STORE)||'{}'); }catch(e){ return {}; } }
+function saveStore(d){ try{ localStorage.setItem(STORE, JSON.stringify(d)); }catch(e){} }
+
+function bindTest(testBox, s){
+  const opts=s._opts||[];
+  const blanks=$$('.blank', testBox);
+  const saved=(loadStore()[s.id]||{}).answers||[];
+  blanks.forEach(b=>{
+    const bi=+b.dataset.bi; const o=opts[bi];
+    if(saved[bi]!=null && saved[bi]!==''){ b.textContent=saved[bi]; b.classList.add('filled'); }
+    if(o && !b.classList.contains('filled')) b.addEventListener('click', ()=>openOptPop(b,o,s,bi));
+  });
+}
+function openOptPop(b,o,s,bi){
+  if(b.classList.contains('filled')) return;
+  closeOptPop();
+  const pop=document.createElement('div'); pop.className='opt-pop';
+  pop.innerHTML=`<div class="opt-hd"><span>请选择正确答案</span><button class="opt-close" aria-label="关闭">×</button></div><div class="opt-grid"></div>`;
+  const grid=pop.querySelector('.opt-grid');
+  o.ops.forEach(op=>{
+    const btn=document.createElement('button'); btn.className='opt-item'; btn.textContent=op;
+    btn.addEventListener('click', ()=>{
+      if(op===o.ans){ b.textContent=op; b.classList.add('filled'); b.classList.remove('wrong'); saveAnswer(s.id,bi,op); closeOptPop(); }
+      else { btn.classList.add('wrong'); }
+    });
+    grid.appendChild(btn);
+  });
+  pop.querySelector('.opt-close').addEventListener('click', closeOptPop);
+  document.body.appendChild(pop);
+  const rect=b.getBoundingClientRect();
+  const pw=pop.offsetWidth, ph=pop.offsetHeight;
+  let x=rect.left, y=rect.bottom+6;
+  if(x+pw>window.innerWidth-8) x=window.innerWidth-pw-8;
+  if(y+ph>window.innerHeight-8) y=rect.top-ph-6;
+  x=Math.max(8,x); y=Math.max(8,y);
+  pop.style.left=x+'px'; pop.style.top=y+'px';
+  setTimeout(()=>{ pop._out=ev=>{ if(!pop.contains(ev.target)&&ev.target!==b) closeOptPop(); }; document.addEventListener('click',pop._out,true); },0);
+}
+function closeOptPop(){ const p=document.querySelector('.opt-pop'); if(p){ if(p._out) document.removeEventListener('click',p._out,true); p.remove(); } }
+function saveAnswer(testId,bi,val){ const st=loadStore(); st[testId]=st[testId]||{answers:[]}; st[testId].answers[bi]=val; saveStore(st); }
+function clearTest(s){
+  $$('.blank', s.el).forEach(b=>{ b.textContent='____'; b.classList.remove('filled'); });
+  const st=loadStore(); delete st[s.id]; saveStore(st);
+  toast('已清空本测试答案');
+}
+
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+const main = $('#main');
+const toc = $('#toc');
+
+function toast(msg,ms=1400){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid=setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+function buildApp(){
+  UNITS.forEach(u=>{
+    const a=document.createElement('a');
+    a.href='#'+u.id; a.textContent=(u.icon||'·')+' '+u.name;
+    toc.appendChild(a);
+  });
+
+  UNITS.forEach(u=>{
+    const sec=document.createElement('section'); sec.className='unit'; sec.id=u.id;
+    sec.innerHTML = `<h2><span class="badge">${u.icon||'·'}</span>${escapeHtml(u.name)}<span class="arrow">▾</span></h2>
+      <div class="body"></div>`;
+    sec.querySelector('h2').addEventListener('click',()=>sec.classList.toggle('collapsed'));
+    main.appendChild(sec);
+    const body=sec.querySelector('.body');
+    u.sections.forEach(s=>{
+      if(s.kind==='chapters'){
+        const h3=document.createElement('h3');
+        h3.textContent=s.title;
+        body.appendChild(h3);
+        const chs = CHAPTERS[s.unitId] || [];
+        const box = document.createElement('div');
+        box.className='chapters';
+        let html = '';
+        chs.forEach(ch=>{ html += renderChapter(ch); });
+        box.innerHTML = html;
+        body.appendChild(box);
+        bindChapterEvents(box);
+      } else if(s.kind==='mm'){
+        const h3=document.createElement('h3');
+        h3.textContent='思维导图';
+        body.appendChild(h3);
+        const block=document.createElement('div'); block.className='mm-block';
+        body.appendChild(block);
+        initMindMap(block, s.svgId);
+      } else if(s.kind==='test'){
+        const h3=document.createElement('h3');
+        h3.textContent=s.title;
+        body.appendChild(h3);
+        s._opts = buildOptions(s.id);
+        _bidx=0;
+        const testBox=document.createElement('div');
+        testBox.className='test';
+        testBox.id=s.id;
+        const ol=document.createElement('ol');
+        s.items.forEach(it=>{ ol.innerHTML += renderTestItem(it); });
+        testBox.appendChild(ol);
+        const acts=document.createElement('div');
+        acts.className='test-actions';
+        acts.innerHTML=`<button data-act="reveal">显示答案</button>
+          <button data-act="clear" class="danger">清除答案</button>
+          <button data-act="print" class="primary">仅打印本测试</button>`;
+        testBox.appendChild(acts);
+        body.appendChild(testBox);
+        s.el=testBox;
+        acts.querySelectorAll('button').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            const a=btn.dataset.act;
+            if(a==='reveal') showAnswers(s);
+            else if(a==='clear') clearTest(s);
+            else if(a==='print'){
+              $$('.unit').forEach(u2=>{ if(u2!==sec) u2.classList.add('collapsed'); });
+              sec.classList.remove('collapsed');
+              setTimeout(()=>{ window.print(); },80);
+            }
+          });
+        });
+        bindTest(testBox, s);
+      }
+    });
+  });
+}
+
+function showAnswers(sec){
+  const ans = ANSWERS[sec.id];
+  if(!ans){ toast('暂无答案'); return; }
+  const blanks = $$('.blank', sec.el);
+  const revealed = blanks.some(b=>b.classList.contains('filled'));
+  if(revealed){
+    blanks.forEach(b=>{ b.textContent='____'; b.classList.remove('filled'); });
+    toast('已隐藏参考答案');
+    return;
+  }
+  let filled = 0;
+  blanks.forEach((b,i)=>{
+    const a = ans[i];
+    if(a!=null && a!==''){ b.textContent = a; b.classList.add('filled'); filled++; }
+  });
+  toast(filled ? '已显示参考答案（再次点击隐藏）' : '暂无参考答案');
+}
+
+/* ============================================================
+   九、点读开关 + 字号 + 启动
+   ============================================================ */
+TTS.init();
+
+$('#tts-stop').addEventListener('click', ()=>{ TTS.stop(); toast('已停止朗读'); });
+
+$('#tts-toggle').addEventListener('click', ()=>{
+  TTS.enabled = !TTS.enabled;
+  document.body.classList.toggle('tts-on', TTS.enabled);
+  const btn = $('#tts-toggle');
+  btn.textContent = TTS.enabled ? '🔊 点读：开' : '🔊 点读：关';
+  btn.classList.toggle('on', TTS.enabled);
+  if(TTS.enabled){
+    const hasVoice = !!TTS.voice;
+    toast(hasVoice ? '点读已开启，点击任意文字即可朗读' : '点读已开启（未检测到中文语音，请安装系统中文语音）');
+  } else {
+    TTS.stop();
+    toast('点读已关闭');
+  }
+});
+
+$$('.fs-controls button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const f=b.dataset.fs;
+    document.body.classList.remove('fs-lg','fs-xl');
+    if(f==='lg') document.body.classList.add('fs-lg');
+    else if(f==='xl') document.body.classList.add('fs-xl');
+  });
+});
+
+buildApp();
+</script>
+</body>
+</html>
