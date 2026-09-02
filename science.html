@@ -231,6 +231,63 @@
   body.fs-xl .test li{font-size:19px;}
   body.fs-xl .chapter h4{font-size:21px;}
   .mm-title{text-align:center;margin:0 0 8px;font-size:14px;color:var(--muted);}
+
+  /* === 常驻浮动按钮 + 弹出面板 === */
+  .fab-bar{position:fixed;right:16px;bottom:16px;z-index:550;display:flex;flex-direction:column;gap:12px;}
+  .fab{width:54px;height:54px;border-radius:50%;border:none;background:var(--accent);color:#fff;
+    box-shadow:0 6px 16px rgba(37,99,235,.38);cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:21px;line-height:1;padding:0;
+    transition:transform .12s ease;}
+  .fab:active{transform:scale(.92);}
+  .fab span{font-size:10px;margin-top:2px;font-weight:600;}
+  .fab.mind{background:linear-gradient(135deg,#8b5cf6,#6366f1);box-shadow:0 6px 16px rgba(139,92,246,.4);}
+  .pop-mask{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:600;
+    display:flex;align-items:center;justify-content:center;padding:14px;animation:popIn .15s ease;}
+  .pop-mask[hidden]{display:none;}
+  @keyframes popIn{from{opacity:0}to{opacity:1}}
+  .pop-panel{background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.3);
+    width:100%;max-width:960px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+  .pop-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);
+    font-weight:700;font-size:16px;flex-shrink:0;background:#fff;}
+  .pop-close{margin-left:auto;appearance:none;border:none;background:#f1f5f9;color:#475569;border-radius:8px;
+    width:32px;height:32px;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .pop-close:active{background:#e2e8f0;}
+  /* 目录面板 */
+  .toc-panel{max-width:380px;}
+  .toc-list{overflow:auto;padding:8px 10px;max-height:72vh;}
+  .toc-list a{display:block;padding:13px 14px;border-radius:10px;text-decoration:none;color:var(--ink);
+    font-size:15px;border:1px solid transparent;margin-bottom:2px;}
+  .toc-list a:hover{background:var(--accent-soft);border-color:#bfdbfe;}
+  .toc-list a .ic{margin-right:8px;}
+  /* 思维导图弹窗 */
+  .mm-tabs{display:flex;gap:6px;margin-left:6px;flex:1;overflow:auto;padding-bottom:2px;}
+  .mm-tabs button{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:18px;padding:5px 12px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+  .mm-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .mm-modal-body{flex:1;overflow:auto;padding:14px;background:#fcfdff;}
+  .mm-modal-body .mm-editor{overflow:visible;border:none;background:transparent;min-height:0;}
+  /* 单元内导图触发卡片（替代原内联大图） */
+  .mm-trigger{margin-bottom:14px;}
+  .mm-trigger-card{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,#eef2ff,#faf5ff);
+    border:1px solid #ddd6fe;border-radius:12px;padding:12px 14px;flex-wrap:wrap;}
+  .mm-trigger-ico{font-size:30px;flex-shrink:0;}
+  .mm-trigger-txt{display:flex;flex-direction:column;flex:1;min-width:140px;}
+  .mm-trigger-txt b{font-size:15px;color:#4338ca;}
+  .mm-trigger-txt span{font-size:12px;color:var(--muted);}
+  .mm-open-btn{appearance:none;border:none;background:var(--accent);color:#fff;border-radius:8px;
+    padding:9px 16px;font-size:14px;cursor:pointer;flex-shrink:0;min-height:40px;}
+  .mm-open-btn:active{background:#1d4ed8;}
+
+  @media (max-width: 640px){
+    .fab{width:48px;height:48px;font-size:18px;}
+    .pop-panel{max-height:94vh;}
+    .mm-tabs button{font-size:12px;padding:4px 10px;}
+    .mm-trigger-card{gap:8px;}
+    .mm-open-btn{flex:1 1 100%;}
+  }
+  @media print{
+    .fab-bar,.pop-mask{display:none !important;}
+  }
 </style>
 </head>
 <body class="">
@@ -254,7 +311,32 @@
   <button class="primary" onclick="window.print()">打印 / 导出 PDF</button>
 </header>
 
-<nav class="toc" id="toc"></nav>
+<!-- 常驻浮动按钮 -->
+<div class="fab-bar" id="fabBar">
+  <button class="fab mind" id="fabMind" title="打开思维导图">🧠<span>导图</span></button>
+  <button class="fab" id="fabToc" title="打开目录">📑<span>目录</span></button>
+</div>
+
+<!-- 目录弹出面板 -->
+<div class="pop-mask" id="tocMask" hidden>
+  <div class="pop-panel toc-panel">
+    <div class="pop-head">📑 目录<button class="pop-close" data-close="toc" title="关闭">✕</button></div>
+    <nav class="toc-list" id="tocList"></nav>
+  </div>
+</div>
+
+<!-- 思维导图弹出窗口 -->
+<div class="pop-mask" id="mmMask" hidden>
+  <div class="pop-panel mm-modal">
+    <div class="pop-head">
+      🧠 思维导图
+      <div class="mm-tabs" id="mmTabs"></div>
+      <button class="pop-close" data-close="mm" title="关闭">✕</button>
+    </div>
+    <div class="mm-modal-body" id="mmModalBody"></div>
+  </div>
+</div>
+
 <main id="main"></main>
 <div class="toast" id="toast"></div>
 
@@ -1203,6 +1285,8 @@ function initMindMap(block, treeId){
   }
 
   let drag=null;
+  let suppressRead=false;       // 拖拽过则本次点击不朗读
+  let lastReadId=null, lastReadT=0;  // 防双击（编辑）时重复朗读
   editor.addEventListener('pointerdown', e=>{
     const node=e.target.closest('.mm-node'); if(!node) return;
     if(e.target.closest('.spk')) return;
@@ -1224,12 +1308,22 @@ function initMindMap(block, treeId){
   editor.addEventListener('pointerup', e=>{
     if(!drag) return;
     if(drag.moved) mmSaveState(treeId, model);
+    suppressRead = drag.moved;   // 拖拽过 → 本次点击不朗读
     try{ drag.node.releasePointerCapture(e.pointerId); }catch(_){}
     drag=null;
   });
   editor.addEventListener('click', e=>{
     const spk=e.target.closest('.spk');
-    if(spk){ e.stopPropagation(); const node=spk.closest('.mm-node'); TTS.speak(model.nodes[node.dataset.id].text); }
+    if(spk){ e.stopPropagation(); const node=spk.closest('.mm-node'); TTS.speak(model.nodes[node.dataset.id].text); return; }
+    if(suppressRead){ suppressRead=false; return; }   // 刚拖拽结束，不朗读
+    const node=e.target.closest('.mm-node');
+    if(node){
+      const id=node.dataset.id;
+      const now=Date.now();
+      if(id===lastReadId && now-lastReadT<350) return;  // 双击编辑时跳过第二次朗读
+      lastReadId=id; lastReadT=now;
+      TTS.speak(model.nodes[id].text);   // 点读：点击节点 / 文字即朗读
+    }
   });
   editor.addEventListener('dblclick', e=>{
     const node=e.target.closest('.mm-node'); if(!node||e.target.closest('.spk')) return;
@@ -1318,6 +1412,8 @@ const TTS = {
   voice: null,
   currentBtn: null,
   currentEl: null,
+  _token: 0,          // 自增令牌：stop() 时自增，使任何进行中的序列立即失效
+  _readTimer: null,
   init(){
     if(!('speechSynthesis' in window)) return;
     const trySet = ()=>{
@@ -1354,8 +1450,9 @@ const TTS = {
     speechSynthesis.speak(u);
   },
   stop(){
+    this._token++;                       // 让任何进行中的序列（含 onend 回调）立即失效
     if('speechSynthesis' in window) speechSynthesis.cancel();
-    this._seq = null;
+    if(this._readTimer){ clearInterval(this._readTimer); this._readTimer=null; }
     if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
     TTS.currentEl = null;
     document.querySelectorAll('.tts-btn.playing').forEach(b=>b.classList.remove('playing'));
@@ -1363,40 +1460,40 @@ const TTS = {
   },
   speakNodes(list){
     if(!('speechSynthesis' in window)){ toast('当前浏览器不支持语音朗读'); return; }
+    const myToken = ++this._token;
     this._seq = (list||[]).slice();
     const next=()=>{
+      if(myToken !== TTS._token) return;                 // 已被 stop 作废
       if(!this._seq || !this._seq.length){ if(TTS.currentBtn) TTS.currentBtn.classList.remove('playing'); TTS.currentBtn=null; return; }
       const item=this._seq.shift();
       speechSynthesis.cancel();
       if(TTS.currentEl){ TTS.currentEl.classList.remove('tts-reading'); TTS.currentEl=null; }
       const u=new SpeechSynthesisUtterance(item.text);
       u.lang='zh-CN'; u.rate=0.95; if(TTS.voice) u.voice=TTS.voice;
-      u.onstart=()=>{ if(item.el){ item.el.classList.add('tts-reading'); TTS.currentEl=item.el; } };
-      u.onend=()=>{ if(item.el) item.el.classList.remove('tts-reading'); if(TTS.currentEl===item.el) TTS.currentEl=null; next(); };
-      u.onerror=()=>{ if(item.el) item.el.classList.remove('tts-reading'); next(); };
+      u.onstart=()=>{ if(myToken!==TTS._token) return; if(item.el){ item.el.classList.add('tts-reading'); TTS.currentEl=item.el; } };
+      u.onend=()=>{ if(myToken!==TTS._token) return; if(item.el) item.el.classList.remove('tts-reading'); if(TTS.currentEl===item.el) TTS.currentEl=null; next(); };
+      u.onerror=()=>{ if(myToken!==TTS._token) return; if(item.el) item.el.classList.remove('tts-reading'); next(); };
       speechSynthesis.speak(u);
     };
     next();
   },
   readSection(chapterEl, btn){
-    if(TTS.currentBtn === btn){
-      TTS.stop();
-      return;
-    }
+    if(TTS.currentBtn === btn){ TTS.stop(); return; }   // 同一按钮再次点击 = 停止
     TTS.stop();
+    const myToken = ++this._token;
+    TTS.currentBtn = btn; btn.classList.add('playing');
     const parts = [];
     chapterEl.querySelectorAll('h4, .kp-list li, table, .exp-card .row, .dis-list .a, .dis-list .q, .note, .tip').forEach(el=>{
       const t = el.innerText.trim();
       if(t) parts.push({el, text:t});
     });
-    if(!parts.length){ toast('本节无内容'); return; }
-    btn.classList.add('playing');
-    TTS.currentBtn = btn;
+    if(!parts.length){ toast('本节无内容'); btn.classList.remove('playing'); TTS.currentBtn=null; return; }
     let i = 0;
     const next = ()=>{
+      if(myToken !== TTS._token) return;                 // 已被 stop 作废
       if(i >= parts.length){
-        TTS.currentBtn = null;
         btn.classList.remove('playing');
+        if(TTS.currentBtn===btn) TTS.currentBtn=null;
         return;
       }
       const p = parts[i++];
@@ -1405,10 +1502,10 @@ const TTS = {
       TTS.currentEl = p.el;
       p.el.scrollIntoView({behavior:'smooth', block:'center'});
       TTS.speak(p.text);
-      const interval = window.setInterval(()=>{
+      TTS._readTimer = window.setInterval(()=>{
+        if(myToken !== TTS._token){ clearInterval(TTS._readTimer); TTS._readTimer=null; return; }
         if(!speechSynthesis.speaking && !speechSynthesis.pending){
-          window.clearInterval(interval);
-          next();
+          clearInterval(TTS._readTimer); TTS._readTimer=null; next();
         }
       }, 200);
     };
@@ -1578,7 +1675,8 @@ function clearTest(s){
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
 const main = $('#main');
-const toc = $('#toc');
+const tocList = $('#tocList');
+const MM_UNITS = [];   // 收集各单元思维导图（用于弹窗 tab 切换）
 
 function toast(msg,ms=1400){
   const t=$('#toast'); t.textContent=msg; t.classList.add('show');
@@ -1586,10 +1684,18 @@ function toast(msg,ms=1400){
 }
 
 function buildApp(){
+  // 目录面板：列出所有单元，点击滚动定位并关闭面板
   UNITS.forEach(u=>{
     const a=document.createElement('a');
-    a.href='#'+u.id; a.textContent=(u.icon||'·')+' '+u.name;
-    toc.appendChild(a);
+    a.href='#'+u.id;
+    a.innerHTML='<span class="ic">'+(u.icon||'·')+'</span>'+escapeHtml(u.name);
+    a.addEventListener('click', e=>{
+      e.preventDefault();
+      const el=document.getElementById(u.id);
+      if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      closeToc();
+    });
+    tocList.appendChild(a);
   });
 
   UNITS.forEach(u=>{
@@ -1613,12 +1719,18 @@ function buildApp(){
         body.appendChild(box);
         bindChapterEvents(box);
       } else if(s.kind==='mm'){
+        MM_UNITS.push({unitId:u.id, unitName:u.name, treeId:s.svgId});
         const h3=document.createElement('h3');
         h3.textContent='思维导图';
         body.appendChild(h3);
-        const block=document.createElement('div'); block.className='mm-block';
-        body.appendChild(block);
-        initMindMap(block, s.svgId);
+        const trigger=document.createElement('div');
+        trigger.className='mm-trigger';
+        trigger.innerHTML=`<div class="mm-trigger-card">
+            <div class="mm-trigger-ico">🧠</div>
+            <div class="mm-trigger-txt"><b>本单元思维导图</b><span>点击打开：可拖拽编辑 · 朗读导图 · 点读节点</span></div>
+            <button class="mm-open-btn" data-unit="${u.id}">打开导图</button>
+          </div>`;
+        body.appendChild(trigger);
       } else if(s.kind==='test'){
         const h3=document.createElement('h3');
         h3.textContent=s.title;
@@ -1705,6 +1817,41 @@ $$('.fs-controls button').forEach(b=>{
     else if(f==='xl') document.body.classList.add('fs-xl');
   });
 });
+
+/* === 目录 / 思维导图 弹窗控制 === */
+function openToc(){ $('#tocMask').hidden=false; }
+function closeToc(){ $('#tocMask').hidden=true; }
+function buildMmTabs(){
+  const tabs=$('#mmTabs'); tabs.innerHTML='';
+  MM_UNITS.forEach(m=>{
+    const b=document.createElement('button');
+    b.textContent=m.unitName; b.dataset.unit=m.unitId;
+    b.addEventListener('click', ()=>loadMindMap(m.unitId));
+    tabs.appendChild(b);
+  });
+}
+function loadMindMap(unitId){
+  const m=MM_UNITS.find(x=>x.unitId===unitId); if(!m) return;
+  $$('#mmTabs button').forEach(b=>b.classList.toggle('active', b.dataset.unit===unitId));
+  const body=$('#mmModalBody');
+  body.innerHTML='';
+  initMindMap(body, m.treeId);
+}
+function openMindMap(unitId){
+  buildMmTabs();
+  $('#mmMask').hidden=false;
+  if(!unitId && MM_UNITS.length) unitId=MM_UNITS[0].unitId;
+  loadMindMap(unitId);
+}
+function closeMindMap(){
+  $('#mmMask').hidden=true;
+  TTS.stop();   // 关闭窗口时停止朗读，避免声音残留
+}
+$('#fabToc').addEventListener('click', openToc);
+$('#fabMind').addEventListener('click', ()=>openMindMap());
+$('#tocMask').addEventListener('click', e=>{ if(e.target.id==='tocMask') closeToc(); });
+$('#mmMask').addEventListener('click', e=>{ if(e.target.id==='mmMask') closeMindMap(); });
+$$('.pop-close').forEach(b=> b.addEventListener('click', ()=>{ if(b.dataset.close==='toc') closeToc(); else closeMindMap(); }));
 
 buildApp();
 </script>
