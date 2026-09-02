@@ -246,7 +246,7 @@
   .pop-mask[hidden]{display:none;}
   @keyframes popIn{from{opacity:0}to{opacity:1}}
   .pop-panel{background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.3);
-    width:100%;max-width:960px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+    width:100%;max-width:760px;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;}
   .pop-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);
     font-weight:700;font-size:16px;flex-shrink:0;background:#fff;}
   .pop-close{margin-left:auto;appearance:none;border:none;background:#f1f5f9;color:#475569;border-radius:8px;
@@ -264,8 +264,13 @@
   .mm-tabs button{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
     border-radius:18px;padding:5px 12px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
   .mm-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .mm-modal-body{flex:1;overflow:auto;padding:14px;background:#fcfdff;}
+  .mm-modal-body{flex:1;overflow:auto;padding:10px;background:#fcfdff;}
   .mm-modal-body .mm-editor{overflow:visible;border:none;background:transparent;min-height:0;}
+  /* 缩放包裹：让整棵树在小弹窗里能完整呈现 */
+  .mm-scaler{position:relative;margin:0 auto;}
+  .mm-scaler > .mm-editor{position:absolute;left:0;top:0;transform-origin:0 0;border:none;background:transparent;}
+  .mm-modal-body .mm-toolbar{margin-bottom:6px;}
+  .mm-modal-body .mm-toolbar .ttl{font-size:12px;color:var(--muted);}
   /* 单元内导图触发卡片（替代原内联大图） */
   .mm-trigger{margin-bottom:14px;}
   .mm-trigger-card{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,#eef2ff,#faf5ff);
@@ -856,8 +861,8 @@ const MM_TREES = {
     root:{t:'天气', w:80, h:60, fill:'#dbeafe', color:'#1e3a8a', fs:18, stroke:'#1e3a8a', strokeW:1.5},
     branches:[
       {t:'认识天气', w:100, h:36, fill:'#fbcfe8', color:'#831843', fs:14, children:[
-        {t:'发生在包围我们的阴、晴、雨、雪、风等', w:380, h:32, color:'#1f2937', fs:13},
-        {t:'描述天气的词、句、炎热、寒冷等', w:340, h:32, color:'#1f2937', fs:13}
+        {t:'常见的天气现象：阴、晴、雨、雪、风等', w:380, h:32, color:'#1f2937', fs:13},
+        {t:'描述天气的词语：寒冷、炎热、微风、大风、晴朗、多云、乌云密布、大雨、小雪等', w:480, h:32, color:'#1f2937', fs:13}
       ]},
       {t:'天气特征', w:100, h:36, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
         {t:'气温', w:60, h:32, fill:'#bfdbfe', color:'#1e3a8a', fs:14, children:[
@@ -1072,14 +1077,8 @@ function mmEdgePath(p,c){
   return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
 }
 
-function mmLoadState(treeId){
-  try{ return JSON.parse(localStorage.getItem('mmpos_'+treeId)||'null'); }catch(e){ return null; }
-}
-function mmSaveState(treeId, model){
-  const pos={}, text={};
-  Object.values(model.nodes).forEach(n=>{ pos[n.id]={x:Math.round(n.x),y:Math.round(n.y)}; text[n.id]=n.text; });
-  try{ localStorage.setItem('mmpos_'+treeId, JSON.stringify({pos,text})); }catch(e){}
-}
+function mmLoadState(treeId){ /* 视图模式不再保存/读取节点位置与文本 */ return null; }
+function mmSaveState(treeId, model){ /* 视图模式不再保存/读取节点位置与文本 */ }
 
 function renderRainGauge(x,y,w,h){
   let s = `<g transform="translate(${x},${y})">`;
@@ -1187,27 +1186,18 @@ function renderMotionIcons(x,y,w,h){
   return s;
 }
 
-/* ---- 思维导图：交互编辑器（拖拽 / 双击编辑 / 增删 / 朗读） ---- */
+/* ---- 思维导图：仅供查看（点击节点可点读，工具栏仅朗读整图） ---- */
 function initMindMap(block, treeId){
   const tree = MM_TREES[treeId];
   if(!tree) return;
   block.innerHTML = `<div class="mm-toolbar">
-      <span class="ttl">思维导图（拖拽移动 · 双击改字 · 选中后增删）</span>
-      <button data-act="add-child" class="primary">+ 子节点</button>
-      <button data-act="add-sib">+ 同级</button>
-      <button data-act="del" class="warn">删除</button>
-      <button data-act="auto">自动布局</button>
-      <button data-act="speak" class="primary">🔊 朗读导图</button>
-      <button data-act="fit">适应屏幕</button>
-    </div><div class="mm-editor"></div>`;
+      <span class="ttl">视图 · 点击任意节点可点读</span>
+      <button data-act="speak" class="primary">🔊 朗读整张导图</button>
+    </div><div class="mm-scaler"><div class="mm-editor"></div></div>`;
   const editor = block.querySelector('.mm-editor');
+  const scaler = block.querySelector('.mm-scaler');
   const model = buildMMModel(tree);
   mmAutoLayout(model); // 先用估算尺寸布局
-  const saved = mmLoadState(treeId);
-  if(saved){
-    if(saved.pos) Object.keys(saved.pos).forEach(id=>{ if(model.nodes[id]){ model.nodes[id].x=saved.pos[id].x; model.nodes[id].y=saved.pos[id].y; } });
-    if(saved.text) Object.keys(saved.text).forEach(id=>{ if(model.nodes[id]) model.nodes[id].text=saved.text[id]; });
-  }
   // 先创建节点元素，再测量真实尺寸，避免长文本溢出/重叠、连线贴合真实盒子
   const nodeEls={};
   function createNodeEl(id){
@@ -1228,7 +1218,7 @@ function initMindMap(block, treeId){
     n.aw = (el && el.offsetWidth) ? el.offsetWidth : n.w;
     n.ah = (el && el.offsetHeight) ? el.offsetHeight : n.h;
   });
-  mmAutoLayout(model); // 用真实尺寸重排，杜绝重叠
+  mmAutoLayout(model); // 用真实尺寸重排
   Object.values(model.nodes).forEach(n=>{ const el=nodeEls[n.id]; el.style.left=n.x+'px'; el.style.top=n.y+'px'; });
   let maxX=0,maxY=0;
   Object.values(model.nodes).forEach(n=>{ maxX=Math.max(maxX,n.x+(n.aw||n.w)); maxY=Math.max(maxY,n.y+(n.ah||n.h)); });
@@ -1246,7 +1236,8 @@ function initMindMap(block, treeId){
   }).join('');
   const svgStr=`<svg class="mm-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif">${diagStr}</svg>`;
   editor.insertAdjacentHTML('afterbegin', svgStr);
-  editor.style.height = H+'px';
+  editor.style.width  = W + 'px';
+  editor.style.height = H + 'px';
   const svgEl = editor.querySelector('svg');
   const edgeList=[];
   Object.keys(model.nodes).forEach(id=>{
@@ -1259,148 +1250,41 @@ function initMindMap(block, treeId){
     });
   });
 
-  let selectedId=null;
-  function selectNode(id){
-    selectedId=id;
-    editor.querySelectorAll('.mm-node').forEach(n=>n.classList.toggle('sel', n.dataset.id===id));
-  }
-  function redrawEdgesFor(id){
-    edgeList.forEach(e=>{ if(e.pid===id||e.cid===id) e.el.setAttribute('d', mmEdgePath(model.nodes[e.pid],model.nodes[e.cid])); });
-  }
-  function measure(id){
-    const el=nodeEls[id]; const n=model.nodes[id];
-    if(el){ n.aw=el.offsetWidth||n.w; n.ah=el.offsetHeight||n.h; }
-  }
-  function expandCanvas(){
-    let mx=0,my=0;
-    Object.values(model.nodes).forEach(n=>{ mx=Math.max(mx,n.x+(n.aw||n.w)); my=Math.max(my,n.y+(n.ah||n.h)); });
-    (tree.diagrams||[]).forEach(d=>{ mx=Math.max(mx,d.x+shift+d.w); my=Math.max(my,d.y+d.h); });
-    const W=mx+40,H=my+40;
-    svgEl.setAttribute('width',W); svgEl.setAttribute('height',H);
-    svgEl.setAttribute('viewBox','0 0 '+W+' '+H);
-    editor.style.height=H+'px';
-  }
+  // === 缩放适配：整棵树按比例放入小弹窗，仅供查看 ===
+  // 可视区近似尺寸（max-width:760, max-height:78vh）；按比例缩放以保证整张图能看全
+  const PANEL_W = 720, PANEL_H = 520;
+  const SCALE = Math.min(0.7, PANEL_W / W, PANEL_H / H);
+  scaler.style.width  = Math.round(W * SCALE) + 'px';
+  scaler.style.height = Math.round(H * SCALE) + 'px';
+  editor.style.position = 'absolute';
+  editor.style.left = '0';
+  editor.style.top  = '0';
+  editor.style.transformOrigin = '0 0';
+  editor.style.transform = `scale(${SCALE})`;
+  editor.style.overflow = 'visible';
+
   function dfsOrder(id){
     let out=[id]; (model.children[id]||[]).forEach(c=>{ out=out.concat(dfsOrder(c)); }); return out;
   }
 
-  let drag=null;
-  let suppressRead=false;       // 拖拽过则本次点击不朗读
-  let lastReadId=null, lastReadT=0;  // 防双击（编辑）时重复朗读
-  editor.addEventListener('pointerdown', e=>{
-    const node=e.target.closest('.mm-node'); if(!node) return;
-    if(e.target.closest('.spk')) return;
-    if(node.classList.contains('editing')) return;
-    const id=node.dataset.id; const n=model.nodes[id];
-    drag={id, node, sx:e.clientX, sy:e.clientY, ox:n.x, oy:n.y, moved:false};
-    try{ node.setPointerCapture(e.pointerId); }catch(_){}
-    selectNode(id);
-  });
-  editor.addEventListener('pointermove', e=>{
-    if(!drag) return;
-    const dx=e.clientX-drag.sx, dy=e.clientY-drag.sy;
-    if(Math.abs(dx)>3||Math.abs(dy)>3) drag.moved=true;
-    const n=model.nodes[drag.id];
-    n.x=Math.max(0,drag.ox+dx); n.y=Math.max(0,drag.oy+dy);
-    drag.node.style.left=n.x+'px'; drag.node.style.top=n.y+'px';
-    redrawEdgesFor(drag.id);
-  });
-  editor.addEventListener('pointerup', e=>{
-    if(!drag) return;
-    if(drag.moved) mmSaveState(treeId, model);
-    suppressRead = drag.moved;   // 拖拽过 → 本次点击不朗读
-    try{ drag.node.releasePointerCapture(e.pointerId); }catch(_){}
-    drag=null;
-  });
+  // === 仅查看：点击节点 = 朗读该节点（点读）；无拖拽/编辑/保存 ===
+  editor.style.cursor = 'default';
   editor.addEventListener('click', e=>{
     const spk=e.target.closest('.spk');
     if(spk){ e.stopPropagation(); const node=spk.closest('.mm-node'); TTS.speak(model.nodes[node.dataset.id].text); return; }
-    if(suppressRead){ suppressRead=false; return; }   // 刚拖拽结束，不朗读
     const node=e.target.closest('.mm-node');
     if(node){
       const id=node.dataset.id;
-      const now=Date.now();
-      if(id===lastReadId && now-lastReadT<350) return;  // 双击编辑时跳过第二次朗读
-      lastReadId=id; lastReadT=now;
-      TTS.speak(model.nodes[id].text);   // 点读：点击节点 / 文字即朗读
+      TTS.speak(model.nodes[id].text);   // 点读
     }
   });
-  editor.addEventListener('dblclick', e=>{
-    const node=e.target.closest('.mm-node'); if(!node||e.target.closest('.spk')) return;
-    try{ node.releasePointerCapture(e.pointerId); }catch(_){}
-    const txt=node.querySelector('.txt'); node.classList.add('editing');
-    txt.setAttribute('contenteditable','true'); txt.focus();
-    const r=document.createRange(); r.selectNodeContents(txt);
-    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
-    const finish=()=>{
-      txt.removeAttribute('contenteditable'); node.classList.remove('editing');
-      const nn=model.nodes[node.dataset.id];
-      nn.text=txt.innerText.trim();
-      measure(node.dataset.id);
-      redrawEdgesFor(node.dataset.id);
-      expandCanvas();
-      mmSaveState(treeId, model);
-      txt.removeEventListener('blur', finish);
-    };
-    txt.addEventListener('blur', finish);
-  });
-
-  function addNode(parentId, asChild){
-    const parent=model.nodes[parentId]; if(!parent) return;
-    if(!asChild && !parent.parent){ toast('根节点不能加同级'); return; }
-    const pid = asChild ? parentId : parent.parent;
-    const newId = pid+'-'+(model.children[pid].length);
-    model.children[pid].push(newId);
-    const pd=model.nodes[pid];
-    model.nodes[newId]={id:newId, parent:pid, depth:pd.depth+1, text:'新节点', w:110, h:30, fs:13, fill:'#ffffff', color:'#1f2937', stroke:'#94a3b8', strokeW:1, x:0, y:0};
-    const n=model.nodes[newId];
-    // 先放到父节点右侧（用已测量的真实尺寸），交给「自动布局」整理
-    n.x = (pd.x+(pd.aw||pd.w)) + 58;
-    n.y = pd.y + (pd.ah||pd.h)/2 - 16;
-    const el=createNodeEl(newId);
-    n.aw = el.offsetWidth||n.w; n.ah = el.offsetHeight||n.h;
-    n.y = pd.y + (pd.ah||pd.h)/2 - n.ah/2; // 用真实高度垂直居中于父节点
-    el.style.left=n.x+'px'; el.style.top=n.y+'px';
-    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d', mmEdgePath(pd, n));
-    path.setAttribute('stroke','#94a3b8'); path.setAttribute('stroke-width','1.6'); path.setAttribute('fill','none');
-    svgEl.appendChild(path);
-    edgeList.push({pid,cid:newId,el:path});
-    expandCanvas();
-    mmSaveState(treeId, model); selectNode(newId);
-  }
-  function delNode(id){
-    if(id==='r'){ toast('根节点不能删除'); return; }
-    const toDel=[]; (function collect(x){ toDel.push(x); (model.children[x]||[]).forEach(collect); })(id);
-    toDel.forEach(did=>{
-      const el=editor.querySelector('.mm-node[data-id="'+did+'"]'); if(el) el.remove();
-      edgeList.filter(e=>e.pid===did||e.cid===did).forEach(e=>{ if(e.el) e.el.remove(); });
-      delete model.nodes[did];
-    });
-    Object.keys(model.children).forEach(pid=>{ model.children[pid]=model.children[pid].filter(c=>model.nodes[c]); });
-    selectedId=null;
-    mmSaveState(treeId, model);
-  }
 
   block.querySelector('.mm-toolbar').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
-    const a=b.dataset.act;
-    if(a==='add-child'){ if(!selectedId){toast('请先点选一个节点');return;} addNode(selectedId, true); }
-    else if(a==='add-sib'){ if(!selectedId){toast('请先点选一个节点');return;} addNode(selectedId, false); }
-    else if(a==='del'){ if(!selectedId){toast('请先点选一个节点');return;} delNode(selectedId); }
-    else if(a==='auto'){
-      Object.keys(model.nodes).forEach(measure); // 编辑后尺寸可能变化，先重新测量
-      mmAutoLayout(model);
-      Object.keys(model.nodes).forEach(id=>{ const el=nodeEls[id]; const n=model.nodes[id]; if(el){ el.style.left=n.x+'px'; el.style.top=n.y+'px'; } });
-      edgeList.forEach(e=>{ if(e.el&&model.nodes[e.pid]&&model.nodes[e.cid]) e.el.setAttribute('d', mmEdgePath(model.nodes[e.pid],model.nodes[e.cid])); });
-      expandCanvas();
-      mmSaveState(treeId, model);
-    }
-    else if(a==='speak'){
+    if(b.dataset.act==='speak'){
       const list=dfsOrder('r').map(id=>({el:nodeEls[id], text:model.nodes[id].text}));
       TTS.speakNodes(list);
     }
-    else if(a==='fit'){ editor.scrollLeft=0; editor.scrollTop=0; }
   });
 }
 
@@ -1719,18 +1603,8 @@ function buildApp(){
         body.appendChild(box);
         bindChapterEvents(box);
       } else if(s.kind==='mm'){
+        // 正文不再插入导图卡 / 触发按钮；统一通过右下 🧠 浮窗查看，弹窗内有 tab 切换各单元。
         MM_UNITS.push({unitId:u.id, unitName:u.name, treeId:s.svgId});
-        const h3=document.createElement('h3');
-        h3.textContent='思维导图';
-        body.appendChild(h3);
-        const trigger=document.createElement('div');
-        trigger.className='mm-trigger';
-        trigger.innerHTML=`<div class="mm-trigger-card">
-            <div class="mm-trigger-ico">🧠</div>
-            <div class="mm-trigger-txt"><b>本单元思维导图</b><span>点击打开：可拖拽编辑 · 朗读导图 · 点读节点</span></div>
-            <button class="mm-open-btn" data-unit="${u.id}">打开导图</button>
-          </div>`;
-        body.appendChild(trigger);
       } else if(s.kind==='test'){
         const h3=document.createElement('h3');
         h3.textContent=s.title;
