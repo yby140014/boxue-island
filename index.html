@@ -439,6 +439,24 @@ img,svg{display:block}
 .kkt-word-py{ font-size:11px; color:#9aa0ad; }
 .kkt-card-meta.kkt-meta-lg{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-start; margin:10px 0 4px; }
 .kkt-card-meta.kkt-meta-lg span{ font-size:13px; color:#555; background:#f3f4f8; border-radius:6px; padding:3px 9px; font-weight:600; }
+/* 生字卡 + 词语表 左右分栏 */
+.kkt-cards-wrap{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
+.kkt-cards-col{ flex:1 1 340px; min-width:0; }
+.kkt-wordlist{ flex:1 1 240px; min-width:0; background:#fff; border:1.5px solid #eef0f6; border-radius:14px; padding:12px 10px; align-self:stretch; }
+.kkt-wordlist-head{ font-size:14px; font-weight:700; color:#333; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.kkt-wl-count{ font-size:11px; font-weight:600; color:#9aa0ad; }
+.kkt-wordlist-body{ display:flex; flex-direction:column; gap:6px; max-height:62vh; overflow:auto; }
+.kkt-wl-item{ display:flex; align-items:center; gap:8px; padding:8px 10px; background:#f7f8fc; border-radius:10px; cursor:pointer; transition:background .12s; }
+.kkt-wl-item:active{ background:#eef0ff; }
+.kkt-wl-t{ font-size:17px; font-weight:600; color:#222; }
+.kkt-wl-py{ font-size:11px; color:#9aa0ad; }
+.kkt-wl-from{ margin-left:auto; font-size:11px; color:#b9bec9; }
+.kkt-wl-empty{ font-size:13px; color:#9aa0ad; padding:10px 2px; }
+@media (max-width:768px){
+  .kkt-cards-wrap{ flex-direction:column; }
+  .kkt-wordlist{ width:100%; flex:1 1 auto; }
+  .kkt-wordlist-body{ max-height:none; }
+}
 /* 笔顺浮窗 */
 .kkt-stroke-ov{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:9999; }
 .kkt-stroke-box{ background:#fff; border-radius:18px; padding:16px; width:300px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,.25); }
@@ -6841,21 +6859,21 @@ function kktBack(){
 /* —— 年级首页 —— */
 function renderKktHome(){
   var root=document.getElementById('kktRoot'); if(!root) return;
-  var total=0, mas=0, wrong=0;
+  var total=0, mas=0;
   (KKT_DATA.grades||[]).forEach(function(gd){
     gd.units.forEach(function(u){ u.lessons.forEach(function(l){ l.chars.forEach(function(c){
-      total++; if(kktMastered(gd.g,c.z)) mas++; if(kktWrong(gd.g,c.z)) wrong++;
+      total++; if(kktMastered(gd.g,c.z)) mas++;
     });});});
   });
   var h = kktTopBar('课课贴', false);
-  h += '<div class="kkt-overall">已掌握 <b>'+mas+'</b> / '+total+' 字　·　易错 <b>'+wrong+'</b> 字</div>';
+  h += '<div class="kkt-overall">已掌握 <b>'+mas+'</b> / '+total+' 字</div>';
   h += '<div class="section-title">选择年级</div><div class="kkt-gradebar">';
   GRADES.forEach(function(g){
     var d=kktGrade(g);
     h += '<button class="kkt-grade '+(d?'':'kkt-locked')+'" data-g="'+g+'">'+(LS_GMAP[g]||g)+'</button>';
   });
   h += '</div>';
-  h += '<div class="kkt-review-entry"><button class="btn btn-primary btn-block" id="kktReviewBtn">📅 复习队列（未掌握 / 易错 '+wrong+'）</button></div>';
+  h += '<div class="kkt-review-entry"><button class="btn btn-primary btn-block" id="kktReviewBtn">📅 复习队列（未掌握）</button></div>';
   h += '<div class="note mt">数据严格来自你提供的三份课课贴：二年级上 / 二年级下 / 三年级上；其余年级待录入。</div>';
   root.innerHTML = h;
   $all('.kkt-grade',root).forEach(function(b){
@@ -6920,35 +6938,28 @@ function renderKktLesson(){
   h+='<div class="kkt-tabs">'+
      '<div class="kkt-tab '+(kktCur.tab==='cards'?'on':'')+'" data-t="cards">生字卡</div>'+
      '<div class="kkt-tab '+(kktCur.tab==='self'?'on':'')+'" data-t="self">自测</div>'+
-     '<div class="kkt-tab '+(kktCur.tab==='wrong'?'on':'')+'" data-t="wrong">易错巩固</div>'+
+
      '</div>';
   h+='<div id="kktTabBody"></div>';
   root.innerHTML=h;
   kktBindBack(root, function(){ kktBack(); });
   $all('.kkt-tab',root).forEach(function(t){ t.onclick=function(){ kktCur.tab=t.dataset.t; if(t.dataset.t!=='self') kktCur.self=null; renderKktLesson(); }; });
-  if(kktCur.tab==='cards') renderKktCards(l);
-  else if(kktCur.tab==='self') renderKktSelf(l);
-  else renderKktWrong(l);
+  if(kktCur.tab==='self') renderKktSelf(l);
+  else renderKktCards(l);
 }
 
-/* —— 生字卡 —— */
+/* —— 生字卡 + 词语表（左右分栏） —— */
 function renderKktCards(l){
   var g=kktCur.g, gd=kktGrade(g), body=document.getElementById('kktTabBody'); if(!body) return;
-  var h='<div class="kkt-cards">';
+  var cards='';
   l.chars.forEach(function(c, idx){
-    var m=kktMastered(gd.g,c.z), w=kktWrong(gd.g,c.z);
+    var m=kktMastered(gd.g,c.z);
     var tb = kktInTextbook(g,c.z);
-    var w0=(c.w&&c.w[0])||'', w1=(c.w&&c.w[1])||'';
-    var wp0=(c.wp&&c.wp[0])||'', wp1=(c.wp&&c.wp[1])||'';
-    h+='<div class="kkt-card '+(m?'kkt-m':'')+'" data-i="'+idx+'">'+
+    cards+='<div class="kkt-card '+(m?'kkt-m':'')+'" data-i="'+idx+'">'+
        '<div class="kkt-card-main">'+
          '<div class="kkt-zbox">'+
            '<div class="kkt-card-py">'+c.py+'</div>'+
            '<div class="kkt-card-z">'+c.z+'</div>'+
-         '</div>'+
-         '<div class="kkt-words">'+
-           (w0?'<div class="kkt-word"><span class="kkt-word-t">'+w0+'</span><span class="kkt-word-py">'+wp0+'</span></div>':'')+
-           (w1?'<div class="kkt-word"><span class="kkt-word-t">'+w1+'</span><span class="kkt-word-py">'+wp1+'</span></div>':'')+
          '</div>'+
        '</div>'+
        '<div class="kkt-card-meta kkt-meta-lg">'+
@@ -6960,69 +6971,45 @@ function renderKktCards(l){
        (tb?'<div class="kkt-badge" data-x="1">📖 课后三表</div>':'')+
        '<div class="kkt-card-acts">'+
          '<button class="kkt-mini '+(m?'on':'')+'" data-act="m">✓ 已会</button>'+
-         '<button class="kkt-mini '+(w?'on wrong':'')+'" data-act="w">⚠ 易错</button>'+
          '<button class="kkt-mini" data-act="spk">🔊 听</button>'+
          '<button class="kkt-mini" data-act="stroke">✍ 笔画</button>'+
        '</div>'+
        '</div>';
   });
-  h+='</div>';
-  body.innerHTML=h;
+  // 词语表：本课全部组词，点击即可点读
+  var wl='<aside class="kkt-wordlist"><div class="kkt-wordlist-head">词语表<span class="kkt-wl-count"></span></div><div class="kkt-wordlist-body">';
+  var cnt=0;
+  l.chars.forEach(function(c){
+    (c.w||[]).forEach(function(w0, wi){
+      if(!w0) return;
+      var wp=(c.wp&&c.wp[wi])||'';
+      cnt++;
+      wl+='<div class="kkt-wl-item" data-w="'+w0.replace(/"/g,'&quot;')+'">'+
+            '<span class="kkt-wl-t">'+w0+'</span>'+
+            (wp?'<span class="kkt-wl-py">'+wp+'</span>':'')+
+            '<span class="kkt-wl-from">'+c.z+'</span>'+
+          '</div>';
+    });
+  });
+  if(!cnt) wl+='<div class="kkt-wl-empty">本课暂无组词</div>';
+  wl+='</div></aside>';
+  body.innerHTML='<div class="kkt-cards-wrap"><div class="kkt-cards-col"><div class="kkt-cards">'+cards+'</div></div>'+wl+'</div>';
   $all('.kkt-card',body).forEach(function(card){
     var idx=+card.dataset.i, c=l.chars[idx];
     card.querySelector('[data-act="spk"]').onclick=function(e){ e.stopPropagation(); kktSpeak(c); };
     card.querySelector('[data-act="stroke"]').onclick=function(e){ e.stopPropagation(); kktStroke(c, g, gd.g); };
     card.querySelector('[data-act="m"]').onclick=function(e){ e.stopPropagation(); kktToggleM(gd.g,c.z); renderKktLesson(); };
-    card.querySelector('[data-act="w"]').onclick=function(e){ e.stopPropagation(); kktToggleW(gd.g,c.z); renderKktLesson(); };
     var bd=card.querySelector('.kkt-badge');
     if(bd) bd.onclick=function(e){ e.stopPropagation(); state.profile.grade=g; saveState(); openText(); toast('已打开课后三表·课文点读'); };
     card.onclick=function(){ kktSpeak(c); };
   });
+  $all('.kkt-wl-item',body).forEach(function(it){
+    it.onclick=function(){ try{ speak(it.dataset.w); }catch(e){} };
+  });
+  var cntEl=body.querySelector('.kkt-wl-count'); if(cntEl) cntEl.textContent='共 '+cnt+' 词';
 }
 
-/* —— 易错巩固 —— */
-function renderKktWrong(l){
-  var g=kktCur.g, gd=kktGrade(g), body=document.getElementById('kktTabBody'); if(!body) return;
-  var wlist=l.chars.filter(function(c){ return kktWrong(gd.g,c.z); });
-  var h='<div class="note mb12">本课标记「易错」的字会集中在这里，反复巩固直到记住。</div>';
-  if(!wlist.length){ h+='<div class="empty"><div class="em-ico">⚠️</div><div class="em-t">本课暂无易错字</div><div class="em-s">在「生字卡」里点「⚠ 易错」标记</div></div>'; body.innerHTML=h; return; }
-  h+='<div class="kkt-cards">';
-  wlist.forEach(function(c){
-    var m=kktMastered(gd.g,c.z);
-    var w0=(c.w&&c.w[0])||'', w1=(c.w&&c.w[1])||'';
-    var wp0=(c.wp&&c.wp[0])||'', wp1=(c.wp&&c.wp[1])||'';
-    h+='<div class="kkt-card '+(m?'kkt-m':'')+'" data-z="'+c.z+'">'+
-       '<div class="kkt-card-main">'+
-         '<div class="kkt-zbox"><div class="kkt-card-py">'+c.py+'</div><div class="kkt-card-z">'+c.z+'</div></div>'+
-         '<div class="kkt-words">'+
-           (w0?'<div class="kkt-word"><span class="kkt-word-t">'+w0+'</span><span class="kkt-word-py">'+wp0+'</span></div>':'')+
-           (w1?'<div class="kkt-word"><span class="kkt-word-t">'+w1+'</span><span class="kkt-word-py">'+wp1+'</span></div>':'')+
-         '</div>'+
-       '</div>'+
-       '<div class="kkt-card-meta kkt-meta-lg">'+
-         (c.yx?'<span>音序 '+c.yx+'</span>':'')+
-         (c.bs?'<span>部首 '+c.bs+'</span>':'')+
-         (c.struc?'<span>'+c.struc+'</span>':'')+
-         (c.bh?'<span>'+c.bh+' 画</span>':'')+
-       '</div>'+
-       '<div class="kkt-card-acts">'+
-         '<button class="kkt-mini" data-act="spk">🔊 听</button>'+
-         '<button class="kkt-mini" data-act="stroke">✍ 笔画</button>'+
-         '<button class="kkt-mini" data-act="unw">↺ 取消易错</button>'+
-         '<button class="kkt-mini '+(m?'on':'')+'" data-act="m">✓ 已会</button>'+
-       '</div></div>';
-  });
-  h+='</div>';
-  body.innerHTML=h;
-  $all('.kkt-card',body).forEach(function(card){
-    var z=card.dataset.z;
-    var c=l.chars.find(function(x){return x.z===z;}); if(!c) return;
-    card.querySelector('[data-act="spk"]').onclick=function(e){ e.stopPropagation(); kktSpeak(c); };
-    card.querySelector('[data-act="stroke"]').onclick=function(e){ e.stopPropagation(); kktStroke(c, g, gd.g); };
-    card.querySelector('[data-act="unw"]').onclick=function(e){ e.stopPropagation(); kktToggleW(gd.g,c.z); renderKktLesson(); };
-    card.querySelector('[data-act="m"]').onclick=function(e){ e.stopPropagation(); kktToggleM(gd.g,c.z); renderKktLesson(); };
-  });
-}
+/* —— 易错巩固模块已按需求移除 —— */
 
 /* —— 自测 —— */
 function renderKktSelf(l){
@@ -7060,14 +7047,14 @@ function renderKktSelf(l){
     var v=inp.value.trim();
     var ok = (mode==='py2z') ? (v===c.z) : (normPy(v)===normPy(c.py));
     S.results.push({z:c.z, py:c.py, ok:ok, ans:v});
-    if(ok) S.correct++; else kktToggleW(gd.g,c.z);
+    if(ok) S.correct++;
     var box=document.getElementById('kktAnsBox'); if(box) box.style.display='block';
     document.getElementById('kktCheck').disabled=true;
     var sk=document.getElementById('kktSkip'); sk.textContent='下一题 ▶'; sk.onclick=next;
   };
   document.getElementById('kktSkip').onclick=function(){
     S.results.push({z:c.z, py:c.py, ok:false, ans:'(跳过)'});
-    kktToggleW(gd.g,c.z); next();
+    next();
   };
 }
 function renderKktSelfResult(l){
@@ -7094,17 +7081,17 @@ function renderKktReview(){
   (KKT_DATA.grades||[]).forEach(function(gd){
     gd.units.forEach(function(u){ u.lessons.forEach(function(l){ l.chars.forEach(function(c){
       if(kktMastered(gd.g,c.z)) return;
-      items.push({g:gd.g, z:c.z, py:c.py, w:c.w, wrong:kktWrong(gd.g,c.z)});
+      items.push({g:gd.g, z:c.z, py:c.py});
     });});});
   });
-  items.sort(function(a,b){ return (b.wrong?1:0)-(a.wrong?1:0); });
+  items.sort(function(a,b){ return 0; });
   if(!items.length){ root.innerHTML=kktTopBar('复习队列',true)+'<div class="empty"><div class="em-ico">🎉</div><div class="em-t">全部掌握啦！</div></div>'; kktBindBack(root, function(){ renderKktHome(); }); return; }
   var idx={v:0};
   function paint(){
     if(idx.v>=items.length){ root.innerHTML=kktTopBar('复习队列',true)+'<div class="empty"><div class="em-ico">🎉</div><div class="em-t">复习完成！</div></div>'; kktBindBack(root, function(){ renderKktHome(); }); return; }
     var it=items[idx.v];
     var h=kktTopBar('复习队列',true);
-    h+='<div class="kkt-overall">进度 '+(idx.v+1)+' / '+items.length+(it.wrong?' · 易错':'')+'</div>';
+    h+='<div class="kkt-overall">进度 '+(idx.v+1)+' / '+items.length+'</div>';
     h+='<div class="kkt-revcard"><div class="kkt-rev-py">'+it.py+'</div><div class="kkt-rev-z" id="kktRevZ" style="visibility:hidden">'+it.z+'</div></div>';
     h+='<div class="row" style="gap:10px;margin-top:14px"><button class="btn btn-sm" id="kktRevShow">看答案</button><button class="btn btn-sm" id="kktRevSpk">🔊</button></div>';
     h+='<div class="row" style="gap:10px;margin-top:10px"><button class="btn btn-primary btn-sm" id="kktRevOk">我记住了 ✓</button><button class="btn btn-sm ghost" id="kktRevNo">还不会</button></div>';
@@ -7113,7 +7100,7 @@ function renderKktReview(){
     document.getElementById('kktRevShow').onclick=function(){ document.getElementById('kktRevZ').style.visibility='visible'; };
     document.getElementById('kktRevSpk').onclick=function(){ kktSpeak({z:it.z,py:it.py}); };
     document.getElementById('kktRevOk').onclick=function(){ kktToggleM(it.g,it.z); idx.v++; paint(); };
-    document.getElementById('kktRevNo').onclick=function(){ kktToggleW(it.g,it.z); idx.v++; paint(); };
+    document.getElementById('kktRevNo').onclick=function(){ idx.v++; paint(); };
   }
   paint();
 }
