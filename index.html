@@ -3129,7 +3129,8 @@ function speak(text, opt){
       const u = new SpeechSynthesisUtterance(text);
       u.lang = zh.lang; u.voice = zh;
       // 语速保持放缓；语调以 opt.pit(5=中性)重映射：5→约1.0，整体更柔和自然，不发尖
-      u.rate  = (typeof opt.spd==='number') ? Math.max(0.45, Math.min(1.4, 0.5 + opt.spd*0.2)) : 0.9;
+      u.rate  = (typeof opt.rate==='number') ? Math.max(0.45, Math.min(1.4, opt.rate))
+              : ((typeof opt.spd==='number') ? Math.max(0.45, Math.min(1.4, 0.5 + opt.spd*0.2)) : 0.9);
       u.pitch = (typeof opt.pit==='number') ? Math.max(0.75, Math.min(1.22, 0.76 + opt.pit*0.055)) : 1.0;
       u.onend = function(){ if(onend)onend(); };
       u.onerror = function(){ baiduSpeak(text, opt); }; // 设备语音异常 → 回退百度
@@ -3143,7 +3144,7 @@ function speak(text, opt){
 function baiduSpeak(text, opt, retry){
   retry = retry||0;
   opt = opt||{};
-  const spd = opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
+  const spd = opt.bsd||opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
   const onend = opt.onend||null;
   const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&per=0&type=3';
   function fail(){
@@ -3553,12 +3554,14 @@ function lsSpeakPinyin(syl){
 }
 let _readToken=0,_lsAudio=null;
 function lsStopSpeech(){ if(_lsAudio){try{_lsAudio.pause();}catch(e){}_lsAudio=null;} try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){} }
-/* 朗读配置：语速放缓 + 语调更自然（百度 spd 越小越慢；设备语音按同档换算） */
-var LS_READ = { spd:1, pit:5, gap:360,
-  gapComma:300,   /* 逗号/顿号：短停，语气延续 */
-  gapSemi:400,    /* 分号：中停 */
-  gapStop:640,    /* 句号/问号/叹号：句末长停，换气 */
-  gapPara:900 };  /* 段落之间 */
+/* 停止朗读：令牌自增作废进行中的朗读队列 + 停音频/设备语音 + 清除当前句高亮 */
+function lsStopAll(){ ++_readToken; lsStopSpeech(); lsClearReading(); toast('已停止朗读'); }
+/* 朗读配置：语速接近正常 + 语调自然（rate=设备语音语速，0.95≈正常语速；bsd=百度音频语速，4≈接近默认） */
+var LS_READ = { rate:0.95, bsd:4, pit:5, gap:280,
+  gapComma:220,   /* 逗号/顿号：短停，语气延续 */
+  gapSemi:300,    /* 分号：中停 */
+  gapStop:500,    /* 句号/问号/叹号：句末长停，换气 */
+  gapPara:680 };  /* 段落之间 */
 function lsClearReading(){ $all('#lsReader .reading').forEach(function(x){x.classList.remove('reading');}); }
 /* 将段落按 ，。！？；、 切分为短句（遇到逗号即视为一句），保留句末标点 */
 function lsClauseList(text){
@@ -3582,7 +3585,7 @@ function lsSpeakSeq(clauses, clauseEls, done){
     const pit=lsContourPitch(clauses[ci], ci);
     // 停顿随句末标点变化：逗号短停、句号长停 —— 均匀停顿听起来最机械，节奏起伏才自然
     const gap=lsClauseGap(clauses[ci]);
-    speak(clauses[ci], {spd:LS_READ.spd, pit:pit, onend:function(){ if(my!==_readToken)return; i++; setTimeout(nxt, gap); }});
+    speak(clauses[ci], {rate:LS_READ.rate, bsd:LS_READ.bsd, pit:pit, onend:function(){ if(my!==_readToken)return; i++; setTimeout(nxt, gap); }});
   })();
 }
 /* 整段阅读：以逗号为断句单位，逐句朗读并高亮当前句 */
@@ -3615,7 +3618,7 @@ function lsSpeakClauseOne(elm){
   lsStopSpeech(); lsClearReading();
   elm.classList.add('reading');
   const text = (elm.dataset && elm.dataset.t) ? elm.dataset.t : (elm.textContent||'');
-  speak(text, {spd:LS_READ.spd, pit:lsContourPitch(text,0), onend:function(){ elm.classList.remove('reading'); }});
+  speak(text, {rate:LS_READ.rate, bsd:LS_READ.bsd, pit:lsContourPitch(text,0), onend:function(){ elm.classList.remove('reading'); }});
 }
 function lsEsc(s){return (s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 function lsRenderPlain(s){let html='';for(const ch of s){html+='<span class="ls-hl">'+lsEsc(ch)+'</span>';}return html;}
@@ -3708,7 +3711,9 @@ function buildFullReader(c, grade){
       html+='</div>';
     }
     html+='<div class="ls-lesson-title">📖 '+lsEsc(L.title)+'</div>';
-    html+='<div class="ls-actions"><button class="btn btn-sm green" id="lsReadAll">🔊 朗读整课</button><span class="note" style="margin:0">点句子读单句 · 点「整段」逐句读（高亮当前句）</span></div>';
+    html+='<div class="ls-actions"><button class="btn btn-sm green" id="lsReadAll">🔊 朗读整课</button>'+
+      '<button class="btn btn-sm" id="lsStopRead" style="background:var(--danger-soft);color:var(--danger)">⏹ 停止朗读</button>'+
+      '<span class="note" style="margin:0">点句子读单句 · 点「整段」逐句读（高亮当前句）</span></div>';
     paras.forEach(function(s,si){
       const inner=lsRenderClauses(s, tb.showPy);
       html+='<div class="ls-para"><button class="ls-readpara" data-si="'+si+'" title="朗读整段">🔊 整段</button>';
@@ -3718,6 +3723,7 @@ function buildFullReader(c, grade){
     reader.innerHTML=html;
     $all('#lsReader [data-py]').forEach(function(b){b.onclick=function(){tb.showPy=(b.dataset.py==='1');renderLesson();};});
     const ra=document.getElementById('lsReadAll');if(ra)ra.onclick=function(){lsReadLesson(paras);};
+    const rs=document.getElementById('lsStopRead');if(rs)rs.onclick=function(){lsStopAll();};
     $all('#lsReader .ls-sz').forEach(function(cc){cc.onclick=function(){speak(cc.dataset.c);};});
     $all('#lsReader .ls-shizichar').forEach(function(cc){cc.onclick=function(){speak(cc.dataset.c);flashTileShizichar(cc);};});
     // 单句阅读：点句中任意字 → 只读这一句（不读其它）
@@ -3732,7 +3738,7 @@ function buildFullReader(c, grade){
 (function(){
   if(document.getElementById('lsStyle'))return;
   const st=document.createElement('style');st.id='lsStyle';
-  st.textContent='#ovBody .ls-selrow{display:flex;gap:8px;margin-bottom:10px}#ovBody .ls-sel{max-width:160px;flex:none;padding:8px;border-radius:10px;border:1px solid #e3e6f0;background:#fff;font-size:14px}#ovBody .ls-sel:last-child{flex:1;min-width:0}#ovBody .ls-lesson{margin-top:6px}#ovBody .ls-pyseg{display:inline-flex;gap:0;margin:8px 0;border-radius:10px;overflow:hidden;border:1px solid #ffe0c2}#ovBody .ls-pyseg button{padding:6px 14px;border:none;background:#fff;color:#FF8A3D;font-size:13px;cursor:pointer}#ovBody .ls-pyseg button.active{background:#FF8A3D;color:#fff}#ovBody .ls-actions{display:flex;align-items:center;gap:10px;margin:6px 0 12px}#ovBody .ls-szrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}#ovBody .ls-sz{display:inline-flex;flex-direction:column;align-items:center;min-width:42px;padding:6px 8px;background:#fff7f1;border:1px solid #ffd9bf;border-radius:12px;cursor:pointer}#ovBody .ls-sz b{font-size:20px;color:#FF8A3D;line-height:1.1}#ovBody .ls-sz i{font-style:normal;font-size:11px;color:#b06a3a}#ovBody .ls-sz:active{transform:scale(.96)}#ovBody .ls-sentence{font-size:19px;line-height:2.0;padding:8px 10px;border-radius:10px;margin-bottom:6px;cursor:pointer;color:#222}#ovBody .ls-sentence:hover{background:#fff5ee}#ovBody .ls-sentence.reading{background:#ffe9d6}#ovBody .ls-hl{position:relative;display:inline-block}#ovBody .ls-pycol{display:inline-block;text-align:center;vertical-align:top;margin:0 1px}#ovBody .ls-pyt{display:block;font-size:11px;color:#8B5CF6;height:14px;line-height:14px;font-style:normal}#ovBody .ls-chb{display:block;font-size:19px}#ovBody .ls-pu .ls-chb{font-size:19px}#ovBody .ls-para{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}#ovBody .ls-readpara{flex:0 0 auto;align-self:center;margin-top:4px;padding:4px 10px;border:none;border-radius:10px;background:#FF8A3D;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}#ovBody .ls-readpara:active{transform:scale(.95)}#ovBody .ls-clause{display:inline;cursor:pointer;padding:1px 2px;border-radius:5px}#ovBody .ls-clause:hover{background:#fff1e6}#ovBody .ls-clause.reading{background:#ffe1c4;border-radius:5px}#ovBody .ls-sentence.reading{background:#ffe9d6}';
+  st.textContent='#ovBody .ls-selrow{display:flex;gap:8px;margin-bottom:10px}#ovBody .ls-sel{max-width:160px;flex:none;padding:8px;border-radius:10px;border:1px solid #e3e6f0;background:#fff;font-size:14px}#ovBody .ls-sel:last-child{flex:1;min-width:0}#ovBody .ls-lesson{margin-top:6px}#ovBody .ls-pyseg{display:inline-flex;gap:0;margin:8px 0;border-radius:10px;overflow:hidden;border:1px solid #ffe0c2}#ovBody .ls-pyseg button{padding:6px 14px;border:none;background:#fff;color:#FF8A3D;font-size:13px;cursor:pointer}#ovBody .ls-pyseg button.active{background:#FF8A3D;color:#fff}#ovBody .ls-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:6px 0 12px}#ovBody .ls-szrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}#ovBody .ls-sz{display:inline-flex;flex-direction:column;align-items:center;min-width:42px;padding:6px 8px;background:#fff7f1;border:1px solid #ffd9bf;border-radius:12px;cursor:pointer}#ovBody .ls-sz b{font-size:20px;color:#FF8A3D;line-height:1.1}#ovBody .ls-sz i{font-style:normal;font-size:11px;color:#b06a3a}#ovBody .ls-sz:active{transform:scale(.96)}#ovBody .ls-sentence{font-size:19px;line-height:2.0;padding:8px 10px;border-radius:10px;margin-bottom:6px;cursor:pointer;color:#222}#ovBody .ls-sentence:hover{background:#fff5ee}#ovBody .ls-sentence.reading{background:#ffe9d6}#ovBody .ls-hl{position:relative;display:inline-block}#ovBody .ls-pycol{display:inline-block;text-align:center;vertical-align:top;margin:0 1px}#ovBody .ls-pyt{display:block;font-size:11px;color:#8B5CF6;height:14px;line-height:14px;font-style:normal}#ovBody .ls-chb{display:block;font-size:19px}#ovBody .ls-pu .ls-chb{font-size:19px}#ovBody .ls-para{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}#ovBody .ls-readpara{flex:0 0 auto;align-self:center;margin-top:4px;padding:4px 10px;border:none;border-radius:10px;background:#FF8A3D;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}#ovBody .ls-readpara:active{transform:scale(.95)}#ovBody .ls-clause{display:inline;cursor:pointer;padding:1px 2px;border-radius:5px}#ovBody .ls-clause:hover{background:#fff1e6}#ovBody .ls-clause.reading{background:#ffe1c4;border-radius:5px}#ovBody .ls-sentence.reading{background:#ffe9d6}';
   document.head.appendChild(st);
 })();
 
