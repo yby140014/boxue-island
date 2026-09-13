@@ -16,6 +16,9 @@
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
     -webkit-text-size-adjust:100%; font-size:16px; line-height:1.7;}
+  html{height:100%;}
+  /* 满铺屏幕：整页竖向撑满，内容区吃满剩余高度 */
+  body{min-height:100vh;display:flex;flex-direction:column;}
   header.app{
     position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);
     padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
@@ -34,7 +37,7 @@
   }
   nav.toc a{color:var(--accent);text-decoration:none;padding:6px 10px;border-radius:6px;}
   nav.toc a:hover{background:var(--accent-soft);}
-  main{max-width:1080px;margin:0 auto;padding:16px;}
+  main{flex:1 1 auto;width:100%;max-width:none;margin:0;padding:14px clamp(12px,2.2vw,40px) 32px;}
   section.unit{
     background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:18px;
     overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);
@@ -117,7 +120,7 @@
   .sync .dot{width:8px;height:8px;border-radius:50%;background:#10b981;}
 
   /* === 章节详情样式 === */
-  .chapters{display:flex;flex-direction:column;gap:14px;margin-bottom:14px;}
+  .chapters{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px;align-items:start;}
   .chapter{
     background:#fff;border:1px solid var(--line);border-radius:12px;
     padding:14px 18px;position:relative;
@@ -207,12 +210,22 @@
     .chapter h4{font-size:15px;}
     .chapter table{font-size:13px;}
   }
+  /* === 宽屏满铺：减少纵向长度、提高横向利用率，一屏放下更多内容 === */
+  @media (min-width:1080px){
+    .chapters{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+    section.unit > h2{padding:12px 20px;}
+    .body{padding:14px 20px;}
+  }
+  @media (min-width:1900px){
+    .chapters{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
   @media print{
     header.app,nav.toc,.mm-toolbar,.test-actions,.tts-btn,.chapter h4 .tts-btn{display:none !important;}
     body,html{background:#fff;}
     body.tts-on{cursor:default !important;}
     body.tts-on .chapter p, body.tts-on .chapter li, body.tts-on .chapter td{cursor:default !important;}
     main{max-width:100%;padding:0;}
+    .chapters{grid-template-columns:1fr;gap:10px;}
     section.unit{break-inside:avoid;box-shadow:none;border:1px solid #999;margin-bottom:10px;}
     section.unit.collapsed > .body{display:block !important;}
     section.unit > h2 .arrow{display:none;}
@@ -1320,8 +1333,12 @@ const TTS = {
       return vs.find(v=>/zh|Chinese|中文/i.test((v.lang||'')+' '+(v.name||''))) || null;
     }catch(e){ return null; }
   },
-  /* 百度音频兜底：设备无中文语音 / 合成失败 / 静默无声时使用（与语文板块同一条通道） */
-  _baidu(text, done){
+  /* 百度音频兜底：设备无中文语音 / 合成失败 / 静默无声时使用（与语文板块同一条通道）
+     maxMs：单段最长预算，超时强制推进，避免整节卡死在一句话上 */
+  _baidu(text, done, maxMs){
+    let fired = false;
+    let tmr = null;
+    const once = ()=>{ if(fired) return; fired = true; if(tmr){ clearTimeout(tmr); tmr=null; } done(); };
     try{
       const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd=4&vol=9&pit=5&per=0&type=3';
       const a = new Audio(url);
@@ -1331,26 +1348,40 @@ const TTS = {
         if(TTS._audio===a) TTS._audio=null;
         const now = Date.now();
         if(now - TTS._warnTs > 4000){ TTS._warnTs = now; toast('朗读需要联网，请检查网络后重试'); }
-        done();
+        once();
       };
-      a.onended = ()=>{ if(TTS._audio===a) TTS._audio=null; done(); };
+      a.onended = ()=>{ if(TTS._audio===a) TTS._audio=null; once(); };
       a.onerror = fail;
+      if(maxMs){ tmr = setTimeout(()=>{ if(TTS._audio===a) TTS._audio=null; try{ a.pause(); }catch(e){} once(); }, maxMs); }
       const p = a.play();
       if(p && p.catch) p.catch(fail);
-    }catch(e){ done(); }
+    }catch(e){ once(); }
   },
-  /* 统一朗读入口：优先设备中文语音 → 异常/无声自动回退百度音频；done 恰好回调一次 */
+  /* 单段最长预算：中文语音约 4 字/秒，按字数估算并留足缓冲 */
+  _budget(text){
+    const n = String(text||'').length;
+    return Math.max(4000, Math.min(45000, 1500 + n * 260));
+  },
+  /* 统一朗读入口：优先设备中文语音 → 异常/无声/卡住自动回退百度音频；done 恰好回调一次 */
   speak(text, opts){
     opts = opts || {};
     const done = opts.onend || function(){};
+    const myToken = TTS._token;                 // 发起时令牌：stop() 之后不再发声
     let fired = false;
-    const once = ()=>{ if(fired) return; fired = true; done(); };
-    const toAudio = ()=>{ TTS._baidu(text, once); };
+    let tmStart = null, tmMax = null;
+    const clearT = ()=>{ if(tmStart){ clearTimeout(tmStart); tmStart=null; } if(tmMax){ clearTimeout(tmMax); tmMax=null; } };
+    const once = ()=>{ if(fired) return; fired = true; clearT(); done(); };
+    const bud = TTS._budget(text);
+    const toAudio = ()=>{
+      if(fired || myToken !== TTS._token) return;
+      TTS._baidu(text, once, bud);
+    };
     const v = (this._devOk === false) ? null : this._zhVoice();
     if(v){
       try{
-        window.speechSynthesis.cancel();
-        if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+        if(this._audio){ try{ this._audio.pause(); }catch(e){} this._audio = null; }
+        let busy = false;
+        try{ busy = !!(window.speechSynthesis.speaking || window.speechSynthesis.pending); }catch(e){}
         const u = new SpeechSynthesisUtterance(text);
         u.lang = v.lang || opts.lang || 'zh-CN';
         u.voice = v;
@@ -1360,17 +1391,37 @@ const TTS = {
         u.onstart = ()=>{ started = true; TTS._devOk = true; };
         u.onend = ()=>{ once(); };
         u.onerror = ()=>{ if(started) once(); else toAudio(); };   // 设备语音报错 → 百度兜底
-        window.speechSynthesis.speak(u);
-        // 部分设备"有 API 但无中文语音"：不触发任何事件且无声 → 900ms 后兜底到百度音频
-        window.setTimeout(()=>{
-          if(fired || started) return;
-          try{ if(window.speechSynthesis.speaking || window.speechSynthesis.pending) return; }catch(e){}
-          TTS._devOk = false;
-          try{ window.speechSynthesis.cancel(); }catch(e){}
-          toAudio();
-        }, 900);
+        const go = ()=>{
+          if(fired || myToken !== TTS._token) return;
+          try{ window.speechSynthesis.speak(u); }catch(e){ toAudio(); return; }
+          /* 看门狗①：迟迟不开始 → 切换百度音频。
+             ⚠ 不能用 speaking/pending 直接 return：部分设备会长期停在 pending 状态，
+             那样整个朗读序列就会永久卡死在当前句（这就是「只读一句」的根因）。 */
+          let retry = 0;
+          const watch = ()=>{
+            if(fired || started) return;
+            let pendingNow = false;
+            try{ pendingNow = !!(window.speechSynthesis.speaking || window.speechSynthesis.pending); }catch(e){}
+            if(pendingNow && retry < 1){ retry++; tmStart = setTimeout(watch, 1200); return; }
+            TTS._devOk = false;
+            try{ window.speechSynthesis.cancel(); }catch(e){}
+            toAudio();
+          };
+          tmStart = setTimeout(watch, 900);
+          /* 看门狗②：已开始但迟迟不结束 → 强制推进，保证整节读完 */
+          tmMax = setTimeout(()=>{
+            tmMax = null;
+            if(fired) return;
+            TTS._devOk = false;
+            try{ window.speechSynthesis.cancel(); }catch(e){}
+            once();
+          }, bud);
+        };
+        /* cancel() 与 speak() 同一 tick 会被部分内核丢弃，先把上一次停干净再起新句 */
+        if(busy){ try{ window.speechSynthesis.cancel(); }catch(e){} setTimeout(go, 40); }
+        else go();
         return;
-      }catch(e){}
+      }catch(e){ TTS._devOk = false; }
     }
     toAudio();
   },
@@ -1411,7 +1462,8 @@ const TTS = {
     TTS.currentBtn = btn; btn.classList.add('playing');
     const parts = [];
     chapterEl.querySelectorAll('h4, .kp-list li, table, .exp-card .row, .dis-list .a, .dis-list .q, .note, .tip').forEach(el=>{
-      const t = (el.innerText || el.textContent || '').trim();
+      const ti = el.querySelector ? el.querySelector('.title') : null;
+      const t = ((ti ? (ti.innerText || ti.textContent) : (el.innerText || el.textContent)) || '').trim();
       if(t) parts.push({el, text:t});
     });
     if(!parts.length){ toast('本节无内容'); btn.classList.remove('playing'); TTS.currentBtn=null; return; }
