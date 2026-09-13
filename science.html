@@ -1309,55 +1309,98 @@ const TTS = {
       speechSynthesis.onvoiceschanged = trySet;
     }
   },
+  /* 设备中文语音是否可用：null=未知，false=已确认不可用（后续直接走音频，避免每次等超时） */
+  _devOk: null,
+  _audio: null,
+  _warnTs: 0,
+  _zhVoice(){
+    try{
+      if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return null;
+      const vs = window.speechSynthesis.getVoices() || [];
+      return vs.find(v=>/zh|Chinese|中文/i.test((v.lang||'')+' '+(v.name||''))) || null;
+    }catch(e){ return null; }
+  },
+  /* 百度音频兜底：设备无中文语音 / 合成失败 / 静默无声时使用（与语文板块同一条通道） */
+  _baidu(text, done){
+    try{
+      const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd=4&vol=9&pit=5&per=0&type=3';
+      const a = new Audio(url);
+      if(this._audio){ try{ this._audio.pause(); }catch(e){} }
+      this._audio = a;
+      const fail = ()=>{
+        if(TTS._audio===a) TTS._audio=null;
+        const now = Date.now();
+        if(now - TTS._warnTs > 4000){ TTS._warnTs = now; toast('朗读需要联网，请检查网络后重试'); }
+        done();
+      };
+      a.onended = ()=>{ if(TTS._audio===a) TTS._audio=null; done(); };
+      a.onerror = fail;
+      const p = a.play();
+      if(p && p.catch) p.catch(fail);
+    }catch(e){ done(); }
+  },
+  /* 统一朗读入口：优先设备中文语音 → 异常/无声自动回退百度音频；done 恰好回调一次 */
   speak(text, opts){
-    if(!('speechSynthesis' in window)){
-      toast('当前浏览器不支持语音朗读'); return;
-    }
     opts = opts || {};
-    speechSynthesis.cancel();
-    if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = opts.lang || 'zh-CN';
-    u.rate = opts.rate || 0.95;
-    u.pitch = opts.pitch || 1;
-    if(TTS.voice) u.voice = TTS.voice;
-    u.onend = ()=>{
-      if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
-      TTS.currentEl = null;
-      if(TTS.currentBtn) TTS.currentBtn.classList.remove('playing');
-      TTS.currentBtn = null;
-    };
-    u.onerror = ()=>{
-      if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
-      TTS.currentEl = null;
-    };
-    speechSynthesis.speak(u);
+    const done = opts.onend || function(){};
+    let fired = false;
+    const once = ()=>{ if(fired) return; fired = true; done(); };
+    const toAudio = ()=>{ TTS._baidu(text, once); };
+    const v = (this._devOk === false) ? null : this._zhVoice();
+    if(v){
+      try{
+        window.speechSynthesis.cancel();
+        if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = v.lang || opts.lang || 'zh-CN';
+        u.voice = v;
+        u.rate = (typeof opts.rate==='number') ? Math.max(0.5, Math.min(1.6, opts.rate)) : 0.95;
+        u.pitch = (typeof opts.pitch==='number') ? Math.max(0.5, Math.min(1.6, opts.pitch)) : 1;
+        let started = false;
+        u.onstart = ()=>{ started = true; TTS._devOk = true; };
+        u.onend = ()=>{ once(); };
+        u.onerror = ()=>{ if(started) once(); else toAudio(); };   // 设备语音报错 → 百度兜底
+        window.speechSynthesis.speak(u);
+        // 部分设备"有 API 但无中文语音"：不触发任何事件且无声 → 900ms 后兜底到百度音频
+        window.setTimeout(()=>{
+          if(fired || started) return;
+          try{ if(window.speechSynthesis.speaking || window.speechSynthesis.pending) return; }catch(e){}
+          TTS._devOk = false;
+          try{ window.speechSynthesis.cancel(); }catch(e){}
+          toAudio();
+        }, 900);
+        return;
+      }catch(e){}
+    }
+    toAudio();
   },
   stop(){
     this._token++;                       // 让任何进行中的序列（含 onend 回调）立即失效
-    if('speechSynthesis' in window) speechSynthesis.cancel();
+    try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
     if(this._readTimer){ clearInterval(this._readTimer); this._readTimer=null; }
+    if(this._audio){ try{ this._audio.pause(); }catch(e){} this._audio=null; }
     if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
     TTS.currentEl = null;
     document.querySelectorAll('.tts-btn.playing').forEach(b=>b.classList.remove('playing'));
     TTS.currentBtn = null;
   },
   speakNodes(list){
-    if(!('speechSynthesis' in window)){ toast('当前浏览器不支持语音朗读'); return; }
     const myToken = ++this._token;
     this._seq = (list||[]).slice();
     const next=()=>{
       if(myToken !== TTS._token) return;                 // 已被 stop 作废
       if(!this._seq || !this._seq.length){ if(TTS.currentBtn) TTS.currentBtn.classList.remove('playing'); TTS.currentBtn=null; return; }
       const item=this._seq.shift();
-      speechSynthesis.cancel();
-      if(TTS.currentEl){ TTS.currentEl.classList.remove('tts-reading'); TTS.currentEl=null; }
-      const u=new SpeechSynthesisUtterance(item.text);
-      u.lang='zh-CN'; u.rate=0.95; if(TTS.voice) u.voice=TTS.voice;
-      u.onstart=()=>{ if(myToken!==TTS._token) return; if(item.el){ item.el.classList.add('tts-reading'); TTS.currentEl=item.el; } };
-      u.onend=()=>{ if(myToken!==TTS._token) return; if(item.el) item.el.classList.remove('tts-reading'); if(TTS.currentEl===item.el) TTS.currentEl=null; next(); };
-      u.onerror=()=>{ if(myToken!==TTS._token) return; if(item.el) item.el.classList.remove('tts-reading'); next(); };
-      speechSynthesis.speak(u);
+      if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
+      if(item.el){ item.el.classList.add('tts-reading'); TTS.currentEl=item.el; }
+      TTS.speak(item.text, {
+        onend: ()=>{
+          if(myToken!==TTS._token) return;
+          if(item.el) item.el.classList.remove('tts-reading');
+          if(TTS.currentEl===item.el) TTS.currentEl=null;
+          next();
+        }
+      });
     };
     next();
   },
@@ -1368,7 +1411,7 @@ const TTS = {
     TTS.currentBtn = btn; btn.classList.add('playing');
     const parts = [];
     chapterEl.querySelectorAll('h4, .kp-list li, table, .exp-card .row, .dis-list .a, .dis-list .q, .note, .tip').forEach(el=>{
-      const t = el.innerText.trim();
+      const t = (el.innerText || el.textContent || '').trim();
       if(t) parts.push({el, text:t});
     });
     if(!parts.length){ toast('本节无内容'); btn.classList.remove('playing'); TTS.currentBtn=null; return; }
@@ -1384,14 +1427,14 @@ const TTS = {
       if(TTS.currentEl) TTS.currentEl.classList.remove('tts-reading');
       p.el.classList.add('tts-reading');
       TTS.currentEl = p.el;
-      p.el.scrollIntoView({behavior:'smooth', block:'center'});
-      TTS.speak(p.text);
-      TTS._readTimer = window.setInterval(()=>{
-        if(myToken !== TTS._token){ clearInterval(TTS._readTimer); TTS._readTimer=null; return; }
-        if(!speechSynthesis.speaking && !speechSynthesis.pending){
-          clearInterval(TTS._readTimer); TTS._readTimer=null; next();
+      try{ p.el.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+      TTS.speak(p.text, {
+        onend: ()=>{
+          if(myToken !== TTS._token) return;
+          if(TTS.currentEl===p.el){ p.el.classList.remove('tts-reading'); TTS.currentEl=null; }
+          next();
         }
-      }, 200);
+      });
     };
     next();
   }
@@ -1675,8 +1718,7 @@ $('#tts-toggle').addEventListener('click', ()=>{
   btn.textContent = TTS.enabled ? '🔊 点读：开' : '🔊 点读：关';
   btn.classList.toggle('on', TTS.enabled);
   if(TTS.enabled){
-    const hasVoice = !!TTS.voice;
-    toast(hasVoice ? '点读已开启，点击任意文字即可朗读' : '点读已开启（未检测到中文语音，请安装系统中文语音）');
+    toast('点读已开启，点击任意文字即可朗读');
   } else {
     TTS.stop();
     toast('点读已关闭');
