@@ -3118,28 +3118,82 @@ function _hasZhVoice(){
   }catch(e){}
   return null;
 }
+/* 设备语音可用性记忆：一旦判定某设备的语音引擎不可靠（有中文 voice 却不发声，或发声却不回调），
+   本次会话后续朗读直接走百度音频，避免每句都白等看门狗。刷新页面后重置。 */
+var _devVoiceOk = true;
+/* 单段最长预算（毫秒）：中文约 4 字/秒，留足余量；下限 2.5s、上限 45s。
+   用于「设备语音开始了却迟迟不结束」的静默故障，到点强制收尾推进，避免整课卡死在某一句。 */
+function _speakBudget(text){
+  const n = (text||'').length;
+  return Math.max(2500, Math.min(45000, 1500 + n*320));
+}
 function speak(text, opt){
   opt = opt||{};
   const onend = opt.onend||null;
+  let fired=false, started=false, tWatch=null, tBudget=null, tGo=null;
+  function clearTimers(){
+    if(tWatch){clearTimeout(tWatch);tWatch=null;}
+    if(tBudget){clearTimeout(tBudget);tBudget=null;}
+    if(tGo){clearTimeout(tGo);tGo=null;}
+  }
+  /* 收尾：幂等 —— 设备语音 onend/onerror、看门狗、音频 onended/轮询/失败兜底 多路竞争，
+     只允许第一次生效；否则朗读队列会一次跳两句。 */
+  function finish(){ if(fired)return; fired=true; clearTimers(); if(onend)onend(); }
+  /* 音频通道兜底：部分内核对 <audio> 不触发 ended，用 currentTime 轮询判定读到头 */
+  function watchAudio(a){
+    var tk=setInterval(function(){
+      if(fired){ clearInterval(tk); return; }
+      try{
+        if(a.ended || (a.duration>0 && a.currentTime>=a.duration-0.12)){ clearInterval(tk); finish(); }
+      }catch(e){ clearInterval(tk); }
+    },250);
+    setTimeout(function(){ clearInterval(tk); }, 60000);
+  }
+  function toAudio(){
+    if(fired)return;
+    clearTimers();
+    _devVoiceOk=false;   // 记住该设备语音不可靠，后续段落直接走音频
+    try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+    var a = baiduSpeak(text, {rate:opt.rate, bsd:opt.bsd, spd:opt.spd, vol:opt.vol, pit:opt.pit, onend:finish});
+    if(a) watchAudio(a);
+    // 最后一道保险：音频 onended/onerror/轮询全失效时，也必须在预算内推进队列
+    tBudget = setTimeout(function(){ finish(); }, _speakBudget(text)+4000);
+  }
   // 1) 优先设备语音（无需联网、无跨域问题，最稳）
-  const zh = _hasZhVoice();
+  const zh = _devVoiceOk ? _hasZhVoice() : null;
   if(zh){
     try{
-      window.speechSynthesis.cancel();
+      try{ window.speechSynthesis.cancel(); }catch(e){}
       const u = new SpeechSynthesisUtterance(text);
       u.lang = zh.lang; u.voice = zh;
       // 语速保持放缓；语调以 opt.pit(5=中性)重映射：5→约1.0，整体更柔和自然，不发尖
       u.rate  = (typeof opt.rate==='number') ? Math.max(0.45, Math.min(1.4, opt.rate))
               : ((typeof opt.spd==='number') ? Math.max(0.45, Math.min(1.4, 0.5 + opt.spd*0.2)) : 0.9);
       u.pitch = (typeof opt.pit==='number') ? Math.max(0.75, Math.min(1.22, 0.76 + opt.pit*0.055)) : 1.0;
-      u.onend = function(){ if(onend)onend(); };
-      u.onerror = function(){ baiduSpeak(text, opt); }; // 设备语音异常 → 回退百度
-      window.speechSynthesis.speak(u);
+      u.onstart = function(){
+        if(fired)return; started=true;
+        if(tWatch){clearTimeout(tWatch);tWatch=null;}
+        // 已开始发声 → 用预算兜住「读完却不回调 onend」的故障设备
+        tBudget = setTimeout(function(){
+          if(fired)return;
+          _devVoiceOk=false;   // 能开始却不能正常结束 → 同样判定不可靠，后续走音频
+          finish();
+        }, _speakBudget(text));
+      };
+      u.onend = function(){ finish(); };
+      u.onerror = function(){ if(started){ finish(); } else { toAudio(); } }; // 已开始却报错→直接收尾推进；未开始→回退百度
+      // cancel() 与 speak() 同 tick 时，部分内核（荣耀/华为系等）会丢弃本次 speak，故错开一拍
+      tGo = setTimeout(function(){
+        tGo=null; if(fired)return;
+        try{ window.speechSynthesis.speak(u); }catch(e){ toAudio(); }
+      }, 40);
+      // 看门狗：迟迟不触发 onstart（含 pending 常驻却永不发声的静默设备）→ 切音频，不再无限等待
+      tWatch = setTimeout(function(){ tWatch=null; if(!started && !fired) toAudio(); }, 1600);
       return;
     }catch(e){}
   }
   // 2) 回退百度音频
-  baiduSpeak(text, opt);
+  toAudio();
 }
 function baiduSpeak(text, opt, retry){
   retry = retry||0;
@@ -3162,7 +3216,9 @@ function baiduSpeak(text, opt, retry){
     a.onended=function(){ if(_lsAudio===a)_lsAudio=null; if(onend)onend(); };
     a.onerror=fail;
     a.play().catch(fail);
+    return a;   // 交给调用方做 currentTime 轮询兜底（部分内核不触发 ended）
   }catch(e){ fail(); }
+  return null;
 }
 function $(s, r){ return (r||document).querySelector(s); }
 function $all(s, r){ return Array.from((r||document).querySelectorAll(s)); }
