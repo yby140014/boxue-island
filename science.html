@@ -306,6 +306,22 @@
   @media print{
     .fab-bar,.pop-mask{display:none !important;}
   }
+
+  /* === 平板横屏：目录常驻左栏 + 内容右侧满铺 === */
+  @media (orientation:landscape) and (min-width:820px) and (min-height:480px){
+    .pop-mask#tocMask[hidden]{display:block;}
+    .pop-mask#tocMask{position:fixed;left:0;top:0;bottom:0;right:auto;width:240px;
+      background:none;padding:0;display:block;pointer-events:none;z-index:40;animation:none;}
+    .pop-mask#tocMask .toc-panel{pointer-events:auto;width:100%;height:100%;max-width:none;max-height:none;
+      border-radius:0;box-shadow:none;border-right:1px solid var(--line);}
+    .pop-mask#tocMask .pop-head{border-radius:0;background:#fbfcfe;}
+    .pop-mask#tocMask .pop-close{display:none;}
+    .pop-mask#tocMask .toc-list{flex:1 1 auto;max-height:none;padding:10px 12px 24px;}
+    .pop-mask#tocMask .toc-list a{padding:11px 12px;font-size:14px;}
+    header.app{margin-left:240px;}
+    main{margin-left:240px;width:auto;padding:12px clamp(12px,1.6vw,26px) 32px;}
+    #fabToc{display:none;}
+  }
 </style>
 </head>
 <body class="">
@@ -1200,6 +1216,19 @@ function renderMotionIcons(x,y,w,h){
 }
 
 /* ---- 思维导图：仅供查看（点击节点可点读，工具栏仅朗读整图） ---- */
+/* 视口 / 方向变化重算：导图弹窗开着时按新的可视区重新缩放（单向，仅更新 DOM） */
+let _mmScaleApply = null;
+let _sciVpTimer = null;
+function onSciViewportChange(){
+  clearTimeout(_sciVpTimer);
+  _sciVpTimer = setTimeout(function(){
+    const mm = document.getElementById('mmMask');
+    if(mm && !mm.hidden && typeof _mmScaleApply === 'function') _mmScaleApply();
+  }, 200);
+}
+window.addEventListener('resize', onSciViewportChange);
+window.addEventListener('orientationchange', onSciViewportChange);
+
 function initMindMap(block, treeId){
   const tree = MM_TREES[treeId];
   if(!tree) return;
@@ -1263,18 +1292,26 @@ function initMindMap(block, treeId){
     });
   });
 
-  // === 缩放适配：整棵树按比例放入小弹窗，仅供查看 ===
-  // 可视区近似尺寸（max-width:760, max-height:78vh）；按比例缩放以保证整张图能看全
-  const PANEL_W = 720, PANEL_H = 520;
-  const SCALE = Math.min(0.7, PANEL_W / W, PANEL_H / H);
-  scaler.style.width  = Math.round(W * SCALE) + 'px';
-  scaler.style.height = Math.round(H * SCALE) + 'px';
+  // === 缩放适配：整棵树按比例放入弹窗，仅供查看 ===
+  // 用弹窗可视区的真实尺寸计算；旋转屏幕 / 改变窗口尺寸后由 _mmScaleApply 重算，
+  // 保证整张图在任何方向下都能完整看全。
   editor.style.position = 'absolute';
   editor.style.left = '0';
   editor.style.top  = '0';
   editor.style.transformOrigin = '0 0';
-  editor.style.transform = `scale(${SCALE})`;
   editor.style.overflow = 'visible';
+  _mmScaleApply = function(){
+    const bodyEl = document.getElementById('mmModalBody');
+    const bw = (bodyEl && bodyEl.clientWidth)  ? bodyEl.clientWidth  : 740;
+    const bh = (bodyEl && bodyEl.clientHeight) ? bodyEl.clientHeight : 540;
+    const availW = Math.max(220, bw - 20);
+    const availH = Math.max(220, bh - 46);
+    const sc = Math.min(0.7, availW / W, availH / H);
+    scaler.style.width  = Math.round(W * sc) + 'px';
+    scaler.style.height = Math.round(H * sc) + 'px';
+    editor.style.transform = 'scale(' + sc + ')';
+  };
+  _mmScaleApply();
 
   function dfsOrder(id){
     let out=[id]; (model.children[id]||[]).forEach(c=>{ out=out.concat(dfsOrder(c)); }); return out;
