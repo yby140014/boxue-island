@@ -713,6 +713,10 @@ const WORDBOOK={
   '三下':[['经济','jīng jì'],['武汉','wǔ hàn'],['包括','bāo kuò'],['系统','xì tǒng'],['计划','jì huà'],['价值','jià zhí'],['存在','cún zài'],['内容','nèi róng'],['继续','jì xù'],['执行','zhí xíng'],['希望','xī wàng'],['设计','shè jì'],['规模','guī mó'],['选择','xuǎn zé'],['是否','shì fǒu'],['利益','lì yì'],['困难','kùn nán'],['苏联','sū lián'],['解释','jiě shì'],['属于','shǔ yú'],['普通','pǔ tōng'],['文章','wén zhāng'],['创造','chuàng zào'],['若干','ruò gān'],['错误','cuò wù'],['实验','shí yàn'],['检查','jiǎn chá'],['分配','fēn pèi'],['普遍','pǔ biàn'],['逐步','zhú bù'],['试验','shì yàn'],['习惯','xí guàn'],['距离','jù lí'],['妻子','qī zǐ'],['录取','lù qǔ'],['承认','chéng rèn'],['承担','chéng dān'],['厘米','lí mǐ'],['大约','dà yuē'],['秘密','mì mì'],['生存','shēng cún'],['累计','lěi jì'],['异常','yì cháng'],['接触','jiē chù'],['改进','gǎi jìn'],['日益','rì yì'],['通知','tōng zhī'],['美丽','měi lì'],['宋江','sòng jiāng'],['制成','zhì chéng'],['途径','tú jìng'],['积累','jī lěi'],['继承','jì chéng'],['领袖','lǐng xiù'],['希腊','xī là'],['形态','xíng tài'],['检察','jiǎn chá'],['之内','zhī nèi'],['灵魂','líng hún'],['被迫','bèi pò'],['接待','jiē dài'],['牺牲','xī shēng'],['感染','gǎn rǎn'],['代替','dài tì'],['夫妻','fū qī'],['释放','shì fàng'],['凡是','fán shì'],['刑部','xíng bù'],['官吏','guān lì'],['舞蹈','wǔ dǎo'],['爆炸','bào zhà'],['遵守','zūn shǒu'],['贫困','pín kùn'],['工匠','gōng jiàng'],['欣赏','xīn shǎng'],['总裁','zǒng cái'],['差距','chā jù'],['景区','jǐng qū'],['跪下','guì xià'],['生涯','shēng yá']],
 };
 const PINYIN = {
+  "耙":"pá",
+  "陷":"xiàn",
+  "笆":"bā",
+  "辆":"liàng",
   "一":"yī",
   "丁":"dīng",
   "七":"qī",
@@ -3297,7 +3301,8 @@ function renderSideToc(name){
       {t:'词卡点读', fn:openCika},
       {t:'词语听写', fn:openTingxie},
       {t:'单元闯关', fn:openUnitQuiz},
-      {t:'课课贴',   fn:openKkt}
+      {t:'课课贴',   fn:openKkt},
+      {t:'课外阅读', fn:openExtraRead}
     ];
   } else if(name === 'math'){
     items = [
@@ -3812,7 +3817,9 @@ function lsReadLesson(paras){
 }
 const LS_GMAP={'一上':'一年级上','一下':'一年级下','二上':'二年级上','二下':'二年级下','三上':'三年级上','三下':'三年级下'};
 const LS_GRADES=['一年级上','一年级下','二年级上','二年级下','三年级上','三年级下'];
-function buildFullReader(c, grade){
+function buildFullReader(c, grade, dataMap, gradeList, initIdx){
+  var SRC = dataMap || LESSONS;
+  var GLIST = gradeList || LS_GRADES;
   c.innerHTML=
     '<div class="ls-selrow ls-selrow-lesson">'+
       '<select id="lsGradeSel" class="ls-sel"></select>'+
@@ -3820,23 +3827,24 @@ function buildFullReader(c, grade){
     '</div>'+
     '<div id="lsReader"></div>';
   const gs=document.getElementById('lsGradeSel');
-  LS_GRADES.forEach(function(g){const o=document.createElement('option');o.value=g;o.textContent=g;if(g===grade)o.selected=true;gs.appendChild(o);});
+  GLIST.forEach(function(g){const o=document.createElement('option');o.value=g;o.textContent=g;if(g===grade)o.selected=true;gs.appendChild(o);});
   const tb={grade:grade,title:null,showPy:false};
   function fillLessonSel(){
     const sel=document.getElementById('lsLessonSel');if(!sel)return;sel.innerHTML='';
-    const arr=LESSONS[tb.grade]||[];
+    const arr=SRC[tb.grade]||[];
     if(!arr.length){const o=document.createElement('option');o.textContent='待录入';sel.appendChild(o);tb.title=null;return;}
     let grp=null;
     arr.forEach(function(L){
       if(!grp||L.unit!==grp.label){grp=document.createElement('optgroup');grp.label=L.unit;sel.appendChild(grp);}
       const o=document.createElement('option');o.value=L.title;o.textContent=L.title;grp.appendChild(o);
     });
+    if(tb.title==null && typeof initIdx==='number' && arr[initIdx])tb.title=arr[initIdx].title;
     if(!tb.title||!arr.some(function(x){return x.title===tb.title;}))tb.title=arr[0].title;
     sel.value=tb.title;
   }
   function renderLesson(){
     const reader=document.getElementById('lsReader');if(!reader)return;
-    const arr=LESSONS[tb.grade]||[];
+    const arr=SRC[tb.grade]||[];
     if(!arr.length){reader.innerHTML='<div class="note">该册内容待录入。</div>';return;}
     const L=arr.find(function(x){return x.title===tb.title;});
     if(!L){reader.innerHTML='<div class="note">该册内容待录入。</div>';return;}
@@ -3888,6 +3896,7 @@ function buildFullReader(c, grade){
   }
   gs.onchange=function(){tb.grade=gs.value;tb.title=null;tb.showPy=false;fillLessonSel();renderLesson();};
   document.getElementById('lsLessonSel').onchange=function(e){tb.title=e.target.value;tb.showPy=false;renderLesson();};
+  if(gradeList&&gradeList.length<=1){gs.style.display='none';}   // 单一分组（如课外阅读）不显示年级下拉
   fillLessonSel();renderLesson();
 }
 (function(){
@@ -4313,6 +4322,7 @@ function renderChinese(){
     {ico:'🎯',t:'词语听写',s:'4选1·配套读音',bg:'var(--success-soft)',fg:'#1FB874',fn:openTingxie},
     {ico:'📊',t:'单元闯关',s:'挖空·字音·词义 综合',bg:'var(--brand-soft)',fg:'#8B5CF6',fn:openUnitQuiz},
     {ico:'📒',t:'课课贴',s:'生字·认读·自测·复习',bg:'var(--success-soft)',fg:'#1FB874',fn:openKkt},
+    {ico:'📚',t:'课外阅读',s:'绘本导读·课外短文',bg:'var(--accent-soft)',fg:'#FF8A3D',fn:openExtraRead},
   ];
   // 推荐学习路径：done 由「今天是否真的练过」决定，并可直接点击跳进模块
   const path = [
@@ -6393,6 +6403,54 @@ function drawZidian(ui){
 function flashTile(t){ if(!t)return; t.classList.add('ck-flash'); t.style.background='var(--brand-soft)'; setTimeout(()=>{ t.classList.remove('ck-flash'); t.style.background=''; },220); }
 
 /* —— 课文点读（按单元生字/词语朗读+跟读）—— */
+/* —— 课外阅读（绘本导读 / 课外短文，复用课文点读的阅读器）—— */
+const EXTRA_READ = {
+'课外阅读':[
+  {unit:'绘本导读', title:'母鸡萝丝去散步', author:'佩特·哈金斯（Pat Hutchins）',
+   intro:'一只叫萝丝的母鸡出门去散步，一只狐狸悄悄跟在后面，一路上却连连碰壁……看图画里藏着的另一半故事。',
+   tags:['绘本','幽默','观察'],
+   paras:[
+     '这天，母鸡萝丝出门去散步。她不知道，有一只狐狸悄悄跟在后面。',
+     '萝丝走过院子。狐狸扑上来，一脚踩到了钉耙，钉耙弹起来，打在他脸上。',
+     '萝丝绕过池塘。狐狸又扑上来，扑了个空，一头栽进池塘里。',
+     '萝丝越过干草堆。狐狸跟着扑上来，一下子陷进了草堆里。',
+     '萝丝经过磨坊。她的脚勾住一根绳子，绳子一松，一袋面粉全撒在狐狸身上。',
+     '萝丝穿过篱笆。狐狸扑上来，正好跌进一辆手推车。',
+     '萝丝钻过蜜蜂房。手推车撞翻了蜂箱，蜜蜂嗡嗡地追着狐狸跑远了。',
+     '萝丝回到家，正好赶上吃晚饭。'
+   ]}
+]
+};
+function openExtraRead(){
+  bumpAct('extra');
+  const list = EXTRA_READ['课外阅读'] || [];
+  let html = '<div class="note" style="margin:2px 0 10px">课外阅读 · 共 '+list.length+' 篇（点一篇开始阅读）</div>';
+  if(!list.length){ html += '<div class="note">内容待录入。</div>'; }
+  list.forEach(function(L,i){
+    const tags = (L.tags||[]).map(function(t){return '<span class="note" style="margin-right:8px">#'+lsEsc(t)+'</span>';}).join('');
+    html += '<div class="card mb xr-item" data-i="'+i+'" style="cursor:pointer">'+
+      '<div class="lr-title" style="margin-bottom:6px">📚 '+lsEsc(L.title)+'</div>'+
+      '<div class="lr-sub">'+lsEsc(L.author||'')+'</div>'+
+      '<div style="margin:6px 0">'+tags+'</div>'+
+      '<div class="lr-sub">'+lsEsc(L.intro||'')+'</div>'+
+      '<div class="note" style="margin-top:8px">共 '+(L.paras||[]).length+' 段 · 可逐句点读 / 整段朗读 / 朗读整课</div>'+
+      '<div class="note" style="margin-top:6px;color:var(--brand)">点此开始阅读 ›</div>'+
+    '</div>';
+  });
+  openOverlay('课外阅读', html, null, function(){
+    $all('.xr-item').forEach(function(card){
+      card.onclick=function(){ openExtraReadItem(+card.dataset.i); };
+    });
+  });
+}
+function openExtraReadItem(i){
+  const list = EXTRA_READ['课外阅读'] || [];
+  const L = list[i]; if(!L) return;
+  openOverlay('课外阅读 · '+L.title, '<div class="ls-reader" id="lsReaderRoot"></div>');
+  const root = document.getElementById('lsReaderRoot');
+  buildFullReader(root, '课外阅读', EXTRA_READ, ['课外阅读'], i);
+}
+
 function openText(){
   bumpAct('text');
   openOverlay('课文点读','<div class="ls-reader" id="lsReaderRoot"></div>');
