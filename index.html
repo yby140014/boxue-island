@@ -530,6 +530,34 @@ img,svg{display:block}
   .sci-read{padding:6px 14px 50px;}
   .sci-content p{font-size:16px;}
 }
+/* —————— 学堂随测 —— */
+.sq-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.sq-meta span{background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:3px 10px;font-weight:700}
+.sq-bar{display:flex;gap:10px;margin:2px 0 10px}
+.sq-btn{flex:1 1 0;min-height:46px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.sq-btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.sq-btn:active{transform:scale(.985)}
+.sq-band{margin:22px 0 12px;text-align:center;font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.5px}
+.sq-sec{margin:16px 0 10px;font-size:15px;font-weight:800;color:var(--brand)}
+.sq-item{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 52px 14px 14px;margin-bottom:10px;transition:border-color .18s,background .18s}
+.sq-item.reading{border-color:var(--brand);background:var(--brand-soft)}
+.sq-q{font-size:16px;line-height:1.75;color:var(--ink);word-break:break-word}
+.sq-no{font-weight:800;color:var(--brand);margin-right:4px}
+.sq-sub{margin-top:8px;font-size:15px;line-height:1.85;color:var(--ink)}
+.sq-opts{margin-top:8px;font-size:15px;line-height:1.8;color:var(--ink);opacity:.92}
+.sq-tb{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;text-align:center}
+.sq-tb th,.sq-tb td{border:1px solid var(--line);padding:6px 4px;white-space:nowrap;color:var(--ink)}
+.sq-tb th{background:var(--brand-soft);font-weight:700}
+.sq-tb td.sq-lab{background:var(--brand-soft);font-weight:600}
+.sq-play{position:absolute;top:10px;right:10px;width:44px;height:44px;min-width:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.sq-play:active{transform:scale(.94)}
+.sq-item.reading .sq-play{border-color:var(--brand);background:var(--brand);color:#fff}
+@media (max-width:420px){
+  .sq-q{font-size:15px}
+  .sq-tb{font-size:12px}
+  .sq-item{padding:12px 48px 12px 12px}
+}
+
 </style>
 </head>
 <body>
@@ -3412,7 +3440,8 @@ function renderSideToc(name){
     items = [
       {t:'知识点讲解', fn:function(){ markMathSeen('知识点讲解'); openMathTeach(); }},
       {t:'口算挑战',   fn:function(){ markMathSeen('口算挑战'); openSuan(); }},
-      {t:'应用题挑战', fn:function(){ markMathSeen('应用题挑战'); openWordProb(); }}
+      {t:'应用题挑战', fn:function(){ markMathSeen('应用题挑战'); openWordProb(); }},
+      {t:'学堂随测',   fn:openSchoolQuiz}
     ];
   } else if(name === 'home'){
     items = [
@@ -6253,6 +6282,11 @@ function renderMath(){
      desc:'从生活场景出发，理解题意、列式并计算；题目难度随年级递增。',
      bg:'linear-gradient(135deg,#d8f7e6,#a8ebcf)', fg:'#1FB874',
      badge:'进阶', fn:path[2].fn},
+    {key:'squiz', ico:'📝', t:'学堂随测',
+     sub:'整卷导入·逐题点读',
+     desc:'把学校发下来的随堂测试卷整卷搬进来，题目原样呈现，支持单题点读与整卷连读。',
+     bg:'linear-gradient(135deg,#ffe6f1,#ffc6dd)', fg:'#E0559B',
+     badge:'新卷', fn:openSchoolQuiz},
   ];
 
   s.innerHTML =
@@ -6293,6 +6327,450 @@ function renderMath(){
     n.addEventListener('click', function(){ it.fn(); });
   });
 }
+/* —————— 学堂随测（整卷点读）：数学第 4 板块 —————— */
+const MATH_PAPERS = [
+  {
+    "id": "s3-u3",
+    "title": "第三单元 大数加与减（二）",
+    "grade": "三年级上",
+    "src": "2025—2026 学年第一学期学科素养课堂提升",
+    "minutes": 60,
+    "pages": 4,
+    "sections": [
+      {
+        "t": "一、我会选择。",
+        "items": [
+          {
+            "no": "1",
+            "q": "654－321－288 与（　　）的计算结果相同。",
+            "opts": [
+              "A.654－321＋288",
+              "B.654－（321－288）",
+              "C.654－（321＋288）"
+            ]
+          },
+          {
+            "no": "2",
+            "q": "下表是小明每年生日测量身高的记录情况。算一算从 3 岁至 8 岁他共长高了（　　）厘米。",
+            "table": {
+              "head": [
+                "年龄/岁",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8"
+              ],
+              "rows": [
+                [
+                  "身高/厘米",
+                  "97",
+                  "103",
+                  "110",
+                  "116",
+                  "122",
+                  "131"
+                ]
+              ]
+            },
+            "opts": [
+              "A.131",
+              "B.34",
+              "C.25"
+            ]
+          },
+          {
+            "no": "3",
+            "q": "三、四年级一起参加研学活动，三年级有 156 人参加，______，研学活动的一共有多少人？如果用 156＋（156－42）解决这个问题，横线上的条件是（　　）。",
+            "opts": [
+              "A.四年级参加人数比三年级多 42 人",
+              "B.四年级有 42 人参加",
+              "C.四年级参加人数比三年级少 42 人"
+            ]
+          },
+          {
+            "no": "4",
+            "q": "依依爸爸买了一台 1100 元的投影仪，先付 400 元，余下部分每月付 160 元，（　　）个月能全部付清。",
+            "opts": [
+              "A.3",
+              "B.4",
+              "C.5"
+            ]
+          },
+          {
+            "no": "5",
+            "q": "亮亮家离图书馆 840 米，一天他从家出发去图书馆，走了 315 米后，发现借阅证落在家里了，于是他原路返回取好借阅证又去了图书馆。他这次去图书馆一共走了（　　）米。",
+            "opts": [
+              "A.840",
+              "B.1155",
+              "C.1470"
+            ]
+          }
+        ]
+      },
+      {
+        "t": "二、我会填空。",
+        "items": [
+          {
+            "no": "1",
+            "q": "计算 563＋284－302 时，应先算（　　）法，再算（　　）法，结果是（　　）。"
+          },
+          {
+            "no": "2",
+            "q": "在○里填上“＞”“＜”或“＝”。",
+            "sub": [
+              "16＋24÷8 ○（16＋24）÷8",
+              "58－8×6 ○ 42÷6＋3",
+              "43＋38－24 ○ 43＋（38－24）",
+              "800＋300－432 ○ 800－300＋432"
+            ]
+          },
+          {
+            "no": "3",
+            "q": "算式 101＋199＋302 可以估算为（　　）＋（　　）＋（　　），估算的结果比实际的结果（　　）。（填“大”或“小”）"
+          },
+          {
+            "no": "4",
+            "q": "博物馆第一周售出了纪念币 328 个，第二周比第一周多售出 87 个，第三周比第二周多售出 103 个，第三周售出（　　）个纪念币。三周一共售出（　　）个纪念币。"
+          },
+          {
+            "no": "5",
+            "q": "妈妈和笑笑带 500 元去超市，买食用油花了 135 元，买果蔬花了 246 元，想知道还剩多少钱。妈妈列式 500－135－246，先求的是（　　）；笑笑列式 500－（135＋246），先求的是（　　）。"
+          },
+          {
+            "no": "6",
+            "q": "刘叔叔家的电表读数如下。（单位：千瓦时）",
+            "table": {
+              "head": [
+                "6月底",
+                "7月底",
+                "8月底",
+                "9月底",
+                "10月底",
+                "11月底",
+                "12月底"
+              ],
+              "rows": [
+                [
+                  "123",
+                  "520",
+                  "520",
+                  "616",
+                  "709",
+                  "802",
+                  "885"
+                ]
+              ]
+            },
+            "sub": [
+              "（1）9 月用电（　　）千瓦时，11 月用电（　　）千瓦时。",
+              "（2）7 月底和 8 月底的读数相同，说明刘叔叔家（　　）月没用电。7 月份，刘叔叔家用电最多，原因可能是（　　）。"
+            ]
+          }
+        ]
+      },
+      {
+        "t": "三、我会计算。",
+        "items": [
+          {
+            "no": "1",
+            "q": "直接写出得数。",
+            "sub": [
+              "120－53＝",
+              "181＋18＝",
+              "9×6－30＝",
+              "72÷9－8＝",
+              "24＋40÷8＝"
+            ]
+          },
+          {
+            "no": "2",
+            "q": "算一算。",
+            "sub": [
+              "327＋159＋232",
+              "126＋（652－438）",
+              "638－215－185",
+              "456－248＋75"
+            ]
+          }
+        ]
+      },
+      {
+        "t": "第二部分　综合运用",
+        "band": true
+      },
+      {
+        "t": "四、我会看图列式计算。",
+        "items": [
+          {
+            "no": "1",
+            "q": "看图列式计算：黄瓜有 276 筐，西红柿比黄瓜少 64 筐。西红柿有多少筐？"
+          },
+          {
+            "no": "2",
+            "q": "看图列式计算：文学类书有 115 本，科普类书有 220 本，借走 140 本。还剩多少本？"
+          }
+        ]
+      },
+      {
+        "t": "五、我会解决问题。",
+        "items": [
+          {
+            "no": "1",
+            "q": "为丰富校园图书角，三年级组织各班积极捐书。一班捐了 126 本，二班捐了 158 本，三班捐了 142 本。三个班一共捐了多少本书？"
+          },
+          {
+            "no": "2",
+            "q": "学校开展“绿色校园”环保活动，同学们积极参与矿泉水瓶回收。在这次活动中，乐乐回收了多少个矿泉水瓶？",
+            "sub": [
+              "明明：我比琪琪多回收 67 个。",
+              "琪琪：我回收了 106 个矿泉水瓶。",
+              "乐乐：我比明明少回收 26 个。"
+            ]
+          },
+          {
+            "no": "3",
+            "q": "一个物体从高空落下，经过 3 秒落到地面，已知第一秒下落的距离是 49 分米，以后每一秒下落的距离都比前一秒多 98 分米，这个物体下落前距地面多少分米？"
+          },
+          {
+            "no": "4",
+            "q": "翠屏小学三年级近期开展了“种植水培植物”长期观察活动。朵朵选择了一盆风信子苗进行生长高度记录。刚开始记录时，风信子苗的高度是 22 毫米。",
+            "table": {
+              "head": [
+                "日期",
+                "1周后",
+                "2周后",
+                "3周后",
+                "4周后",
+                "5周后"
+              ],
+              "rows": [
+                [
+                  "高度/毫米",
+                  "60",
+                  "139",
+                  "148",
+                  "154",
+                  "159"
+                ]
+              ]
+            },
+            "sub": [
+              "（1）请你用画线段图的方式表示风信子生长的高度。",
+              "（2）风信子哪一周生长速度最快？你还有哪些发现？"
+            ]
+          },
+          {
+            "no": "5",
+            "q": "下面是“深圳—南昌”沿线主要车站不完整的火车里程表。",
+            "table": {
+              "head": [
+                "路线",
+                "里程/千米"
+              ],
+              "rows": [
+                [
+                  "深圳—广州",
+                  "147"
+                ],
+                [
+                  "深圳—衡阳",
+                  "668"
+                ],
+                [
+                  "衡阳—南昌",
+                  "501"
+                ]
+              ]
+            },
+            "sub": [
+              "（1）深圳到南昌的路程多少千米？",
+              "（2）“668－147”求的是哪两个城市之间的里程？（画一画，算一算）",
+              "（3）一列火车从深圳出发，平均每时行驶 160 千米，4 时大约行驶到什么位置？请在图中用“△”标出来。"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+];
+let _sqTok = 0;
+
+function sqAttr(v){
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+/* 朗读文本清洗：算式符号转中文读法，空格读作「多少」，路线连接号读作「到」 */
+function sqSay(t){
+  return String(t==null?'':t)
+    .replace(/（[\s\u3000]*）/g,'（多少）')
+    .replace(/_{2,}/g,'横线处')
+    .replace(/－/g,'减')
+    .replace(/＋/g,'加')
+    .replace(/×/g,'乘')
+    .replace(/÷/g,'除')
+    .replace(/＝/g,'等于')
+    .replace(/＞/g,'大于')
+    .replace(/＜/g,'小于')
+    .replace(/○/g,'圆圈')
+    .replace(/—/g,'到')
+    .replace(/[\s\u3000]+/g,' ')
+    .trim();
+}
+function sqCount(p){
+  var n = 0;
+  (p.sections||[]).forEach(function(sec){ n += (sec.items||[]).length; });
+  return n;
+}
+function sqTableHtml(tb){
+  if(!tb || !(tb.head||[]).length) return '';
+  var h = '<table class="sq-tb"><thead><tr>';
+  (tb.head||[]).forEach(function(c){ h += '<th>'+sqAttr(c)+'</th>'; });
+  h += '</tr></thead><tbody>';
+  (tb.rows||[]).forEach(function(r){
+    h += '<tr>';
+    r.forEach(function(c,ci){ h += '<td'+(ci===0?' class="sq-lab"':'')+'>'+sqAttr(c)+'</td>'; });
+    h += '</tr>';
+  });
+  return h + '</tbody></table>';
+}
+function sqItemHtml(it){
+  var tb = it.table ? ((it.table.head||[]).join(' ') + '；' + (it.table.rows||[]).map(function(r){ return r.join(' '); }).join('；')) : '';
+  var attrs = ' data-no="'+sqAttr(it.no||'')+'" data-q="'+sqAttr(it.q||'')+'"'+
+    ' data-sub="'+sqAttr((it.sub||[]).join('||'))+'"'+
+    ' data-opts="'+sqAttr((it.opts||[]).join('||'))+'"'+
+    ' data-tb="'+sqAttr(tb)+'"';
+  var h = '<div class="sq-item"'+attrs+'>'+
+    '<button class="sq-play" type="button" aria-label="点读此题">🔊</button>'+
+    '<div class="sq-q"><span class="sq-no">'+sqAttr(it.no?it.no+'.':'')+'</span>'+sqAttr(it.q||'')+'</div>'+
+    sqTableHtml(it.table);
+  if(it.sub && it.sub.length){
+    h += '<div class="sq-sub">';
+    it.sub.forEach(function(x){ h += '<div>'+sqAttr(x)+'</div>'; });
+    h += '</div>';
+  }
+  if(it.opts && it.opts.length){
+    h += '<div class="sq-opts">';
+    it.opts.forEach(function(x){ h += '<div>'+sqAttr(x)+'</div>'; });
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+function sqPaperHtml(p){
+  var h = '';
+  (p.sections||[]).forEach(function(sec){
+    if(sec.band){ h += '<div class="sq-band">'+sqAttr(sec.t)+'</div>'; return; }
+    h += '<div class="sq-sec">'+sqAttr(sec.t)+'</div>';
+    (sec.items||[]).forEach(function(it){ h += sqItemHtml(it); });
+  });
+  return h;
+}
+function sqItemText(node){
+  if(!node) return '';
+  var parts = [];
+  var no = node.getAttribute('data-no');
+  if(no) parts.push('第'+no+'题。');
+  parts.push(node.getAttribute('data-q')||'');
+  var sub = node.getAttribute('data-sub')||'';
+  if(sub) parts.push(sub.split('||').join(' '));
+  var tb = node.getAttribute('data-tb')||'';
+  if(tb) parts.push('表格。'+tb);
+  var opts = node.getAttribute('data-opts')||'';
+  if(opts) parts.push('选项。'+opts.split('||').join('；'));
+  return sqSay(parts.join(' '));
+}
+function sqHi(node){
+  var root = document.getElementById('sqRoot');
+  if(!root) return;
+  $all('.sq-item', root).forEach(function(n){ n.classList.remove('reading'); });
+  if(node) node.classList.add('reading');
+}
+function sqStop(quiet){
+  ++_sqTok;
+  lsStopSpeech();
+  sqHi(null);
+  if(!quiet && typeof toast==='function') toast('已停止朗读');
+}
+function sqReadItem(node){
+  if(!node) return;
+  ++_sqTok;
+  var tok = _sqTok;
+  lsStopSpeech();
+  sqHi(node);
+  speak(sqItemText(node), { onend:function(){ if(tok===_sqTok) sqHi(null); } });
+}
+function sqReadAll(){
+  var root = document.getElementById('sqRoot');
+  if(!root) return;
+  var items = $all('.sq-item', root);
+  if(!items.length){ if(typeof toast==='function') toast('本卷暂无题目'); return; }
+  ++_sqTok;
+  var tok = _sqTok, i = 0;
+  lsStopSpeech();
+  function step(){
+    if(tok !== _sqTok) return;
+    if(i >= items.length){
+      sqHi(null);
+      if(typeof toast==='function') toast('整卷朗读完成');
+      return;
+    }
+    var node = items[i];
+    sqHi(node);
+    speak(sqItemText(node), { onend:function(){
+      if(tok !== _sqTok) return;
+      i++;
+      setTimeout(step, 260);
+    }});
+  }
+  step();
+}
+function openSchoolQuiz(){
+  if(typeof bumpAct==='function') bumpAct('squiz');
+  var list = MATH_PAPERS || [];
+  var html = '<div class="note" style="margin:2px 0 10px">学堂随测 · 共 '+list.length+' 份（点一份进入，可逐题点读）</div>';
+  if(!list.length) html += '<div class="note">暂无试卷。</div>';
+  list.forEach(function(p,i){
+    html += '<div class="card mb sq-paper" data-i="'+i+'" style="cursor:pointer">'+
+      '<div class="lr-title" style="margin-bottom:6px">📝 '+sqAttr(p.title)+'</div>'+
+      '<div class="lr-sub">'+sqAttr(p.src||'')+'</div>'+
+      '<div class="sq-meta"><span>'+sqAttr(p.grade||'')+'</span><span>'+sqCount(p)+' 题</span><span>建议 '+sqAttr(p.minutes||'—')+' 分钟</span><span>共 '+sqAttr(p.pages||'—')+' 页</span></div>'+
+      '<div class="note" style="margin-top:8px;color:var(--brand)">点此开始随测 ›</div>'+
+    '</div>';
+  });
+  openOverlay('学堂随测', html, null, function(){
+    $all('.sq-paper').forEach(function(card){
+      card.onclick = function(){ openSchoolQuizPaper(+card.getAttribute('data-i')); };
+    });
+  });
+}
+function openSchoolQuizPaper(i){
+  var p = (MATH_PAPERS||[])[i];
+  if(!p) return;
+  var head = '<div class="sq-meta"><span>'+sqAttr(p.grade||'')+'</span><span>'+sqCount(p)+' 题</span><span>建议 '+sqAttr(p.minutes||'—')+' 分钟</span></div>'+
+    '<div class="sq-bar">'+
+      '<button class="sq-btn primary" type="button" id="sqReadAll">🔊 朗读整卷</button>'+
+      '<button class="sq-btn" type="button" id="sqStop">⏹ 停止</button>'+
+    '</div>'+
+    '<div class="note" style="margin:0 0 12px">点每题右上角的喇叭可单独点读，朗读时当前题会高亮。</div>'+
+    '<div id="sqRoot"></div>';
+  openOverlay('学堂随测 · '+p.title, head, null, function(){
+    var root = document.getElementById('sqRoot');
+    if(!root) return;
+    root.innerHTML = sqPaperHtml(p);
+    OV_LEAVE_HOOK = function(){ ++_sqTok; lsStopSpeech(); };
+    var bAll = document.getElementById('sqReadAll');
+    var bStop = document.getElementById('sqStop');
+    if(bAll) bAll.onclick = function(){ sqReadAll(); };
+    if(bStop) bStop.onclick = function(){ sqStop(false); };
+    $all('.sq-play', root).forEach(function(btn){
+      btn.onclick = function(e){
+        if(e && e.stopPropagation) e.stopPropagation();
+        sqReadItem(btn.parentNode);
+      };
+    });
+  });
+}
+
 function markMathSeen(t){
   state.progress.mathPathSeen = state.progress.mathPathSeen || {};
   state.progress.mathPathSeen[t] = Date.now();
