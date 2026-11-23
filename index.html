@@ -338,6 +338,40 @@ img,svg{display:block}
 .quiz-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .3s}
 
 /* Result toast */
+.rs-fab{position:absolute;right:14px;bottom:calc(var(--tab-h) + var(--safe-b) + 14px);z-index:25;
+  width:50px;height:50px;border-radius:50%;display:none;align-items:center;justify-content:center;
+  background:var(--surface,#fff);border:1px solid rgba(91,108,255,.18);cursor:pointer;padding:0;
+  box-shadow:0 8px 22px rgba(31,42,80,.18);-webkit-tap-highlight-color:transparent;transition:transform .18s}
+.rs-fab.on{display:flex}
+.rs-fab:active{transform:scale(.94)}
+.rs-fab svg{width:24px;height:24px;fill:none;stroke:var(--brand,#5B6CFF);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.rs-fab::after{content:'';position:absolute;right:0;top:0;width:11px;height:11px;border-radius:50%;
+  background:var(--brand,#5B6CFF);border:2px solid var(--surface,#fff)}
+.rs-wrap{position:absolute;inset:0;z-index:27;display:none}
+.rs-wrap.on{display:block}
+.rs-mask{position:absolute;inset:0;background:rgba(16,22,44,.34)}
+.rs-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface,#fff);border-radius:20px 20px 0 0;
+  padding:16px 18px calc(18px + var(--safe-b));box-shadow:0 -10px 34px rgba(31,42,80,.16);
+  animation:rsUp .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes rsUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.rs-sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.rs-sheet-t{font-size:16px;font-weight:800;color:var(--ink,#1F2A50)}
+.rs-sheet-x{width:36px;height:36px;border:0;border-radius:50%;background:rgba(31,42,80,.06);color:#5b6480;
+  font-size:19px;line-height:1;cursor:pointer;padding:0}
+.rs-row{margin-bottom:14px}
+.rs-lab{font-size:13px;font-weight:700;color:#5b6480;margin-bottom:8px}
+.rs-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rs-seg.two{grid-template-columns:repeat(2,1fr)}
+.rs-seg button{height:46px;border:1.5px solid rgba(91,108,255,.16);border-radius:12px;
+  background:var(--bg,#F4F6FB);color:#41507a;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:inherit;padding:0;transition:.16s}
+.rs-seg button.on{background:var(--brand,#5B6CFF);border-color:var(--brand,#5B6CFF);color:#fff;
+  box-shadow:0 6px 16px rgba(91,108,255,.3)}
+.rs-seg button:active{transform:scale(.97)}
+.rs-foot{display:flex;align-items:center;gap:10px;margin-top:2px}
+.rs-test{flex:0 0 auto;height:44px;padding:0 20px;border:0;border-radius:12px;background:rgba(91,108,255,.1);
+  color:var(--brand,#5B6CFF);font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.rs-tip{font-size:12px;color:#8a93ad;line-height:1.5}
 .toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-b) + 20px);transform:translateX(-50%) translateY(20px);
   background:var(--ink);color:#fff;padding:12px 22px;border-radius:var(--pill);font-size:14px;font-weight:700;
   opacity:0;pointer-events:none;transition:.3s;z-index:60;box-shadow:var(--shadow-lg);max-width:90%}
@@ -650,6 +684,24 @@ img,svg{display:block}
   </nav>
 
   <div id="overlay"></div>
+
+  <!-- 阅读设置：仅在可点读界面（弹层）显示 -->
+  <button id="rsFab" class="rs-fab" type="button" aria-label="阅读设置">
+    <svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>
+  </button>
+  <div id="rsWrap" class="rs-wrap">
+    <div class="rs-mask" id="rsMask"></div>
+    <div class="rs-sheet">
+      <div class="rs-sheet-h"><span class="rs-sheet-t">阅读设置</span><button class="rs-sheet-x" id="rsX" type="button">×</button></div>
+      <div class="rs-row"><div class="rs-lab">语速</div><div class="rs-seg" id="rsSpeed">
+        <button type="button" data-v="slow">慢</button><button type="button" data-v="mid">中</button><button type="button" data-v="fast">快</button>
+      </div></div>
+      <div class="rs-row"><div class="rs-lab">声音</div><div class="rs-seg two" id="rsGender">
+        <button type="button" data-v="female">女声</button><button type="button" data-v="male">男声</button>
+      </div></div>
+      <div class="rs-foot"><button class="rs-test" id="rsTest" type="button">试听</button><span class="rs-tip" id="rsTip"></span></div>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
 </div>
 
@@ -3247,13 +3299,88 @@ function ttsWarn(){
   if(offline) toast('朗读需要联网，请检查网络后重试 🙏');
   else toast('朗读服务暂时不可用，请稍后重试 🙏');
 }
-function _hasZhVoice(){
+/* ============ 阅读设置：语速（慢/中/快）+ 音色（女/男） ============
+   作用面：所有经 speak() 的朗读 —— 课文点读、课外阅读、古诗、词卡、听写、单元闯关、数学随测。
+   实现原则：不改任何调用点，只在 speak()/baiduSpeak() 入口统一乘语速系数、统一取音色。
+   两条通道各自实现音色：设备语音按 voice.name 挑男女；百度音频用 per（0 女 / 1 男）。 */
+var RS_KEY = 'bxd_readset';
+var RS_SPEED = { slow:0.82, mid:1.00, fast:1.18 };
+var RS = {
+  speed:'mid', gender:'female',
+  load:function(){
+    try{
+      var o = JSON.parse(localStorage.getItem(RS_KEY)||'{}');
+      if(RS_SPEED[o.speed]) RS.speed = o.speed;
+      if(o.gender==='male'||o.gender==='female') RS.gender = o.gender;
+    }catch(e){}
+  },
+  save:function(){ try{ localStorage.setItem(RS_KEY, JSON.stringify({speed:RS.speed, gender:RS.gender})); }catch(e){} },
+  factor:function(){ var f=RS_SPEED[RS.speed]; return (typeof f==='number')?f:1; },
+  per:function(){ return RS.gender==='male' ? 1 : 0; },
+  bsd:function(base){ var v=Math.round((base||4)*RS.factor()); return Math.max(1, Math.min(9, v)); }
+};
+var RS_MALE_NAME = /male|男|Yunxi|Yunyang|Yunjian|Yunye|Yunfeng|Kangkang|Liang|WanLung/i;
+var RS_FEMALE_NAME = /female|女|Xiaoxiao|Xiaoyi|Xiaohan|Xiaomo|Huihui|Tingting|Yaoyao|Meijia|Google/i;
+/* 按当前音色挑本机中文语音；挑不到返回 null（该性别本机没有 → 自动落到百度通道，不会走错音色） */
+function rsPickVoice(){
   try{
-    if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return null;
-    const vs = window.speechSynthesis.getVoices()||[];
-    for(let i=0;i<vs.length;i++){ if(/zh|Chinese|中文/i.test((vs[i].lang||'')+' '+(vs[i].name||''))) return vs[i]; }
+    if(!window.speechSynthesis) return null;
+    var vs = (window.speechSynthesis.getVoices()||[]).filter(function(v){
+      return /zh|Chinese|中文/i.test((v.lang||'')+' '+(v.name||''));
+    });
+    if(!vs.length) return null;
+    var want = (RS.gender==='male') ? RS_MALE_NAME : RS_FEMALE_NAME;
+    for(var i=0;i<vs.length;i++){
+      if(want.test((vs[i].name||'')+' '+(vs[i].voiceURI||''))) return vs[i];
+    }
+    /* 兜底：本机只有一个中文声音且名字未标性别 —— 绝大多数系统默认是女声，
+       选女声时直接用它，省一次联网；选男声则宁缺毋滥，交给百度 per=1。 */
+    if(RS.gender==='female' && vs.length===1 &&
+       !RS_MALE_NAME.test((vs[0].name||'')+' '+(vs[0].voiceURI||''))) return vs[0];
+    return null;
+  }catch(e){ return null; }
+}
+function rsFabShow(on){
+  var f=document.getElementById('rsFab'); if(f) f.classList.toggle('on', !!on);
+}
+function rsSync(){
+  $all('#rsSpeed button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-v')===RS.speed); });
+  $all('#rsGender button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-v')===RS.gender); });
+  var tip=document.getElementById('rsTip');
+  if(tip){
+    var via = rsPickVoice() ? '本机语音' : '云端音频';
+    tip.textContent = '当前：' + (RS.gender==='male'?'男声':'女声') + ' · ' + via + '　设置会自动记住';
+  }
+}
+function rsOpen(){ var w=document.getElementById('rsWrap'); if(w){ rsSync(); w.classList.add('on'); } }
+function rsClose(){ var w=document.getElementById('rsWrap'); if(w) w.classList.remove('on'); }
+function rsTest(){ speak('小兔子跳过小河，看见一朵开得正好的花。', { rate:0.95, bsd:4, pit:5 }); }
+function rsBind(){
+  RS.load();
+  var fab=document.getElementById('rsFab'), wrap=document.getElementById('rsWrap');
+  if(!fab || !wrap) return;
+  fab.onclick = rsOpen;
+  var x=document.getElementById('rsX'); if(x) x.onclick = rsClose;
+  var m=document.getElementById('rsMask'); if(m) m.onclick = rsClose;
+  $all('#rsSpeed button').forEach(function(b){
+    b.onclick = function(){ RS.speed = b.getAttribute('data-v'); RS.save(); rsSync(); };
+  });
+  $all('#rsGender button').forEach(function(b){
+    b.onclick = function(){ RS.gender = b.getAttribute('data-v'); RS.save(); rsSync(); };
+  });
+  var t=document.getElementById('rsTest'); if(t) t.onclick = rsTest;
+  /* 语音列表异步就绪后刷新一下通道提示 */
+  try{
+    if(window.speechSynthesis && speechSynthesis.onvoiceschanged !== undefined){
+      var _prev = speechSynthesis.onvoiceschanged;
+      speechSynthesis.onvoiceschanged = function(){ try{ if(_prev) _prev(); }catch(e){} rsSync(); };
+    }
   }catch(e){}
-  return null;
+  rsSync();
+}
+function _hasZhVoice(){
+  if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return null;
+  return rsPickVoice();   /* 交回阅读设置按「男声/女声」挑；挑不到返回 null → speak() 自动走百度 */
 }
 /* 设备语音可用性记忆：设备语音「连续失败 2 次」才判定不可靠，本次会话后续朗读直接走百度音频。
    只失败 1 次不拉黑 —— 首次朗读时语音引擎冷启动偏慢属正常现象，一票否决会把好设备误判成坏设备。 */
@@ -3317,8 +3444,10 @@ function speak(text, opt){
       const u = new SpeechSynthesisUtterance(text);
       u.lang = zh.lang; u.voice = zh;
       // 语速保持放缓；语调以 opt.pit(5=中性)重映射：5→约1.0，整体更柔和自然，不发尖
-      u.rate  = (typeof opt.rate==='number') ? Math.max(0.45, Math.min(1.4, opt.rate))
-              : ((typeof opt.spd==='number') ? Math.max(0.45, Math.min(1.4, 0.5 + opt.spd*0.2)) : 0.9);
+      var _rsF = RS.factor();   /* 阅读设置语速系数：慢 0.82 / 中 1.00 / 快 1.18 */
+      u.rate  = (typeof opt.rate==='number') ? Math.max(0.45, Math.min(1.4, opt.rate*_rsF))
+              : ((typeof opt.spd==='number') ? Math.max(0.45, Math.min(1.4, (0.5 + opt.spd*0.2)*_rsF))
+              : Math.max(0.45, Math.min(1.4, 0.9*_rsF)));
       u.pitch = (typeof opt.pit==='number') ? Math.max(0.75, Math.min(1.22, 0.76 + opt.pit*0.055)) : 1.0;
       /* 精确收尾轮询：设备语音一旦由「正在发声」转为「已停」，立即收尾推进，不必等预算耗尽。
          这是消除「句间停顿忽长忽短」的关键。要求连续两次读到「已停」才收尾，避免状态抖动导致提前切断。 */
@@ -3392,9 +3521,9 @@ function speak(text, opt){
 function baiduSpeak(text, opt, retry){
   retry = retry||0;
   opt = opt||{};
-  const spd = opt.bsd||opt.spd||4, vol=opt.vol||9, pit=opt.pit||5;
+  const spd = RS.bsd(opt.bsd||opt.spd||4), vol=opt.vol||9, pit=opt.pit||5;   /* 语速随设置缩放 */
   const onend = opt.onend||null;
-  const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&per=0&type=3';
+  const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+spd+'&vol='+vol+'&pit='+pit+'&per='+RS.per()+'&type=3'   /* per：0 女 / 1 男 */;
   function fail(){
     // 首次失败且网络可能尚未就绪（刚进页面/设备还在握手）→ 稍候重测并重试一次
     if(retry<1 && (Net.state==='checking' || (typeof navigator==='undefined' || navigator.onLine!==false))){
@@ -3503,6 +3632,7 @@ function openOverlay(title, bodyHtml, actHtml, onMount){
   ov._ovState = st;
   _ovPaint(st);
   ov.classList.add('open');
+  try{ rsFabShow(true); }catch(e){}   /* 可点读界面才露出阅读设置按钮 */
   return ov;
 }
 function ovBack(){
@@ -3524,6 +3654,7 @@ function closeOverlay(){
   OV_STACK = [];
   ov._ovState = null;
   ov.classList.remove('open');
+  try{ rsClose(); rsFabShow(false); }catch(e){}
   setTimeout(()=>{ ov.innerHTML=''; },320);
 }
 
@@ -6328,272 +6459,538 @@ function renderMath(){
   });
 }
 /* —————— 学堂随测（整卷点读）：数学第 4 板块 —————— */
-const MATH_PAPERS = [
-  {
-    "id": "s3-u3",
-    "title": "第三单元 大数加与减（二）",
-    "grade": "三年级上",
-    "src": "2025—2026 学年第一学期学科素养课堂提升",
-    "minutes": 60,
-    "pages": 4,
-    "sections": [
-      {
-        "t": "一、我会选择。",
-        "items": [
-          {
-            "no": "1",
-            "q": "654－321－288 与（　　）的计算结果相同。",
-            "opts": [
-              "A.654－321＋288",
-              "B.654－（321－288）",
-              "C.654－（321＋288）"
-            ]
-          },
-          {
-            "no": "2",
-            "q": "下表是小明每年生日测量身高的记录情况。算一算从 3 岁至 8 岁他共长高了（　　）厘米。",
-            "table": {
-              "head": [
-                "年龄/岁",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8"
-              ],
-              "rows": [
-                [
-                  "身高/厘米",
-                  "97",
-                  "103",
-                  "110",
-                  "116",
-                  "122",
-                  "131"
-                ]
-              ]
-            },
-            "opts": [
-              "A.131",
-              "B.34",
-              "C.25"
-            ]
-          },
-          {
-            "no": "3",
-            "q": "三、四年级一起参加研学活动，三年级有 156 人参加，______，研学活动的一共有多少人？如果用 156＋（156－42）解决这个问题，横线上的条件是（　　）。",
-            "opts": [
-              "A.四年级参加人数比三年级多 42 人",
-              "B.四年级有 42 人参加",
-              "C.四年级参加人数比三年级少 42 人"
-            ]
-          },
-          {
-            "no": "4",
-            "q": "依依爸爸买了一台 1100 元的投影仪，先付 400 元，余下部分每月付 160 元，（　　）个月能全部付清。",
-            "opts": [
-              "A.3",
-              "B.4",
-              "C.5"
-            ]
-          },
-          {
-            "no": "5",
-            "q": "亮亮家离图书馆 840 米，一天他从家出发去图书馆，走了 315 米后，发现借阅证落在家里了，于是他原路返回取好借阅证又去了图书馆。他这次去图书馆一共走了（　　）米。",
-            "opts": [
-              "A.840",
-              "B.1155",
-              "C.1470"
-            ]
-          }
-        ]
-      },
-      {
-        "t": "二、我会填空。",
-        "items": [
-          {
-            "no": "1",
-            "q": "计算 563＋284－302 时，应先算（　　）法，再算（　　）法，结果是（　　）。"
-          },
-          {
-            "no": "2",
-            "q": "在○里填上“＞”“＜”或“＝”。",
-            "sub": [
-              "16＋24÷8 ○（16＋24）÷8",
-              "58－8×6 ○ 42÷6＋3",
-              "43＋38－24 ○ 43＋（38－24）",
-              "800＋300－432 ○ 800－300＋432"
-            ]
-          },
-          {
-            "no": "3",
-            "q": "算式 101＋199＋302 可以估算为（　　）＋（　　）＋（　　），估算的结果比实际的结果（　　）。（填“大”或“小”）"
-          },
-          {
-            "no": "4",
-            "q": "博物馆第一周售出了纪念币 328 个，第二周比第一周多售出 87 个，第三周比第二周多售出 103 个，第三周售出（　　）个纪念币。三周一共售出（　　）个纪念币。"
-          },
-          {
-            "no": "5",
-            "q": "妈妈和笑笑带 500 元去超市，买食用油花了 135 元，买果蔬花了 246 元，想知道还剩多少钱。妈妈列式 500－135－246，先求的是（　　）；笑笑列式 500－（135＋246），先求的是（　　）。"
-          },
-          {
-            "no": "6",
-            "q": "刘叔叔家的电表读数如下。（单位：千瓦时）",
-            "table": {
-              "head": [
-                "6月底",
-                "7月底",
-                "8月底",
-                "9月底",
-                "10月底",
-                "11月底",
-                "12月底"
-              ],
-              "rows": [
-                [
-                  "123",
-                  "520",
-                  "520",
-                  "616",
-                  "709",
-                  "802",
-                  "885"
-                ]
-              ]
-            },
-            "sub": [
-              "（1）9 月用电（　　）千瓦时，11 月用电（　　）千瓦时。",
-              "（2）7 月底和 8 月底的读数相同，说明刘叔叔家（　　）月没用电。7 月份，刘叔叔家用电最多，原因可能是（　　）。"
-            ]
-          }
-        ]
-      },
-      {
-        "t": "三、我会计算。",
-        "items": [
-          {
-            "no": "1",
-            "q": "直接写出得数。",
-            "sub": [
-              "120－53＝",
-              "181＋18＝",
-              "9×6－30＝",
-              "72÷9－8＝",
-              "24＋40÷8＝"
-            ]
-          },
-          {
-            "no": "2",
-            "q": "算一算。",
-            "sub": [
-              "327＋159＋232",
-              "126＋（652－438）",
-              "638－215－185",
-              "456－248＋75"
-            ]
-          }
-        ]
-      },
-      {
-        "t": "第二部分　综合运用",
-        "band": true
-      },
-      {
-        "t": "四、我会看图列式计算。",
-        "items": [
-          {
-            "no": "1",
-            "q": "看图列式计算：黄瓜有 276 筐，西红柿比黄瓜少 64 筐。西红柿有多少筐？"
-          },
-          {
-            "no": "2",
-            "q": "看图列式计算：文学类书有 115 本，科普类书有 220 本，借走 140 本。还剩多少本？"
-          }
-        ]
-      },
-      {
-        "t": "五、我会解决问题。",
-        "items": [
-          {
-            "no": "1",
-            "q": "为丰富校园图书角，三年级组织各班积极捐书。一班捐了 126 本，二班捐了 158 本，三班捐了 142 本。三个班一共捐了多少本书？"
-          },
-          {
-            "no": "2",
-            "q": "学校开展“绿色校园”环保活动，同学们积极参与矿泉水瓶回收。在这次活动中，乐乐回收了多少个矿泉水瓶？",
-            "sub": [
-              "明明：我比琪琪多回收 67 个。",
-              "琪琪：我回收了 106 个矿泉水瓶。",
-              "乐乐：我比明明少回收 26 个。"
-            ]
-          },
-          {
-            "no": "3",
-            "q": "一个物体从高空落下，经过 3 秒落到地面，已知第一秒下落的距离是 49 分米，以后每一秒下落的距离都比前一秒多 98 分米，这个物体下落前距地面多少分米？"
-          },
-          {
-            "no": "4",
-            "q": "翠屏小学三年级近期开展了“种植水培植物”长期观察活动。朵朵选择了一盆风信子苗进行生长高度记录。刚开始记录时，风信子苗的高度是 22 毫米。",
-            "table": {
-              "head": [
-                "日期",
-                "1周后",
-                "2周后",
-                "3周后",
-                "4周后",
-                "5周后"
-              ],
-              "rows": [
-                [
-                  "高度/毫米",
-                  "60",
-                  "139",
-                  "148",
-                  "154",
-                  "159"
-                ]
-              ]
-            },
-            "sub": [
-              "（1）请你用画线段图的方式表示风信子生长的高度。",
-              "（2）风信子哪一周生长速度最快？你还有哪些发现？"
-            ]
-          },
-          {
-            "no": "5",
-            "q": "下面是“深圳—南昌”沿线主要车站不完整的火车里程表。",
-            "table": {
-              "head": [
-                "路线",
-                "里程/千米"
-              ],
-              "rows": [
-                [
-                  "深圳—广州",
-                  "147"
-                ],
-                [
-                  "深圳—衡阳",
-                  "668"
-                ],
-                [
-                  "衡阳—南昌",
-                  "501"
-                ]
-              ]
-            },
-            "sub": [
-              "（1）深圳到南昌的路程多少千米？",
-              "（2）“668－147”求的是哪两个城市之间的里程？（画一画，算一算）",
-              "（3）一列火车从深圳出发，平均每时行驶 160 千米，4 时大约行驶到什么位置？请在图中用“△”标出来。"
-            ]
-          }
-        ]
-      }
-    ]
-  }
+const MATH_PAPERS = [
+
+  {
+
+    "id": "s3-u3",
+
+    "title": "第三单元 大数加与减（二）",
+
+    "grade": "三年级上",
+
+    "src": "2025—2026 学年第一学期学科素养课堂提升",
+
+    "minutes": 60,
+
+    "pages": 4,
+
+    "sections": [
+
+      {
+
+        "t": "一、我会选择。",
+
+        "items": [
+
+          {
+
+            "no": "1",
+
+            "q": "654－321－288 与（　　）的计算结果相同。",
+
+            "opts": [
+
+              "A.654－321＋288",
+
+              "B.654－（321－288）",
+
+              "C.654－（321＋288）"
+
+            ]
+
+          },
+
+          {
+
+            "no": "2",
+
+            "q": "下表是小明每年生日测量身高的记录情况。算一算从 3 岁至 8 岁他共长高了（　　）厘米。",
+
+            "table": {
+
+              "head": [
+
+                "年龄/岁",
+
+                "3",
+
+                "4",
+
+                "5",
+
+                "6",
+
+                "7",
+
+                "8"
+
+              ],
+
+              "rows": [
+
+                [
+
+                  "身高/厘米",
+
+                  "97",
+
+                  "103",
+
+                  "110",
+
+                  "116",
+
+                  "122",
+
+                  "131"
+
+                ]
+
+              ]
+
+            },
+
+            "opts": [
+
+              "A.131",
+
+              "B.34",
+
+              "C.25"
+
+            ]
+
+          },
+
+          {
+
+            "no": "3",
+
+            "q": "三、四年级一起参加研学活动，三年级有 156 人参加，______，研学活动的一共有多少人？如果用 156＋（156－42）解决这个问题，横线上的条件是（　　）。",
+
+            "opts": [
+
+              "A.四年级参加人数比三年级多 42 人",
+
+              "B.四年级有 42 人参加",
+
+              "C.四年级参加人数比三年级少 42 人"
+
+            ]
+
+          },
+
+          {
+
+            "no": "4",
+
+            "q": "依依爸爸买了一台 1100 元的投影仪，先付 400 元，余下部分每月付 160 元，（　　）个月能全部付清。",
+
+            "opts": [
+
+              "A.3",
+
+              "B.4",
+
+              "C.5"
+
+            ]
+
+          },
+
+          {
+
+            "no": "5",
+
+            "q": "亮亮家离图书馆 840 米，一天他从家出发去图书馆，走了 315 米后，发现借阅证落在家里了，于是他原路返回取好借阅证又去了图书馆。他这次去图书馆一共走了（　　）米。",
+
+            "opts": [
+
+              "A.840",
+
+              "B.1155",
+
+              "C.1470"
+
+            ]
+
+          }
+
+        ]
+
+      },
+
+      {
+
+        "t": "二、我会填空。",
+
+        "items": [
+
+          {
+
+            "no": "1",
+
+            "q": "计算 563＋284－302 时，应先算（　　）法，再算（　　）法，结果是（　　）。"
+
+          },
+
+          {
+
+            "no": "2",
+
+            "q": "在○里填上“＞”“＜”或“＝”。",
+
+            "sub": [
+
+              "16＋24÷8 ○（16＋24）÷8",
+
+              "58－8×6 ○ 42÷6＋3",
+
+              "43＋38－24 ○ 43＋（38－24）",
+
+              "800＋300－432 ○ 800－300＋432"
+
+            ]
+
+          },
+
+          {
+
+            "no": "3",
+
+            "q": "算式 101＋199＋302 可以估算为（　　）＋（　　）＋（　　），估算的结果比实际的结果（　　）。（填“大”或“小”）"
+
+          },
+
+          {
+
+            "no": "4",
+
+            "q": "博物馆第一周售出了纪念币 328 个，第二周比第一周多售出 87 个，第三周比第二周多售出 103 个，第三周售出（　　）个纪念币。三周一共售出（　　）个纪念币。"
+
+          },
+
+          {
+
+            "no": "5",
+
+            "q": "妈妈和笑笑带 500 元去超市，买食用油花了 135 元，买果蔬花了 246 元，想知道还剩多少钱。妈妈列式 500－135－246，先求的是（　　）；笑笑列式 500－（135＋246），先求的是（　　）。"
+
+          },
+
+          {
+
+            "no": "6",
+
+            "q": "刘叔叔家的电表读数如下。（单位：千瓦时）",
+
+            "table": {
+
+              "head": [
+
+                "6月底",
+
+                "7月底",
+
+                "8月底",
+
+                "9月底",
+
+                "10月底",
+
+                "11月底",
+
+                "12月底"
+
+              ],
+
+              "rows": [
+
+                [
+
+                  "123",
+
+                  "520",
+
+                  "520",
+
+                  "616",
+
+                  "709",
+
+                  "802",
+
+                  "885"
+
+                ]
+
+              ]
+
+            },
+
+            "sub": [
+
+              "（1）9 月用电（　　）千瓦时，11 月用电（　　）千瓦时。",
+
+              "（2）7 月底和 8 月底的读数相同，说明刘叔叔家（　　）月没用电。7 月份，刘叔叔家用电最多，原因可能是（　　）。"
+
+            ]
+
+          }
+
+        ]
+
+      },
+
+      {
+
+        "t": "三、我会计算。",
+
+        "items": [
+
+          {
+
+            "no": "1",
+
+            "q": "直接写出得数。",
+
+            "sub": [
+
+              "120－53＝",
+
+              "181＋18＝",
+
+              "9×6－30＝",
+
+              "72÷9－8＝",
+
+              "24＋40÷8＝"
+
+            ]
+
+          },
+
+          {
+
+            "no": "2",
+
+            "q": "算一算。",
+
+            "sub": [
+
+              "327＋159＋232",
+
+              "126＋（652－438）",
+
+              "638－215－185",
+
+              "456－248＋75"
+
+            ]
+
+          }
+
+        ]
+
+      },
+
+      {
+
+        "t": "第二部分　综合运用",
+
+        "band": true
+
+      },
+
+      {
+
+        "t": "四、我会看图列式计算。",
+
+        "items": [
+
+          {
+
+            "no": "1",
+
+            "q": "看图列式计算：黄瓜有 276 筐，西红柿比黄瓜少 64 筐。西红柿有多少筐？"
+
+          },
+
+          {
+
+            "no": "2",
+
+            "q": "看图列式计算：文学类书有 115 本，科普类书有 220 本，借走 140 本。还剩多少本？"
+
+          }
+
+        ]
+
+      },
+
+      {
+
+        "t": "五、我会解决问题。",
+
+        "items": [
+
+          {
+
+            "no": "1",
+
+            "q": "为丰富校园图书角，三年级组织各班积极捐书。一班捐了 126 本，二班捐了 158 本，三班捐了 142 本。三个班一共捐了多少本书？"
+
+          },
+
+          {
+
+            "no": "2",
+
+            "q": "学校开展“绿色校园”环保活动，同学们积极参与矿泉水瓶回收。在这次活动中，乐乐回收了多少个矿泉水瓶？",
+
+            "sub": [
+
+              "明明：我比琪琪多回收 67 个。",
+
+              "琪琪：我回收了 106 个矿泉水瓶。",
+
+              "乐乐：我比明明少回收 26 个。"
+
+            ]
+
+          },
+
+          {
+
+            "no": "3",
+
+            "q": "一个物体从高空落下，经过 3 秒落到地面，已知第一秒下落的距离是 49 分米，以后每一秒下落的距离都比前一秒多 98 分米，这个物体下落前距地面多少分米？"
+
+          },
+
+          {
+
+            "no": "4",
+
+            "q": "翠屏小学三年级近期开展了“种植水培植物”长期观察活动。朵朵选择了一盆风信子苗进行生长高度记录。刚开始记录时，风信子苗的高度是 22 毫米。",
+
+            "table": {
+
+              "head": [
+
+                "日期",
+
+                "1周后",
+
+                "2周后",
+
+                "3周后",
+
+                "4周后",
+
+                "5周后"
+
+              ],
+
+              "rows": [
+
+                [
+
+                  "高度/毫米",
+
+                  "60",
+
+                  "139",
+
+                  "148",
+
+                  "154",
+
+                  "159"
+
+                ]
+
+              ]
+
+            },
+
+            "sub": [
+
+              "（1）请你用画线段图的方式表示风信子生长的高度。",
+
+              "（2）风信子哪一周生长速度最快？你还有哪些发现？"
+
+            ]
+
+          },
+
+          {
+
+            "no": "5",
+
+            "q": "下面是“深圳—南昌”沿线主要车站不完整的火车里程表。",
+
+            "table": {
+
+              "head": [
+
+                "路线",
+
+                "里程/千米"
+
+              ],
+
+              "rows": [
+
+                [
+
+                  "深圳—广州",
+
+                  "147"
+
+                ],
+
+                [
+
+                  "深圳—衡阳",
+
+                  "668"
+
+                ],
+
+                [
+
+                  "衡阳—南昌",
+
+                  "501"
+
+                ]
+
+              ]
+
+            },
+
+            "sub": [
+
+              "（1）深圳到南昌的路程多少千米？",
+
+              "（2）“668－147”求的是哪两个城市之间的里程？（画一画，算一算）",
+
+              "（3）一列火车从深圳出发，平均每时行驶 160 千米，4 时大约行驶到什么位置？请在图中用“△”标出来。"
+
+            ]
+
+          }
+
+        ]
+
+      }
+
+    ]
+
+  }
+
 ];
 let _sqTok = 0;
 
@@ -7936,6 +8333,8 @@ function boot(){
     var _sh=document.getElementById('screen-home');
     if(_sh && !_sh.children.length && window.__showErr){ window.__showErr('[自检] 首页容器内无内容（renderHome 可能未写入或被拦截）'); }
   }catch(e){}
+  // 阅读设置：读取上次选择 + 绑定按钮
+  try{ rsBind(); }catch(e){ if(window.__showErr) window.__showErr('[rsBind 异常] '+((e&&e.message)||e)); }
   // 顶部点击回首页
   document.getElementById('tbAvatar').onclick=()=>showScreen('profile');
   document.getElementById('tbTitle').onclick=()=>showScreen('home');
