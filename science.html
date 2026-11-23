@@ -254,6 +254,23 @@
   .fab:active{transform:scale(.92);}
   .fab span{font-size:10px;margin-top:2px;font-weight:600;}
   .fab.mind{background:linear-gradient(135deg,#8b5cf6,#6366f1);box-shadow:0 6px 16px rgba(139,92,246,.4);}
+  .fab.read{background:linear-gradient(135deg,#0ea5e9,#0284c7);box-shadow:0 6px 16px rgba(14,165,233,.42);}
+  /* === 阅读设置面板 === */
+  .rs-panel{max-width:420px;}
+  .rs-body{padding:16px 16px 18px;}
+  .rs-row{margin-bottom:14px;}
+  .rs-lab{font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;}
+  .rs-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .rs-seg.two{grid-template-columns:repeat(2,1fr);}
+  .rs-seg button{height:46px;border:1.5px solid #e2e8f0;border-radius:11px;background:#f8fafc;
+    color:#334155;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;transition:.16s;}
+  .rs-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff;
+    box-shadow:0 6px 16px rgba(37,99,235,.3);}
+  .rs-seg button:active{transform:scale(.97);}
+  .rs-foot{display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;}
+  .rs-test{height:42px;padding:0 20px;border:0;border-radius:11px;background:#eff6ff;color:var(--accent);
+    font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;}
+  .rs-tip{font-size:12px;color:#94a3b8;line-height:1.5;}
   .pop-mask{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:600;
     display:flex;align-items:center;justify-content:center;padding:14px;animation:popIn .15s ease;}
   .pop-mask[hidden]{display:none;}
@@ -349,6 +366,25 @@
 <div class="fab-bar" id="fabBar">
   <button class="fab mind" id="fabMind" title="打开思维导图">🧠<span>导图</span></button>
   <button class="fab" id="fabToc" title="打开目录">📑<span>目录</span></button>
+  <button class="fab read" id="fabRead" title="阅读设置：语速与声音">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 6a8.5 8.5 0 0 1 0 12"/></svg><span>设置</span>
+  </button>
+</div>
+
+<!-- 阅读设置弹出面板 -->
+<div class="pop-mask" id="readMask" hidden>
+  <div class="pop-panel rs-panel">
+    <div class="pop-head">阅读设置<button class="pop-close" id="readClose" title="关闭">✕</button></div>
+    <div class="rs-body">
+      <div class="rs-row"><div class="rs-lab">语速</div><div class="rs-seg" id="readSpeed">
+        <button type="button" data-v="slow">慢</button><button type="button" data-v="mid">中</button><button type="button" data-v="fast">快</button>
+      </div></div>
+      <div class="rs-row"><div class="rs-lab">声音</div><div class="rs-seg two" id="readGender">
+        <button type="button" data-v="female">女声</button><button type="button" data-v="male">男声</button>
+      </div></div>
+      <div class="rs-foot"><button class="rs-test" id="readTest" type="button">试听</button><span class="rs-tip" id="readTip"></span></div>
+    </div>
+  </div>
 </div>
 
 <!-- 目录弹出面板 -->
@@ -1341,6 +1377,74 @@ function initMindMap(block, treeId){
 /* ============================================================
    六、TTS 点读模块
    ============================================================ */
+/* ============================================================
+   五·五、阅读设置：语速（慢/中/快）+ 音色（女/男）
+   与语文/数学板块共用同一个 localStorage key（bxd_readset）——
+   在博学岛改过的设置，这里打开就是同一套。
+   ============================================================ */
+var RS_KEY = 'bxd_readset';
+var RS_SPEED = { slow:0.82, mid:1.00, fast:1.18 };
+var RS = {
+  speed:'mid', gender:'female',
+  load(){
+    try{
+      const o = JSON.parse(localStorage.getItem(RS_KEY)||'{}');
+      if(RS_SPEED[o.speed]) RS.speed = o.speed;
+      if(o.gender==='male'||o.gender==='female') RS.gender = o.gender;
+    }catch(e){}
+  },
+  save(){ try{ localStorage.setItem(RS_KEY, JSON.stringify({speed:RS.speed, gender:RS.gender})); }catch(e){} },
+  factor(){ const f=RS_SPEED[RS.speed]; return (typeof f==='number')?f:1; },
+  per(){ return RS.gender==='male' ? 1 : 0; },
+  bsd(base){ const v=Math.round((base||4)*RS.factor()); return Math.max(1, Math.min(9, v)); }
+};
+const RS_MALE_NAME = /male|男|Yunxi|Yunyang|Yunjian|Yunye|Yunfeng|Kangkang|Liang|WanLung/i;
+const RS_FEMALE_NAME = /female|女|Xiaoxiao|Xiaoyi|Xiaohan|Xiaomo|Huihui|Tingting|Yaoyao|Meijia|Google/i;
+/* 按当前音色挑本机中文语音；挑不到返回 null（该性别本机没有 → 自动落到百度通道） */
+function rsPickVoice(){
+  try{
+    if(!window.speechSynthesis) return null;
+    const vs = (window.speechSynthesis.getVoices()||[]).filter(v=>/zh|Chinese|中文/i.test((v.lang||'')+' '+(v.name||'')));
+    if(!vs.length) return null;
+    const want = (RS.gender==='male') ? RS_MALE_NAME : RS_FEMALE_NAME;
+    for(const v of vs){ if(want.test((v.name||'')+' '+(v.voiceURI||''))) return v; }
+    if(RS.gender==='female' && vs.length===1 &&
+       !RS_MALE_NAME.test((vs[0].name||'')+' '+(vs[0].voiceURI||''))) return vs[0];
+    return null;
+  }catch(e){ return null; }
+}
+function rsSync(){
+  document.querySelectorAll('#readSpeed button').forEach(b=>b.classList.toggle('on', b.dataset.v===RS.speed));
+  document.querySelectorAll('#readGender button').forEach(b=>b.classList.toggle('on', b.dataset.v===RS.gender));
+  const tip = document.getElementById('readTip');
+  if(tip){
+    const via = rsPickVoice() ? '本机语音' : '云端音频';
+    tip.textContent = '当前：' + (RS.gender==='male'?'男声':'女声') + ' · ' + via + '　设置会自动记住';
+  }
+}
+function rsBind(){
+  RS.load();
+  const fab=document.getElementById('fabRead'), mask=document.getElementById('readMask');
+  if(fab && mask) fab.addEventListener('click', ()=>{ rsSync(); mask.hidden=false; });
+  const cl=document.getElementById('readClose'); if(cl) cl.addEventListener('click', ()=>{ if(mask) mask.hidden=true; });
+  if(mask) mask.addEventListener('click', e=>{ if(e.target===mask) mask.hidden=true; });
+  document.querySelectorAll('#readSpeed button').forEach(b=>{
+    b.addEventListener('click', ()=>{ RS.speed=b.dataset.v; RS.save(); rsSync(); });
+  });
+  document.querySelectorAll('#readGender button').forEach(b=>{
+    b.addEventListener('click', ()=>{ RS.gender=b.dataset.v; RS.save(); rsSync(); });
+  });
+  const t=document.getElementById('readTest');
+  if(t) t.addEventListener('click', ()=>{ TTS.speak('小兔子跳过小河，看见一朵开得正好的花。'); });
+  try{
+    if(window.speechSynthesis && speechSynthesis.onvoiceschanged !== undefined){
+      const prev = speechSynthesis.onvoiceschanged;
+      speechSynthesis.onvoiceschanged = function(){ try{ if(prev) prev(); }catch(e){} rsSync(); };
+    }
+  }catch(e){}
+  rsSync();
+}
+
 const TTS = {
   enabled: false,
   voice: null,
@@ -1350,10 +1454,7 @@ const TTS = {
   _readTimer: null,
   init(){
     if(!('speechSynthesis' in window)) return;
-    const trySet = ()=>{
-      const vs = speechSynthesis.getVoices();
-      TTS.voice = vs.find(v=>/^zh/i.test(v.lang)) || null;
-    };
+    const trySet = ()=>{ TTS.voice = rsPickVoice(); };   /* 交给阅读设置按性别挑 */
     trySet();
     if(speechSynthesis.onvoiceschanged !== undefined){
       speechSynthesis.onvoiceschanged = trySet;
@@ -1364,11 +1465,8 @@ const TTS = {
   _audio: null,
   _warnTs: 0,
   _zhVoice(){
-    try{
-      if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return null;
-      const vs = window.speechSynthesis.getVoices() || [];
-      return vs.find(v=>/zh|Chinese|中文/i.test((v.lang||'')+' '+(v.name||''))) || null;
-    }catch(e){ return null; }
+    if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return null;
+    return rsPickVoice();   /* 按「男声/女声」挑；挑不到返回 null → 自动走百度 */
   },
   /* 百度音频兜底：设备无中文语音 / 合成失败 / 静默无声时使用（与语文板块同一条通道）
      maxMs：单段最长预算，超时强制推进，避免整节卡死在一句话上 */
@@ -1377,7 +1475,7 @@ const TTS = {
     let tmr = null;
     const once = ()=>{ if(fired) return; fired = true; if(tmr){ clearTimeout(tmr); tmr=null; } done(); };
     try{
-      const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd=4&vol=9&pit=5&per=0&type=3';
+      const url = 'https://fanyi.baidu.com/gettts?lan=zh&text='+encodeURIComponent(text)+'&spd='+RS.bsd(4)+'&vol=9&pit=5&per='+RS.per()+'&type=3';
       const a = new Audio(url);
       if(this._audio){ try{ this._audio.pause(); }catch(e){} }
       this._audio = a;
@@ -1422,7 +1520,7 @@ const TTS = {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = v.lang || opts.lang || 'zh-CN';
         u.voice = v;
-        u.rate = (typeof opts.rate==='number') ? Math.max(0.5, Math.min(1.6, opts.rate)) : 0.95;
+        u.rate = ((typeof opts.rate==='number') ? Math.max(0.5, Math.min(1.6, opts.rate)) : 0.95) * RS.factor();   /* 语速随设置缩放 */
         u.pitch = (typeof opts.pitch==='number') ? Math.max(0.5, Math.min(1.6, opts.pitch)) : 1;
         let started = false;
         u.onstart = ()=>{ started = true; TTS._devOk = true; };
@@ -1854,6 +1952,7 @@ function closeMindMap(){
 }
 $('#fabToc').addEventListener('click', openToc);
 $('#fabMind').addEventListener('click', ()=>openMindMap());
+try{ rsBind(); }catch(e){ console.warn('rsBind', e); }   // 阅读设置：恢复上次选择 + 绑定按钮
 $('#tocMask').addEventListener('click', e=>{ if(e.target.id==='tocMask') closeToc(); });
 $('#mmMask').addEventListener('click', e=>{ if(e.target.id==='mmMask') closeMindMap(); });
 $$('.pop-close').forEach(b=> b.addEventListener('click', ()=>{ if(b.dataset.close==='toc') closeToc(); else closeMindMap(); }));
